@@ -1,0 +1,287 @@
+import React, { useState } from 'react';
+import { useLanguage } from '../../../context/LanguageContext';
+import { Customer, Inquiry } from '../../../types';
+import { DataService } from '../../../services/dataService';
+import { Search, Download, User, Mail, Phone, MapPin, Calendar, Clock, Edit2, X, ShieldAlert } from 'lucide-react';
+
+interface CustomersTabProps {
+  customers: Customer[];
+  inquiries: Inquiry[];
+}
+
+export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries }) => {
+  const { isRtl } = useLanguage();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [notesInput, setNotesInput] = useState('');
+
+  const countries = Array.from(new Set(customers.map((c) => c.country).filter(Boolean)));
+
+  const filteredCustomers = customers.filter((c) => {
+    if (countryFilter !== 'all' && c.country !== countryFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.country.toLowerCase().includes(q) ||
+        (c.phone && c.phone.includes(q))
+      );
+    }
+    return true;
+  });
+
+  const handleOpenProfile = (c: Customer) => {
+    setSelectedCustomer(c);
+    setNotesInput(c.notes || '');
+  };
+
+  const handleSaveNotes = () => {
+    if (!selectedCustomer) return;
+    const updated = DataService.updateCustomerNotes(selectedCustomer.id, notesInput);
+    if (updated) {
+      setSelectedCustomer(updated);
+      alert('Customer CRM notes updated.');
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Customer ID', 'Full Name', 'Email', 'Phone', 'Country', 'Inquiries Count', 'Confirmed Bookings', 'Last Interaction', 'Notes'];
+    const rows = filteredCustomers.map((c) => [
+      c.id,
+      `"${c.name.replace(/"/g, '""')}"`,
+      c.email,
+      `"${c.phone || ''}"`,
+      `"${c.country || ''}"`,
+      c.totalInquiries,
+      c.confirmedBookings,
+      c.lastInteraction,
+      `"${(c.notes || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `tourflow_customers_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="space-y-6" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#123B32]">
+            Customer Relationship Management (CRM)
+          </h2>
+          <p className="text-xs text-[#777D75]">
+            Private client profiles, inquiry histories, country origins, and concierge notes.
+          </p>
+        </div>
+
+        <button
+          onClick={handleExportCSV}
+          className="py-2.5 px-4 bg-white border border-[#D9C29A]/60 text-[#123B32] hover:bg-[#FAF8F5] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
+        >
+          <Download className="w-4 h-4 text-[#C6A46B]" />
+          <span>Export Customer Directory</span>
+        </button>
+      </div>
+
+      {/* Filter and Search */}
+      <div className="bg-white border border-[#D9C29A]/50 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 text-[#777D75] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search by customer name, email, country..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <select
+            value={countryFilter}
+            onChange={(e) => setCountryFilter(e.target.value)}
+            className="text-xs py-2 px-3 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl text-[#123B32] font-semibold cursor-pointer"
+          >
+            <option value="all">All Countries ({customers.length})</option>
+            {countries.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Customers Table */}
+      <div className="bg-white border border-[#D9C29A]/50 rounded-2xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-start text-xs">
+            <thead>
+              <tr className="bg-[#FAF8F5] border-b border-[#D9C29A]/40 text-[#777D75] uppercase tracking-wider">
+                <th className="py-3 px-4 font-semibold text-start">Customer</th>
+                <th className="py-3 px-4 font-semibold text-start">Country</th>
+                <th className="py-3 px-4 font-semibold text-start">Inquiries</th>
+                <th className="py-3 px-4 font-semibold text-start">Bookings</th>
+                <th className="py-3 px-4 font-semibold text-start">Last Interaction</th>
+                <th className="py-3 px-4 font-semibold text-start">Notes</th>
+                <th className="py-3 px-4 font-semibold text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#D9C29A]/20">
+              {filteredCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-[#777D75]">
+                    No customer records found.
+                  </td>
+                </tr>
+              ) : (
+                filteredCustomers.map((cust) => (
+                  <tr key={cust.id} className="hover:bg-[#FAF8F5] transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-[#123B32]">{cust.name}</div>
+                      <div className="text-[11px] text-[#777D75]">{cust.email}</div>
+                    </td>
+                    <td className="py-3 px-4 text-[#202923] font-medium whitespace-nowrap">
+                      {cust.country || 'International'}
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-[#123B32] tabular-nums">
+                      {cust.totalInquiries}
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-emerald-700 tabular-nums">
+                      {cust.confirmedBookings}
+                    </td>
+                    <td className="py-3 px-4 text-[#777D75] whitespace-nowrap">
+                      {new Date(cust.lastInteraction).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4 text-[#777D75] max-w-xs truncate">
+                      {cust.notes || '—'}
+                    </td>
+                    <td className="py-3 px-4 text-end whitespace-nowrap">
+                      <button
+                        onClick={() => handleOpenProfile(cust)}
+                        className="py-1 px-3 text-xs font-semibold text-[#123B32] bg-[#FAF8F5] hover:bg-[#D9C29A]/20 border border-[#D9C29A]/50 rounded-lg cursor-pointer"
+                      >
+                        Profile
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* CUSTOMER PROFILE MODAL */}
+      {selectedCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#123B32] text-[#D9C29A] flex items-center justify-center font-bold">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl font-bold text-[#123B32]">
+                    {selectedCustomer.name}
+                  </h3>
+                  <div className="text-xs text-[#777D75]">
+                    {selectedCustomer.email} · {selectedCustomer.phone}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCustomer(null)}
+                className="p-1.5 text-[#777D75] hover:text-[#123B32]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 p-4 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl text-center mb-6">
+              <div>
+                <span className="text-[11px] text-[#777D75] block">Total Inquiries</span>
+                <span className="font-mono text-lg font-bold text-[#123B32]">
+                  {selectedCustomer.totalInquiries}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] text-[#777D75] block">Confirmed Bookings</span>
+                <span className="font-mono text-lg font-bold text-emerald-700">
+                  {selectedCustomer.confirmedBookings}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] text-[#777D75] block">Origin</span>
+                <span className="text-xs font-bold text-[#123B32] mt-1 block">
+                  {selectedCustomer.country}
+                </span>
+              </div>
+            </div>
+
+            {/* Associated Inquiries */}
+            <div className="mb-6">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#123B32] mb-3">
+                Inquiry History
+              </h4>
+              <div className="space-y-2">
+                {inquiries
+                  .filter((i) => i.email.toLowerCase() === selectedCustomer.email.toLowerCase())
+                  .map((inq) => (
+                    <div
+                      key={inq.id}
+                      className="p-3 bg-white border border-[#D9C29A]/50 rounded-xl text-xs flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="font-bold text-[#123B32]">{inq.experienceTitle}</div>
+                        <div className="text-[11px] text-[#777D75]">
+                          Date: {inq.preferredDate} · {inq.guests} guests · Ref: {inq.id}
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] border border-[#D9C29A]/50">
+                        {inq.status}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Concierge Notes */}
+            <div className="border-t border-[#D9C29A]/40 pt-4">
+              <label className="block text-xs font-bold text-[#123B32] mb-1">
+                Concierge Profile Notes:
+              </label>
+              <textarea
+                rows={3}
+                value={notesInput}
+                onChange={(e) => setNotesInput(e.target.value)}
+                placeholder="Add private client preferences (e.g. VIP status, dietary restrictions, preferred language)..."
+                className="w-full text-xs p-3 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32] mb-3"
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveNotes}
+                  className="py-2 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Save Notes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

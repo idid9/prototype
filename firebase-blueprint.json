@@ -1,0 +1,126 @@
+{
+  "entities": {
+    "Experience": {
+      "title": "Experience",
+      "description": "Tourism experience or package offered by Saudi operators",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "titleAr": { "type": "string", "maxLength": 150 },
+        "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "destinationId": { "type": "string", "maxLength": 64 },
+        "destinationName": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 50 },
+        "price": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 5 },
+        "duration": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "coverImage": { "type": "string", "maxLength": 1000 },
+        "featured": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "destinationId", "category", "price", "status"]
+    },
+    "Destination": {
+      "title": "Destination",
+      "description": "Featured Saudi tourism destination",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "description": { "type": "string", "maxLength": 1500 },
+        "coverImage": { "type": "string", "maxLength": 1000 },
+        "region": { "type": "string", "maxLength": 100 },
+        "published": { "type": "boolean" },
+        "featured": { "type": "boolean" }
+      },
+      "required": ["name", "slug", "published"]
+    },
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "Visitor inquiry and booking request for tourism experiences",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "country": { "type": "string", "maxLength": 60 },
+        "experienceId": { "type": "string", "maxLength": 64 },
+        "experienceTitle": { "type": "string", "maxLength": 150 },
+        "preferredDate": { "type": "string", "maxLength": 30 },
+        "guests": { "type": "number" },
+        "message": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["NEW", "CONTACTED", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["customerName", "email", "phone", "experienceId", "preferredDate", "guests", "status"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "CRM profile for tourists and inquiring clients",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "country": { "type": "string", "maxLength": 60 },
+        "totalInquiries": { "type": "number" },
+        "confirmedBookings": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 2000 }
+      },
+      "required": ["name", "email"]
+    },
+    "Promotion": {
+      "title": "Promotion",
+      "description": "Marketing campaign or promotional banner",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "bannerImage": { "type": "string", "maxLength": 1000 },
+        "ctaText": { "type": "string", "maxLength": 60 },
+        "ctaLink": { "type": "string", "maxLength": 500 },
+        "active": { "type": "boolean" }
+      },
+      "required": ["title", "active"]
+    },
+    "WebsiteContent": {
+      "title": "WebsiteContent",
+      "description": "CMS content for visitor pages",
+      "type": "object",
+      "properties": {
+        "heroHeadline": { "type": "string", "maxLength": 200 },
+        "heroDescription": { "type": "string", "maxLength": 1000 },
+        "heroImage": { "type": "string", "maxLength": 1000 }
+      }
+    }
+  },
+  "firestore": {
+    "/experiences/{experienceId}": {
+      "schema": "Experience",
+      "description": "Tourism experiences collection"
+    },
+    "/destinations/{destinationId}": {
+      "schema": "Destination",
+      "description": "Saudi destinations collection"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "Inquiry",
+      "description": "Visitor booking requests and inquiries"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "CRM customer records, private to admin"
+    },
+    "/promotions/{promotionId}": {
+      "schema": "Promotion",
+      "description": "Marketing campaigns and special offers"
+    },
+    "/websiteContent/{contentId}": {
+      "schema": "WebsiteContent",
+      "description": "CMS homepage and site content"
+    }
+  }
+}

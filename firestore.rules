@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Security primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email in ['satriarosie@gmail.com', 'admin@tourflow.sa']
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Experiences: Public can read published, admin full access
+    match /experiences/{experienceId} {
+      allow read: if resource.data.status == 'PUBLISHED' || isAdmin();
+      allow create, update, delete: if isAdmin() && isValidId(experienceId);
+    }
+
+    // Destinations: Public can read published, admin full access
+    match /destinations/{destinationId} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow create, update, delete: if isAdmin() && isValidId(destinationId);
+    }
+
+    // Inquiries: Visitors can create with strict validation, only admin can list, read, update, delete
+    match /inquiries/{inquiryId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isValidId(inquiryId) &&
+        request.resource.data.customerName is string &&
+        request.resource.data.customerName.size() > 0 &&
+        request.resource.data.customerName.size() <= 100 &&
+        request.resource.data.email is string &&
+        request.resource.data.email.size() <= 150 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() <= 30 &&
+        request.resource.data.guests is number &&
+        request.resource.data.guests >= 1 &&
+        request.resource.data.status == 'NEW';
+    }
+
+    // Customers CRM: Admin ONLY (PII isolation)
+    match /customers/{customerId} {
+      allow read, write: if isAdmin() && isValidId(customerId);
+    }
+
+    // Promotions: Public read active, admin full access
+    match /promotions/{promotionId} {
+      allow read: if resource.data.active == true || isAdmin();
+      allow create, update, delete: if isAdmin() && isValidId(promotionId);
+    }
+
+    // Coupons
+    match /coupons/{couponId} {
+      allow read, write: if isAdmin() && isValidId(couponId);
+    }
+
+    // Quizzes & mini-game: Public can read active quizzes, admin full access
+    match /quizzes/{quizId} {
+      allow read: if resource.data.active == true || isAdmin();
+      allow create, update, delete: if isAdmin() && isValidId(quizId);
+    }
+
+    match /quizResults/{resultId} {
+      allow create: if isValidId(resultId);
+      allow read: if isAdmin();
+    }
+
+    // Website Content CMS: Public read, admin write
+    match /websiteContent/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(contentId);
+    }
+
+    // Analytics & Activity Logs: Create allowed for telemetry, read admin only
+    match /analyticsEvents/{eventId} {
+      allow create: if isValidId(eventId);
+      allow read: if isAdmin();
+    }
+
+    match /activityLogs/{logId} {
+      allow read, write: if isAdmin() && isValidId(logId);
+    }
+
+    // Settings: Admin only
+    match /settings/{settingId} {
+      allow read, write: if isAdmin() && isValidId(settingId);
+    }
+  }
+}
