@@ -1,4 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import {
+  db,
+  isFirebaseConfigured,
+  stripUndefined,
+  handleFirestoreError,
+  OperationType,
+} from '../services/firebase/firestore';
+import { useAuth } from './AuthContext';
 
 export type BlurIntensity = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type GlassSurfaceTone = 'dark' | 'light';
@@ -432,7 +441,40 @@ function resolveTextPalette(mode: TextColorMode, surfaceIsDark: boolean) {
   }
 }
 
+function toFirestoreThemeConfig(settings: ThemeSettings) {
+  return stripUndefined({
+    isGlassyEnabled: Boolean(settings.isGlassyEnabled),
+    glassSurfaceTone: settings.glassSurfaceTone,
+    textColorMode: settings.textColorMode,
+    iconThemeStyle: settings.iconThemeStyle,
+    blurIntensity: settings.blurIntensity,
+    blurRadius: Math.max(0, Math.min(64, Number(settings.blurRadius) || 0)),
+    cardTranslucency: Math.max(0.05, Math.min(1, Number(settings.cardTranslucency) || 0.34)),
+    borderOpacity: Math.max(0, Math.min(1, Number(settings.borderOpacity) || 0.28)),
+    glowStrength: Math.max(0, Math.min(1, Number(settings.glowStrength) || 0.45)),
+    glassSheen: Math.max(0, Math.min(1, Number(settings.glassSheen) || 0.65)),
+    backgroundPreset: settings.backgroundPreset,
+    customBgUrl:
+      typeof settings.customBgUrl === 'string' && settings.customBgUrl.length <= 740000
+        ? settings.customBgUrl
+        : '',
+    accentPreset: settings.accentPreset,
+    customAccentHex: settings.customAccentHex || '#C6A46B',
+    visitorGlassy: {
+      enabled: Boolean(settings.visitorGlassy.enabled),
+      navbarGlassy: Boolean(settings.visitorGlassy.navbarGlassy),
+      filterBarGlassy: Boolean(settings.visitorGlassy.filterBarGlassy),
+      experienceCardsGlassy: Boolean(settings.visitorGlassy.experienceCardsGlassy),
+      quizGlassy: Boolean(settings.visitorGlassy.quizGlassy),
+      reasonsCardsGlassy: Boolean(settings.visitorGlassy.reasonsCardsGlassy),
+      aboutSectionGlassy: Boolean(settings.visitorGlassy.aboutSectionGlassy),
+    },
+    updatedAt: new Date().toISOString(),
+  });
+}
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isCloudAdmin } = useAuth();
   const [settings, setSettings] = useState<ThemeSettings>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -444,6 +486,101 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     return DEFAULT_THEME_SETTINGS;
   });
+
+  const lastLocalEditAtRef = useRef<number>(0);
+  const cloudWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsRef = useRef<ThemeSettings>(settings);
+  settingsRef.current = settings;
+
+  const persistThemeToCloud = useCallback(
+    (nextSettings: ThemeSettings, immediate = false) => {
+      if (!isCloudAdmin || !isFirebaseConfigured() || !db) return;
+      const firestoreDb = db;
+
+      if (cloudWriteTimerRef.current) {
+        clearTimeout(cloudWriteTimerRef.current);
+        cloudWriteTimerRef.current = null;
+      }
+
+      const executeWrite = () => {
+        setDoc(doc(firestoreDb, 'themeConfig', 'global'), toFirestoreThemeConfig(nextSettings)).catch(
+          (err) => {
+            handleFirestoreError(err, OperationType.WRITE, 'themeConfig/global');
+          }
+        );
+      };
+
+      if (immediate) {
+        executeWrite();
+      } else {
+        cloudWriteTimerRef.current = setTimeout(executeWrite, 140);
+      }
+    },
+    [isCloudAdmin]
+  );
+
+  // Seed /themeConfig/global once when an authenticated admin connects and doc doesn't exist yet
+  useEffect(() => {
+    if (!isCloudAdmin || !isFirebaseConfigured() || !db) return;
+    const firestoreDb = db;
+    let cancelled = false;
+
+    getDoc(doc(firestoreDb, 'themeConfig', 'global'))
+      .then((snap) => {
+        if (!cancelled && !snap.exists()) {
+          setDoc(
+            doc(firestoreDb, 'themeConfig', 'global'),
+            toFirestoreThemeConfig(settingsRef.current)
+          ).catch((err) => {
+            handleFirestoreError(err, OperationType.WRITE, 'themeConfig/global');
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Unable to inspect cloud theme config:', err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isCloudAdmin]);
+
+  // Real-time Firestore listener for all Admin & Visitor devices
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isFirebaseConfigured() || !db) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'themeConfig', 'global'),
+      (snap) => {
+        if (!snap.exists()) return;
+        // Skip local optimistic echoes and protect active slider drags
+        if (snap.metadata.hasPendingWrites) return;
+        if (Date.now() - lastLocalEditAtRef.current < 350) return;
+
+        const remoteData = snap.data() as Partial<ThemeSettings>;
+        const merged = mergeThemeSettings(remoteData);
+        setSettings((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(merged)) return prev;
+          return merged;
+        });
+      },
+      (err) => {
+        console.warn('Theme config snapshot error:', err.message);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (cloudWriteTimerRef.current) {
+        clearTimeout(cloudWriteTimerRef.current);
+      }
+    };
+  }, []);
 
   const currentAccent = ACCENT_PRESETS.find((p) => p.id === settings.accentPreset);
   const currentAccentHex =
@@ -529,7 +666,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (e.key === THEME_STORAGE_KEY && e.newValue) {
         try {
           setSettings(mergeThemeSettings(JSON.parse(e.newValue)));
-        } catch {}
+        } catch {
+          // Ignore malformed storage values
+        }
       }
     };
 
@@ -557,40 +696,46 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const bc = new BroadcastChannel(THEME_BROADCAST_CHANNEL);
         bc.postMessage({ type: 'THEME_UPDATED', payload: nextSettings });
         bc.close();
-      } catch {}
+      } catch {
+        // Ignore broadcast errors
+      }
     }
   };
 
   const updateSettings = (partial: Partial<ThemeSettings>) => {
-    setSettings((prev) => {
-      const next: ThemeSettings = { ...prev, ...partial };
-      if (partial.blurRadius !== undefined && partial.blurIntensity === undefined) {
-        next.blurIntensity = closestBlurIntensity(partial.blurRadius);
-      } else if (partial.blurIntensity !== undefined && partial.blurRadius === undefined) {
-        next.blurRadius = getBlurPixels(partial.blurIntensity);
-      }
-      broadcastUpdate(next);
-      return next;
-    });
+    lastLocalEditAtRef.current = Date.now();
+    const prev = settingsRef.current;
+    const next: ThemeSettings = { ...prev, ...partial };
+    if (partial.blurRadius !== undefined && partial.blurIntensity === undefined) {
+      next.blurIntensity = closestBlurIntensity(partial.blurRadius);
+    } else if (partial.blurIntensity !== undefined && partial.blurRadius === undefined) {
+      next.blurRadius = getBlurPixels(partial.blurIntensity);
+    }
+    setSettings(next);
+    broadcastUpdate(next);
+    persistThemeToCloud(next, false);
   };
 
   const updateVisitorGlassy = (partial: Partial<VisitorGlassySettings>) => {
-    setSettings((prev) => {
-      const next = {
-        ...prev,
-        visitorGlassy: {
-          ...prev.visitorGlassy,
-          ...partial,
-        },
-      };
-      broadcastUpdate(next);
-      return next;
-    });
+    lastLocalEditAtRef.current = Date.now();
+    const prev = settingsRef.current;
+    const next: ThemeSettings = {
+      ...prev,
+      visitorGlassy: {
+        ...prev.visitorGlassy,
+        ...partial,
+      },
+    };
+    setSettings(next);
+    broadcastUpdate(next);
+    persistThemeToCloud(next, true);
   };
 
   const resetToDefaults = () => {
+    lastLocalEditAtRef.current = Date.now();
     setSettings(DEFAULT_THEME_SETTINGS);
     broadcastUpdate(DEFAULT_THEME_SETTINGS);
+    persistThemeToCloud(DEFAULT_THEME_SETTINGS, true);
   };
 
   const buildGlassOpticalSurface = (

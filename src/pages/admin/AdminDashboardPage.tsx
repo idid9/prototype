@@ -29,7 +29,8 @@ import { AnalyticsTab } from '../../components/admin/tabs/AnalyticsTab';
 import { WebsiteContentTab } from '../../components/admin/tabs/WebsiteContentTab';
 import { AppearanceSettingsTab } from '../../components/admin/tabs/AppearanceSettingsTab';
 import { SettingsTab } from '../../components/admin/tabs/SettingsTab';
-import { Lock } from 'lucide-react';
+import { isFirebaseConfigured } from '../../services/firebase/firestore';
+import { Lock, Loader2, AlertCircle } from 'lucide-react';
 
 interface AdminDashboardPageProps {
   onGoToVisitorSite: () => void;
@@ -40,10 +41,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onGoToVisitorSite,
   onPreviewExperienceOnSite,
 }) => {
-  const { isAdminAuthenticated, logout, openLoginModal } = useAuth();
+  const {
+    isAdminAuthenticated,
+    authReady,
+    authLoading,
+    authError,
+    loginWithGoogle,
+    logout,
+    openLoginModal,
+  } = useAuth();
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
   const { getDashboardBgStyle, isDarkGlass } = useTheme();
+  const firebaseEnabled = isFirebaseConfigured();
 
   const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -90,8 +100,29 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     };
   }, []);
 
+  if (!authReady) {
+    return (
+      <div
+        dir={isRtl ? 'rtl' : 'ltr'}
+        className="min-h-screen bg-[#F6F4EF] flex items-center justify-center p-4 text-[#123B32]"
+      >
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <p className="text-xs font-semibold text-[#777D75]">
+            {isArabic ? 'جارٍ التحقق من الجلسة السحابية...' : 'Verifying cloud session...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Protected Admin Route Check (§8)
   if (!isAdminAuthenticated) {
+    const unauthorizedEmail =
+      authError && authError.startsWith('UNAUTHORIZED:')
+        ? authError.replace('UNAUTHORIZED:', '')
+        : null;
+
     return (
       <div
         dir={isRtl ? 'rtl' : 'ltr'}
@@ -106,15 +137,41 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           </h2>
           <p className="text-xs text-[#777D75] mb-6 leading-relaxed">
             {isArabic
-              ? 'تتطلب مساحة عمل إدارة تورفلو مصادقة مصرح بها. يرجى إدخال بيانات اعتماد المسؤول للمتابعة.'
-              : 'The TourFlow Admin Workspace requires authorized authentication. Please enter your administrator credentials to proceed.'}
+              ? 'تتطلب مساحة عمل إدارة تورفلو مصادقة مصرح بها لمزامنة التحديثات عبر جميع الأجهزة. يرجى تسجيل الدخول بحساب المسؤول للمتابعة.'
+              : 'The TourFlow Admin Workspace requires authorized Google authentication so changes synchronize live across all devices.'}
           </p>
+
+          {authError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2 text-start">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                {unauthorizedEmail
+                  ? isArabic
+                    ? `الحساب (${unauthorizedEmail}) غير مخول للوصول إلى لوحة الإدارة.`
+                    : `Account (${unauthorizedEmail}) is not authorized for Admin access.`
+                  : isArabic
+                  ? 'تعذر تسجيل الدخول عبر جوجل. يرجى السماح بالنوافذ المنبثقة والمحاولة مجدداً.'
+                  : 'Google sign-in could not be completed. Please allow popups and try again.'}
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3">
             <button
-              onClick={openLoginModal}
-              className="w-full py-2.5 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm"
+              onClick={firebaseEnabled ? loginWithGoogle : openLoginModal}
+              disabled={authLoading}
+              className="w-full py-2.5 px-4 bg-[#123B32] hover:bg-[#1D5546] disabled:opacity-70 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm flex items-center justify-center gap-2"
             >
-              {isArabic ? 'إدخال كلمة المرور (تجريبي: 12341234)' : 'Enter Password (Demo: 12341234)'}
+              {authLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>
+                {firebaseEnabled
+                  ? isArabic
+                    ? 'تسجيل الدخول بحساب جوجل'
+                    : 'Sign in with Google'
+                  : isArabic
+                  ? 'إدخال كلمة المرور (تجريبي: 12341234)'
+                  : 'Enter Password (Demo: 12341234)'}
+              </span>
             </button>
             <button
               onClick={onGoToVisitorSite}

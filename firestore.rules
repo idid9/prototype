@@ -2,101 +2,426 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default-deny catch-all
+    // Global default-deny safety net
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Security primitives
+    // Global security helpers
     function isSignedIn() {
       return request.auth != null;
     }
 
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
     function isAdmin() {
-      return isSignedIn() && (
+      return isVerified() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         request.auth.token.email in ['satriarosie@gmail.com', 'admin@tourflow.sa']
       );
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Experiences: Public can read published, admin full access
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation helpers
+    function isValidThemeConfig(data) {
+      return data.keys().hasAll([
+          'isGlassyEnabled',
+          'glassSurfaceTone',
+          'blurRadius',
+          'cardTranslucency',
+          'backgroundPreset',
+          'accentPreset'
+        ]) &&
+        data.keys().hasOnly([
+          'isGlassyEnabled',
+          'glassSurfaceTone',
+          'textColorMode',
+          'iconThemeStyle',
+          'blurIntensity',
+          'blurRadius',
+          'cardTranslucency',
+          'borderOpacity',
+          'glowStrength',
+          'glassSheen',
+          'backgroundPreset',
+          'customBgUrl',
+          'accentPreset',
+          'customAccentHex',
+          'visitorGlassy',
+          'updatedAt'
+        ]) &&
+        data.isGlassyEnabled is bool &&
+        data.glassSurfaceTone in ['dark', 'light'] &&
+        (!('textColorMode' in data) || data.textColorMode in ['auto', 'crisp_white', 'warm_ivory', 'obsidian_ink', 'emerald_ink']) &&
+        (!('iconThemeStyle' in data) || data.iconThemeStyle in ['frosted', 'solid', 'glow_outline']) &&
+        (!('blurIntensity' in data) || data.blurIntensity in ['none', 'sm', 'md', 'lg', 'xl', '2xl']) &&
+        data.blurRadius is number && data.blurRadius >= 0 && data.blurRadius <= 64 &&
+        data.cardTranslucency is number && data.cardTranslucency >= 0.05 && data.cardTranslucency <= 1 &&
+        (!('borderOpacity' in data) || (data.borderOpacity is number && data.borderOpacity >= 0 && data.borderOpacity <= 1)) &&
+        (!('glowStrength' in data) || (data.glowStrength is number && data.glowStrength >= 0 && data.glowStrength <= 1)) &&
+        (!('glassSheen' in data) || (data.glassSheen is number && data.glassSheen >= 0 && data.glassSheen <= 1)) &&
+        data.backgroundPreset in ['lounge_interior', 'ambient', 'deep_emerald', 'gradient', 'desert_dawn', 'custom'] &&
+        (!('customBgUrl' in data) || (data.customBgUrl is string && data.customBgUrl.size() <= 750000)) &&
+        data.accentPreset in ['gold', 'emerald', 'cyan', 'violet', 'rose', 'custom'] &&
+        (!('customAccentHex' in data) || (data.customAccentHex is string && data.customAccentHex.size() <= 20)) &&
+        (!('visitorGlassy' in data) || data.visitorGlassy is map) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidExperience(data) {
+      return data.keys().hasAll(['id', 'title', 'slug', 'destinationId', 'category', 'price', 'status']) &&
+        data.keys().hasOnly([
+          'id', 'title', 'titleAr', 'slug', 'destinationId', 'destinationName',
+          'category', 'categoryAr', 'price', 'currency', 'duration', 'durationAr',
+          'description', 'descriptionAr', 'coverImage', 'gallery',
+          'highlights', 'highlightsAr', 'inclusions', 'inclusionsAr',
+          'exclusions', 'exclusionsAr', 'meetingPoint', 'meetingPointAr',
+          'featured', 'status', 'rating', 'reviewsCount', 'maxGuests',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 180 &&
+        (!('titleAr' in data) || (data.titleAr is string && data.titleAr.size() <= 180)) &&
+        data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 160 &&
+        data.destinationId is string && data.destinationId.size() <= 64 &&
+        (!('destinationName' in data) || (data.destinationName is string && data.destinationName.size() <= 120)) &&
+        data.category is string && data.category.size() <= 60 &&
+        (!('categoryAr' in data) || (data.categoryAr is string && data.categoryAr.size() <= 60)) &&
+        data.price is number && data.price >= 0 &&
+        (!('currency' in data) || (data.currency is string && data.currency.size() <= 5)) &&
+        (!('duration' in data) || (data.duration is string && data.duration.size() <= 60)) &&
+        (!('durationAr' in data) || (data.durationAr is string && data.durationAr.size() <= 60)) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 4000)) &&
+        (!('descriptionAr' in data) || (data.descriptionAr is string && data.descriptionAr.size() <= 4000)) &&
+        (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() <= 750000)) &&
+        (!('gallery' in data) || (data.gallery is list && data.gallery.size() <= 10 && (data.gallery.size() == 0 || data.gallery[0] is string))) &&
+        (!('highlights' in data) || (data.highlights is list && data.highlights.size() <= 20)) &&
+        (!('highlightsAr' in data) || (data.highlightsAr is list && data.highlightsAr.size() <= 20)) &&
+        (!('inclusions' in data) || (data.inclusions is list && data.inclusions.size() <= 20)) &&
+        (!('inclusionsAr' in data) || (data.inclusionsAr is list && data.inclusionsAr.size() <= 20)) &&
+        (!('exclusions' in data) || (data.exclusions is list && data.exclusions.size() <= 20)) &&
+        (!('exclusionsAr' in data) || (data.exclusionsAr is list && data.exclusionsAr.size() <= 20)) &&
+        (!('meetingPoint' in data) || (data.meetingPoint is string && data.meetingPoint.size() <= 240)) &&
+        (!('meetingPointAr' in data) || (data.meetingPointAr is string && data.meetingPointAr.size() <= 240)) &&
+        (!('featured' in data) || data.featured is bool) &&
+        data.status in ['DRAFT', 'PUBLISHED', 'ARCHIVED'] &&
+        (!('rating' in data) || data.rating is number) &&
+        (!('reviewsCount' in data) || data.reviewsCount is number) &&
+        (!('maxGuests' in data) || data.maxGuests is number) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidDestination(data) {
+      return data.keys().hasAll(['id', 'name', 'slug', 'published']) &&
+        data.keys().hasOnly([
+          'id', 'name', 'nameAr', 'slug', 'description', 'descriptionAr',
+          'coverImage', 'region', 'regionAr', 'experienceCount', 'featured',
+          'published', 'createdAt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        (!('nameAr' in data) || (data.nameAr is string && data.nameAr.size() <= 120)) &&
+        data.slug is string && data.slug.size() <= 120 &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 2500)) &&
+        (!('descriptionAr' in data) || (data.descriptionAr is string && data.descriptionAr.size() <= 2500)) &&
+        (!('coverImage' in data) || (data.coverImage is string && data.coverImage.size() <= 750000)) &&
+        (!('region' in data) || (data.region is string && data.region.size() <= 120)) &&
+        (!('regionAr' in data) || (data.regionAr is string && data.regionAr.size() <= 120)) &&
+        (!('experienceCount' in data) || data.experienceCount is number) &&
+        (!('featured' in data) || data.featured is bool) &&
+        data.published is bool &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidInquiry(data) {
+      return data.keys().hasAll(['id', 'customerName', 'email', 'phone', 'experienceId', 'preferredDate', 'guests', 'status']) &&
+        data.keys().hasOnly([
+          'id', 'customerName', 'email', 'phone', 'country', 'experienceId',
+          'experienceTitle', 'preferredDate', 'guests', 'message', 'status',
+          'internalNotes', 'estimatedValue', 'createdAt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+        data.phone is string && data.phone.size() >= 3 && data.phone.size() <= 35 &&
+        (!('country' in data) || (data.country is string && data.country.size() <= 80)) &&
+        data.experienceId is string && data.experienceId.size() <= 128 &&
+        (!('experienceTitle' in data) || (data.experienceTitle is string && data.experienceTitle.size() <= 180)) &&
+        data.preferredDate is string && data.preferredDate.size() <= 40 &&
+        data.guests is number && data.guests >= 1 && data.guests <= 100 &&
+        (!('message' in data) || (data.message is string && data.message.size() <= 2000)) &&
+        data.status in ['NEW', 'CONTACTED', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'] &&
+        (!('internalNotes' in data) || (data.internalNotes is list && data.internalNotes.size() <= 50)) &&
+        (!('estimatedValue' in data) || data.estimatedValue is number) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['id', 'name', 'email']) &&
+        data.keys().hasOnly([
+          'id', 'name', 'email', 'phone', 'country',
+          'totalInquiries', 'confirmedBookings', 'lastInteraction', 'notes', 'createdAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.email is string && data.email.size() <= 150 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 35)) &&
+        (!('country' in data) || (data.country is string && data.country.size() <= 80)) &&
+        (!('totalInquiries' in data) || data.totalInquiries is number) &&
+        (!('confirmedBookings' in data) || data.confirmedBookings is number) &&
+        (!('lastInteraction' in data) || (data.lastInteraction is string && data.lastInteraction.size() <= 64)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 3000)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function isValidPromotion(data) {
+      return data.keys().hasAll(['id', 'title', 'active']) &&
+        data.keys().hasOnly([
+          'id', 'title', 'titleAr', 'description', 'descriptionAr',
+          'bannerImage', 'destinationId', 'linkedExperienceId',
+          'ctaText', 'ctaTextAr', 'ctaLink', 'active', 'badge', 'badgeAr', 'createdAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 180 &&
+        (!('titleAr' in data) || (data.titleAr is string && data.titleAr.size() <= 180)) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1500)) &&
+        (!('descriptionAr' in data) || (data.descriptionAr is string && data.descriptionAr.size() <= 1500)) &&
+        (!('bannerImage' in data) || (data.bannerImage is string && data.bannerImage.size() <= 750000)) &&
+        (!('destinationId' in data) || (data.destinationId is string && data.destinationId.size() <= 128)) &&
+        (!('linkedExperienceId' in data) || (data.linkedExperienceId is string && data.linkedExperienceId.size() <= 128)) &&
+        (!('ctaText' in data) || (data.ctaText is string && data.ctaText.size() <= 80)) &&
+        (!('ctaTextAr' in data) || (data.ctaTextAr is string && data.ctaTextAr.size() <= 80)) &&
+        (!('ctaLink' in data) || (data.ctaLink is string && data.ctaLink.size() <= 500)) &&
+        data.active is bool &&
+        (!('badge' in data) || (data.badge is string && data.badge.size() <= 60)) &&
+        (!('badgeAr' in data) || (data.badgeAr is string && data.badgeAr.size() <= 60)) &&
+        (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function isValidCoupon(data) {
+      return data.keys().hasAll(['id', 'code', 'discountType', 'discountAmount', 'active']) &&
+        data.keys().hasOnly(['id', 'code', 'discountType', 'discountAmount', 'expiryDate', 'usageLimit', 'usedCount', 'active']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.code is string && data.code.size() >= 1 && data.code.size() <= 40 &&
+        data.discountType in ['percentage', 'fixed'] &&
+        data.discountAmount is number && data.discountAmount >= 0 &&
+        (!('expiryDate' in data) || (data.expiryDate is string && data.expiryDate.size() <= 40)) &&
+        (!('usageLimit' in data) || data.usageLimit is number) &&
+        (!('usedCount' in data) || data.usedCount is number) &&
+        data.active is bool;
+    }
+
+    function isValidQuiz(data) {
+      return data.keys().hasAll(['id', 'question', 'correctIndex', 'active']) &&
+        data.keys().hasOnly(['id', 'question', 'questionAr', 'options', 'optionsAr', 'correctIndex', 'explanation', 'explanationAr', 'category', 'active']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.question is string && data.question.size() >= 1 && data.question.size() <= 500 &&
+        (!('questionAr' in data) || (data.questionAr is string && data.questionAr.size() <= 500)) &&
+        (!('options' in data) || (data.options is list && data.options.size() <= 10 && (data.options.size() == 0 || data.options[0] is string))) &&
+        (!('optionsAr' in data) || (data.optionsAr is list && data.optionsAr.size() <= 10 && (data.optionsAr.size() == 0 || data.optionsAr[0] is string))) &&
+        data.correctIndex is number && data.correctIndex >= 0 && data.correctIndex < 10 &&
+        (!('explanation' in data) || (data.explanation is string && data.explanation.size() <= 1000)) &&
+        (!('explanationAr' in data) || (data.explanationAr is string && data.explanationAr.size() <= 1000)) &&
+        (!('category' in data) || (data.category is string && data.category.size() <= 80)) &&
+        data.active is bool;
+    }
+
+    function isValidWebsiteContent(data) {
+      return data.keys().hasAll(['heroHeadline', 'heroImage', 'aboutHeadline']) &&
+        data.keys().hasOnly([
+          'heroHeadline', 'heroHeadlineAr', 'heroDescription', 'heroDescriptionAr',
+          'heroImage', 'aboutHeadline', 'aboutHeadlineAr', 'aboutText', 'aboutTextAr',
+          'stats', 'contactEmail', 'contactPhone', 'whatsappNumber',
+          'officeAddress', 'officeAddressAr', 'socialLinks'
+        ]) &&
+        data.heroHeadline is string && data.heroHeadline.size() <= 300 &&
+        (!('heroHeadlineAr' in data) || (data.heroHeadlineAr is string && data.heroHeadlineAr.size() <= 300)) &&
+        (!('heroDescription' in data) || (data.heroDescription is string && data.heroDescription.size() <= 1500)) &&
+        (!('heroDescriptionAr' in data) || (data.heroDescriptionAr is string && data.heroDescriptionAr.size() <= 1500)) &&
+        data.heroImage is string && data.heroImage.size() <= 750000 &&
+        data.aboutHeadline is string && data.aboutHeadline.size() <= 300 &&
+        (!('aboutHeadlineAr' in data) || (data.aboutHeadlineAr is string && data.aboutHeadlineAr.size() <= 300)) &&
+        (!('aboutText' in data) || (data.aboutText is string && data.aboutText.size() <= 3000)) &&
+        (!('aboutTextAr' in data) || (data.aboutTextAr is string && data.aboutTextAr.size() <= 3000)) &&
+        (!('stats' in data) || data.stats is map) &&
+        (!('contactEmail' in data) || (data.contactEmail is string && data.contactEmail.size() <= 150)) &&
+        (!('contactPhone' in data) || (data.contactPhone is string && data.contactPhone.size() <= 40)) &&
+        (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 40)) &&
+        (!('officeAddress' in data) || (data.officeAddress is string && data.officeAddress.size() <= 300)) &&
+        (!('officeAddressAr' in data) || (data.officeAddressAr is string && data.officeAddressAr.size() <= 300)) &&
+        (!('socialLinks' in data) || data.socialLinks is map);
+    }
+
+    function isValidBusinessSettings(data) {
+      return data.keys().hasAll(['businessName', 'currency', 'defaultLanguage']) &&
+        data.keys().hasOnly([
+          'businessName', 'businessEmail', 'businessPhone', 'whatsappNumber',
+          'businessAddress', 'currency', 'defaultLanguage', 'supportedLanguages',
+          'socialLinks', 'enableEmailNotifications', 'enableWhatsAppNotifications'
+        ]) &&
+        data.businessName is string && data.businessName.size() <= 180 &&
+        (!('businessEmail' in data) || (data.businessEmail is string && data.businessEmail.size() <= 150)) &&
+        (!('businessPhone' in data) || (data.businessPhone is string && data.businessPhone.size() <= 40)) &&
+        (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 40)) &&
+        (!('businessAddress' in data) || (data.businessAddress is string && data.businessAddress.size() <= 300)) &&
+        data.currency is string && data.currency.size() <= 5 &&
+        data.defaultLanguage in ['en', 'ar'] &&
+        (!('supportedLanguages' in data) || (data.supportedLanguages is list && data.supportedLanguages.size() <= 5)) &&
+        (!('socialLinks' in data) || data.socialLinks is map) &&
+        (!('enableEmailNotifications' in data) || data.enableEmailNotifications is bool) &&
+        (!('enableWhatsAppNotifications' in data) || data.enableWhatsAppNotifications is bool);
+    }
+
+    function isValidAnalyticsEvent(data) {
+      return data.keys().hasAll(['id', 'type', 'timestamp']) &&
+        data.keys().hasOnly(['id', 'type', 'path', 'metadata', 'timestamp']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.type in ['page_view', 'experience_view', 'search', 'inquiry_submit', 'booking_confirm'] &&
+        (!('path' in data) || (data.path is string && data.path.size() <= 300)) &&
+        (!('metadata' in data) || data.metadata is map) &&
+        data.timestamp is string && data.timestamp.size() <= 64;
+    }
+
+    function isValidActivityLog(data) {
+      return data.keys().hasAll(['id', 'action', 'details', 'timestamp']) &&
+        data.keys().hasOnly(['id', 'action', 'details', 'adminUser', 'timestamp']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.action is string && data.action.size() <= 150 &&
+        data.details is string && data.details.size() <= 500 &&
+        (!('adminUser' in data) || (data.adminUser is string && data.adminUser.size() <= 120)) &&
+        data.timestamp is string && data.timestamp.size() <= 64;
+    }
+
+    // Theme Config: Public get for real-time visitor glassy sync; admin write only
+    match /themeConfig/{configId} {
+      allow get: if isValidId(configId);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(configId) && isValidThemeConfig(incoming());
+      allow update: if isAdmin() && isValidId(configId) && isValidThemeConfig(incoming());
+      allow delete: if false;
+    }
+
+    // Experiences: Public read published, admin full access
     match /experiences/{experienceId} {
-      allow read: if resource.data.status == 'PUBLISHED' || isAdmin();
-      allow create, update, delete: if isAdmin() && isValidId(experienceId);
+      allow get: if isValidId(experienceId) && (existing().status == 'PUBLISHED' || isAdmin());
+      allow list: if existing().status == 'PUBLISHED' || isAdmin();
+      allow create: if isAdmin() && isValidId(experienceId) && isValidExperience(incoming());
+      allow update: if isAdmin() && isValidId(experienceId) && isValidExperience(incoming());
+      allow delete: if isAdmin() && isValidId(experienceId);
     }
 
-    // Destinations: Public can read published, admin full access
+    // Destinations: Public read published, admin full access
     match /destinations/{destinationId} {
-      allow read: if resource.data.published == true || isAdmin();
-      allow create, update, delete: if isAdmin() && isValidId(destinationId);
+      allow get: if isValidId(destinationId) && (existing().published == true || isAdmin());
+      allow list: if existing().published == true || isAdmin();
+      allow create: if isAdmin() && isValidId(destinationId) && isValidDestination(incoming());
+      allow update: if isAdmin() && isValidId(destinationId) && isValidDestination(incoming());
+      allow delete: if isAdmin() && isValidId(destinationId);
     }
 
-    // Inquiries: Visitors can create with strict validation, only admin can list, read, update, delete
+    // Inquiries: Visitors can create with NEW status; admin only for reading/updating/deleting (PII isolation)
     match /inquiries/{inquiryId} {
-      allow read, update, delete: if isAdmin();
-      allow create: if isValidId(inquiryId) &&
-        request.resource.data.customerName is string &&
-        request.resource.data.customerName.size() > 0 &&
-        request.resource.data.customerName.size() <= 100 &&
-        request.resource.data.email is string &&
-        request.resource.data.email.size() <= 150 &&
-        request.resource.data.phone is string &&
-        request.resource.data.phone.size() <= 30 &&
-        request.resource.data.guests is number &&
-        request.resource.data.guests >= 1 &&
-        request.resource.data.status == 'NEW';
+      allow get: if isValidId(inquiryId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(inquiryId) && isValidInquiry(incoming()) && (
+        isAdmin() || incoming().status == 'NEW'
+      );
+      allow update: if isAdmin() && isValidId(inquiryId) && isValidInquiry(incoming());
+      allow delete: if isAdmin() && isValidId(inquiryId);
     }
 
     // Customers CRM: Admin ONLY (PII isolation)
     match /customers/{customerId} {
-      allow read, write: if isAdmin() && isValidId(customerId);
+      allow get: if isValidId(customerId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(customerId) && isValidCustomer(incoming());
+      allow update: if isAdmin() && isValidId(customerId) && isValidCustomer(incoming());
+      allow delete: if isAdmin() && isValidId(customerId);
     }
 
     // Promotions: Public read active, admin full access
     match /promotions/{promotionId} {
-      allow read: if resource.data.active == true || isAdmin();
-      allow create, update, delete: if isAdmin() && isValidId(promotionId);
+      allow get: if isValidId(promotionId) && (existing().active == true || isAdmin());
+      allow list: if existing().active == true || isAdmin();
+      allow create: if isAdmin() && isValidId(promotionId) && isValidPromotion(incoming());
+      allow update: if isAdmin() && isValidId(promotionId) && isValidPromotion(incoming());
+      allow delete: if isAdmin() && isValidId(promotionId);
     }
 
-    // Coupons
+    // Coupons: Public read active voucher codes, admin full access
     match /coupons/{couponId} {
-      allow read, write: if isAdmin() && isValidId(couponId);
+      allow get: if isValidId(couponId) && (existing().active == true || isAdmin());
+      allow list: if existing().active == true || isAdmin();
+      allow create: if isAdmin() && isValidId(couponId) && isValidCoupon(incoming());
+      allow update: if isAdmin() && isValidId(couponId) && isValidCoupon(incoming());
+      allow delete: if isAdmin() && isValidId(couponId);
     }
 
-    // Quizzes & mini-game: Public can read active quizzes, admin full access
+    // Quizzes: Public read active questions, admin full access
     match /quizzes/{quizId} {
-      allow read: if resource.data.active == true || isAdmin();
-      allow create, update, delete: if isAdmin() && isValidId(quizId);
+      allow get: if isValidId(quizId) && (existing().active == true || isAdmin());
+      allow list: if existing().active == true || isAdmin();
+      allow create: if isAdmin() && isValidId(quizId) && isValidQuiz(incoming());
+      allow update: if isAdmin() && isValidId(quizId) && isValidQuiz(incoming());
+      allow delete: if isAdmin() && isValidId(quizId);
     }
 
-    match /quizResults/{resultId} {
-      allow create: if isValidId(resultId);
-      allow read: if isAdmin();
-    }
-
-    // Website Content CMS: Public read, admin write
+    // Website Content CMS: Public get, admin write
     match /websiteContent/{contentId} {
-      allow read: if true;
-      allow write: if isAdmin() && isValidId(contentId);
+      allow get: if isValidId(contentId);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(contentId) && isValidWebsiteContent(incoming());
+      allow update: if isAdmin() && isValidId(contentId) && isValidWebsiteContent(incoming());
+      allow delete: if false;
     }
 
-    // Analytics & Activity Logs: Create allowed for telemetry, read admin only
-    match /analyticsEvents/{eventId} {
-      allow create: if isValidId(eventId);
-      allow read: if isAdmin();
-    }
-
-    match /activityLogs/{logId} {
-      allow read, write: if isAdmin() && isValidId(logId);
-    }
-
-    // Settings: Admin only
+    // Business Settings: Public get for currency/concierge display, admin write
     match /settings/{settingId} {
-      allow read, write: if isAdmin() && isValidId(settingId);
+      allow get: if isValidId(settingId);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(settingId) && isValidBusinessSettings(incoming());
+      allow update: if isAdmin() && isValidId(settingId) && isValidBusinessSettings(incoming());
+      allow delete: if false;
+    }
+
+    // Analytics Events: Validated create allowed for visitor telemetry, read admin only
+    match /analyticsEvents/{eventId} {
+      allow get: if isValidId(eventId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(eventId) && isValidAnalyticsEvent(incoming());
+      allow update: if false;
+      allow delete: if isAdmin() && isValidId(eventId);
+    }
+
+    // Activity Logs: Admin only
+    match /activityLogs/{logId} {
+      allow get: if isValidId(logId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(logId) && isValidActivityLog(incoming());
+      allow update: if isAdmin() && isValidId(logId) && isValidActivityLog(incoming());
+      allow delete: if isAdmin() && isValidId(logId);
+    }
+
+    // Admin directory: Admin read-only lookup
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isSignedIn() && request.auth.uid == adminId;
+      allow list, write: if false;
     }
   }
 }

@@ -1,103 +1,238 @@
 {
   "entities": {
+    "ThemeConfig": {
+      "title": "ThemeConfig",
+      "description": "Global Glassy appearance, blur, icon theme, text contrast, and wallpaper configuration synced across all devices",
+      "type": "object",
+      "properties": {
+        "isGlassyEnabled": { "type": "boolean" },
+        "glassSurfaceTone": { "type": "string", "enum": ["dark", "light"] },
+        "textColorMode": { "type": "string", "enum": ["auto", "crisp_white", "warm_ivory", "obsidian_ink", "emerald_ink"] },
+        "iconThemeStyle": { "type": "string", "enum": ["frosted", "solid", "glow_outline"] },
+        "blurIntensity": { "type": "string", "enum": ["none", "sm", "md", "lg", "xl", "2xl"] },
+        "blurRadius": { "type": "number" },
+        "cardTranslucency": { "type": "number" },
+        "borderOpacity": { "type": "number" },
+        "glowStrength": { "type": "number" },
+        "glassSheen": { "type": "number" },
+        "backgroundPreset": { "type": "string", "enum": ["lounge_interior", "ambient", "deep_emerald", "gradient", "desert_dawn", "custom"] },
+        "customBgUrl": { "type": "string", "maxLength": 750000 },
+        "accentPreset": { "type": "string", "enum": ["gold", "emerald", "cyan", "violet", "rose", "custom"] },
+        "customAccentHex": { "type": "string", "maxLength": 20 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["isGlassyEnabled", "glassSurfaceTone", "blurRadius", "cardTranslucency", "backgroundPreset", "accentPreset"]
+    },
     "Experience": {
       "title": "Experience",
       "description": "Tourism experience or package offered by Saudi operators",
       "type": "object",
       "properties": {
-        "title": { "type": "string", "maxLength": 150 },
-        "titleAr": { "type": "string", "maxLength": 150 },
-        "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 180 },
+        "titleAr": { "type": "string", "maxLength": 180 },
+        "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 160 },
         "destinationId": { "type": "string", "maxLength": 64 },
-        "destinationName": { "type": "string", "maxLength": 100 },
-        "category": { "type": "string", "maxLength": 50 },
+        "destinationName": { "type": "string", "maxLength": 120 },
+        "category": { "type": "string", "maxLength": 60 },
+        "categoryAr": { "type": "string", "maxLength": 60 },
         "price": { "type": "number" },
         "currency": { "type": "string", "maxLength": 5 },
-        "duration": { "type": "string", "maxLength": 50 },
-        "description": { "type": "string", "maxLength": 2000 },
-        "coverImage": { "type": "string", "maxLength": 1000 },
+        "duration": { "type": "string", "maxLength": 60 },
+        "durationAr": { "type": "string", "maxLength": 60 },
+        "description": { "type": "string", "maxLength": 4000 },
+        "descriptionAr": { "type": "string", "maxLength": 4000 },
+        "coverImage": { "type": "string", "maxLength": 750000 },
+        "meetingPoint": { "type": "string", "maxLength": 240 },
+        "meetingPointAr": { "type": "string", "maxLength": 240 },
         "featured": { "type": "boolean" },
         "status": { "type": "string", "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "slug", "destinationId", "category", "price", "status"]
+      "required": ["id", "title", "slug", "destinationId", "category", "price", "status"]
     },
     "Destination": {
       "title": "Destination",
       "description": "Featured Saudi tourism destination",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "maxLength": 100 },
-        "slug": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-        "description": { "type": "string", "maxLength": 1500 },
-        "coverImage": { "type": "string", "maxLength": 1000 },
-        "region": { "type": "string", "maxLength": 100 },
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 120 },
+        "nameAr": { "type": "string", "maxLength": 120 },
+        "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 2500 },
+        "descriptionAr": { "type": "string", "maxLength": 2500 },
+        "coverImage": { "type": "string", "maxLength": 750000 },
+        "region": { "type": "string", "maxLength": 120 },
+        "regionAr": { "type": "string", "maxLength": 120 },
+        "experienceCount": { "type": "number" },
         "published": { "type": "boolean" },
         "featured": { "type": "boolean" }
       },
-      "required": ["name", "slug", "published"]
+      "required": ["id", "name", "slug", "published"]
     },
     "Inquiry": {
       "title": "Inquiry",
       "description": "Visitor inquiry and booking request for tourism experiences",
       "type": "object",
       "properties": {
-        "customerName": { "type": "string", "maxLength": 100 },
+        "id": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 120 },
         "email": { "type": "string", "format": "email", "maxLength": 150 },
-        "phone": { "type": "string", "maxLength": 30 },
-        "country": { "type": "string", "maxLength": 60 },
-        "experienceId": { "type": "string", "maxLength": 64 },
-        "experienceTitle": { "type": "string", "maxLength": 150 },
-        "preferredDate": { "type": "string", "maxLength": 30 },
+        "phone": { "type": "string", "maxLength": 35 },
+        "country": { "type": "string", "maxLength": 80 },
+        "experienceId": { "type": "string", "maxLength": 128 },
+        "experienceTitle": { "type": "string", "maxLength": 180 },
+        "preferredDate": { "type": "string", "maxLength": 40 },
         "guests": { "type": "number" },
         "message": { "type": "string", "maxLength": 2000 },
         "status": { "type": "string", "enum": ["NEW", "CONTACTED", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "estimatedValue": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["customerName", "email", "phone", "experienceId", "preferredDate", "guests", "status"]
+      "required": ["id", "customerName", "email", "phone", "experienceId", "preferredDate", "guests", "status"]
     },
     "Customer": {
       "title": "Customer",
       "description": "CRM profile for tourists and inquiring clients",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "maxLength": 100 },
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 120 },
         "email": { "type": "string", "format": "email", "maxLength": 150 },
-        "phone": { "type": "string", "maxLength": 30 },
-        "country": { "type": "string", "maxLength": 60 },
+        "phone": { "type": "string", "maxLength": 35 },
+        "country": { "type": "string", "maxLength": 80 },
         "totalInquiries": { "type": "number" },
         "confirmedBookings": { "type": "number" },
-        "notes": { "type": "string", "maxLength": 2000 }
+        "notes": { "type": "string", "maxLength": 3000 },
+        "lastInteraction": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "email"]
+      "required": ["id", "name", "email"]
     },
     "Promotion": {
       "title": "Promotion",
       "description": "Marketing campaign or promotional banner",
       "type": "object",
       "properties": {
-        "title": { "type": "string", "maxLength": 150 },
-        "description": { "type": "string", "maxLength": 1000 },
-        "bannerImage": { "type": "string", "maxLength": 1000 },
-        "ctaText": { "type": "string", "maxLength": 60 },
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 180 },
+        "titleAr": { "type": "string", "maxLength": 180 },
+        "description": { "type": "string", "maxLength": 1500 },
+        "descriptionAr": { "type": "string", "maxLength": 1500 },
+        "bannerImage": { "type": "string", "maxLength": 750000 },
+        "ctaText": { "type": "string", "maxLength": 80 },
+        "ctaTextAr": { "type": "string", "maxLength": 80 },
         "ctaLink": { "type": "string", "maxLength": 500 },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "active"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Promotional discount voucher code",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 40 },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
+        "discountAmount": { "type": "number" },
+        "expiryDate": { "type": "string", "maxLength": 40 },
+        "usageLimit": { "type": "number" },
+        "usedCount": { "type": "number" },
         "active": { "type": "boolean" }
       },
-      "required": ["title", "active"]
+      "required": ["id", "code", "discountType", "discountAmount", "active"]
+    },
+    "QuizQuestion": {
+      "title": "QuizQuestion",
+      "description": "Saudi tourism interactive quiz question",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "question": { "type": "string", "maxLength": 500 },
+        "questionAr": { "type": "string", "maxLength": 500 },
+        "correctIndex": { "type": "number" },
+        "explanation": { "type": "string", "maxLength": 1000 },
+        "explanationAr": { "type": "string", "maxLength": 1000 },
+        "category": { "type": "string", "maxLength": 80 },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "question", "correctIndex", "active"]
     },
     "WebsiteContent": {
       "title": "WebsiteContent",
       "description": "CMS content for visitor pages",
       "type": "object",
       "properties": {
-        "heroHeadline": { "type": "string", "maxLength": 200 },
-        "heroDescription": { "type": "string", "maxLength": 1000 },
-        "heroImage": { "type": "string", "maxLength": 1000 }
-      }
+        "heroHeadline": { "type": "string", "maxLength": 300 },
+        "heroHeadlineAr": { "type": "string", "maxLength": 300 },
+        "heroDescription": { "type": "string", "maxLength": 1500 },
+        "heroDescriptionAr": { "type": "string", "maxLength": 1500 },
+        "heroImage": { "type": "string", "maxLength": 750000 },
+        "aboutHeadline": { "type": "string", "maxLength": 300 },
+        "aboutHeadlineAr": { "type": "string", "maxLength": 300 },
+        "aboutText": { "type": "string", "maxLength": 3000 },
+        "aboutTextAr": { "type": "string", "maxLength": 3000 },
+        "contactEmail": { "type": "string", "maxLength": 150 },
+        "contactPhone": { "type": "string", "maxLength": 40 },
+        "whatsappNumber": { "type": "string", "maxLength": 40 },
+        "officeAddress": { "type": "string", "maxLength": 300 },
+        "officeAddressAr": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["heroHeadline", "heroImage", "aboutHeadline"]
+    },
+    "BusinessSettings": {
+      "title": "BusinessSettings",
+      "description": "Platform identity, currency, and operational contact settings",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string", "maxLength": 180 },
+        "businessEmail": { "type": "string", "maxLength": 150 },
+        "businessPhone": { "type": "string", "maxLength": 40 },
+        "whatsappNumber": { "type": "string", "maxLength": 40 },
+        "businessAddress": { "type": "string", "maxLength": 300 },
+        "currency": { "type": "string", "maxLength": 5 },
+        "defaultLanguage": { "type": "string", "enum": ["en", "ar"] },
+        "enableEmailNotifications": { "type": "boolean" },
+        "enableWhatsAppNotifications": { "type": "boolean" }
+      },
+      "required": ["businessName", "currency", "defaultLanguage"]
+    },
+    "AnalyticsEvent": {
+      "title": "AnalyticsEvent",
+      "description": "Visitor and conversion telemetry events",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["page_view", "experience_view", "search", "inquiry_submit", "booking_confirm"] },
+        "path": { "type": "string", "maxLength": 300 },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "type", "timestamp"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Admin operational activity audit log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "action": { "type": "string", "maxLength": 150 },
+        "details": { "type": "string", "maxLength": 500 },
+        "adminUser": { "type": "string", "maxLength": 120 },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "action", "details", "timestamp"]
     }
   },
   "firestore": {
+    "/themeConfig/{configId}": {
+      "schema": "ThemeConfig",
+      "description": "Global Glassy & Theme Studio settings synced across Admin and Visitor devices"
+    },
     "/experiences/{experienceId}": {
       "schema": "Experience",
       "description": "Tourism experiences collection"
@@ -118,9 +253,29 @@
       "schema": "Promotion",
       "description": "Marketing campaigns and special offers"
     },
+    "/coupons/{couponId}": {
+      "schema": "Coupon",
+      "description": "Promotional discount voucher codes"
+    },
+    "/quizzes/{quizId}": {
+      "schema": "QuizQuestion",
+      "description": "Interactive quiz questions"
+    },
     "/websiteContent/{contentId}": {
       "schema": "WebsiteContent",
       "description": "CMS homepage and site content"
+    },
+    "/settings/{settingId}": {
+      "schema": "BusinessSettings",
+      "description": "Platform identity and currency configuration"
+    },
+    "/analyticsEvents/{eventId}": {
+      "schema": "AnalyticsEvent",
+      "description": "Visitor analytics events"
+    },
+    "/activityLogs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Admin activity log"
     }
   }
 }

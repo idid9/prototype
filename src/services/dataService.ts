@@ -1,4 +1,18 @@
 import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  writeBatch,
+  Unsubscribe,
+} from 'firebase/firestore';
+import {
   Experience,
   Destination,
   Inquiry,
@@ -12,6 +26,14 @@ import {
   BusinessSettings,
   InquiryStatus,
 } from '../types';
+import {
+  auth,
+  db,
+  isFirebaseConfigured,
+  stripUndefined,
+  handleFirestoreError,
+  OperationType,
+} from './firebase/firestore';
 
 // High-fidelity image assets generated for TourFlow
 export const IMAGES = {
@@ -508,7 +530,7 @@ const INITIAL_EXPERIENCES: Experience[] = [
     meetingPoint: 'Mangrove Eco-Center Pier, Red Sea',
     meetingPointAr: 'رصيف مركز المانجروف البيئي، البحر الأحمر',
     featured: false,
-    status: 'DRAFT', // Explicitly DRAFT to test that draft experiences do not appear in visitor panel!
+    status: 'DRAFT',
     rating: 0,
     reviewsCount: 0,
     maxGuests: 16,
@@ -840,6 +862,22 @@ const INITIAL_COUPONS: Coupon[] = [
   },
 ];
 
+const INITIAL_ANALYTICS: AnalyticsEvent[] = [
+  { id: 'ev-1', type: 'page_view', path: '/', timestamp: '2026-11-10T08:00:00.000Z' },
+  { id: 'ev-2', type: 'experience_view', path: '/experience/alula-desert-adventure', timestamp: '2026-11-10T10:00:00.000Z' },
+  { id: 'ev-3', type: 'inquiry_submit', metadata: { exp: 'exp-alula-desert' }, timestamp: '2026-11-10T12:00:00.000Z' },
+];
+
+const INITIAL_LOGS: ActivityLog[] = [
+  {
+    id: 'log-1',
+    action: 'System Initialized',
+    details: 'TourFlow platform seeded with authentic Saudi tourism packages and AlUla assets',
+    adminUser: 'System',
+    timestamp: '2026-11-10T08:00:00.000Z',
+  },
+];
+
 // Storage keys
 const STORAGE_KEYS = {
   EXPERIENCES: 'tourflow_experiences_v1',
@@ -865,13 +903,222 @@ try {
   syncChannel = null;
 }
 
-// In-memory reactive subscriber registry
+// In-memory reactive subscriber registry & live cloud cache
 type Listener<T> = (data: T) => void;
 const listeners: Record<string, Set<Listener<any>>> = {};
+const memoryCache: Record<string, any> = {};
 
-function emitLocalListeners(collection: string, data: any) {
-  if (listeners[collection]) {
-    listeners[collection].forEach((listener) => {
+// Cloud Firestore sync state
+let adminCloudMode = false;
+let cloudSeedKnown = false;
+let cloudSeedingInProgress = false;
+let firestoreListenersStarted = false;
+let firestoreUnsubs: Unsubscribe[] = [];
+const reconciledInquiryIds = new Set<string>();
+
+function createUniqueId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+}
+
+// Strict payload sanitizers matching firestore.rules hasOnly(...) whitelists
+function toFirestoreExperience(exp: Experience) {
+  return stripUndefined({
+    id: exp.id,
+    title: exp.title,
+    titleAr: exp.titleAr || '',
+    slug: exp.slug,
+    destinationId: exp.destinationId,
+    destinationName: exp.destinationName || '',
+    category: exp.category,
+    categoryAr: exp.categoryAr || '',
+    price: Number(exp.price) || 0,
+    currency: exp.currency || 'SAR',
+    duration: exp.duration || '',
+    durationAr: exp.durationAr || '',
+    description: exp.description || '',
+    descriptionAr: exp.descriptionAr || '',
+    coverImage: exp.coverImage || '',
+    gallery: Array.isArray(exp.gallery) ? exp.gallery.slice(0, 4) : [],
+    highlights: Array.isArray(exp.highlights) ? exp.highlights.slice(0, 20) : [],
+    highlightsAr: Array.isArray(exp.highlightsAr) ? exp.highlightsAr.slice(0, 20) : [],
+    inclusions: Array.isArray(exp.inclusions) ? exp.inclusions.slice(0, 20) : [],
+    inclusionsAr: Array.isArray(exp.inclusionsAr) ? exp.inclusionsAr.slice(0, 20) : [],
+    exclusions: Array.isArray(exp.exclusions) ? exp.exclusions.slice(0, 20) : [],
+    exclusionsAr: Array.isArray(exp.exclusionsAr) ? exp.exclusionsAr.slice(0, 20) : [],
+    meetingPoint: exp.meetingPoint || '',
+    meetingPointAr: exp.meetingPointAr || '',
+    featured: Boolean(exp.featured),
+    status: exp.status,
+    rating: Number(exp.rating ?? 4.9),
+    reviewsCount: Number(exp.reviewsCount ?? 0),
+    maxGuests: Number(exp.maxGuests ?? 10),
+    createdAt: exp.createdAt,
+    updatedAt: exp.updatedAt,
+  });
+}
+
+function toFirestoreDestination(dest: Destination) {
+  return stripUndefined({
+    id: dest.id,
+    name: dest.name,
+    nameAr: dest.nameAr || '',
+    slug: dest.slug,
+    description: dest.description || '',
+    descriptionAr: dest.descriptionAr || '',
+    coverImage: dest.coverImage || '',
+    region: dest.region || '',
+    regionAr: dest.regionAr || '',
+    experienceCount: Number(dest.experienceCount ?? 0),
+    featured: Boolean(dest.featured),
+    published: Boolean(dest.published),
+    createdAt: dest.createdAt,
+    updatedAt: dest.updatedAt,
+  });
+}
+
+function toFirestoreInquiry(inq: Inquiry) {
+  return stripUndefined({
+    id: inq.id,
+    customerName: inq.customerName,
+    email: inq.email,
+    phone: inq.phone,
+    country: inq.country || 'Saudi Arabia',
+    experienceId: inq.experienceId,
+    experienceTitle: inq.experienceTitle || '',
+    preferredDate: inq.preferredDate,
+    guests: Math.max(1, Math.min(100, Number(inq.guests) || 1)),
+    message: inq.message || '',
+    status: inq.status,
+    internalNotes: Array.isArray(inq.internalNotes) ? inq.internalNotes.slice(0, 50) : [],
+    estimatedValue: inq.estimatedValue !== undefined ? Number(inq.estimatedValue) : undefined,
+    createdAt: inq.createdAt,
+    updatedAt: inq.updatedAt,
+  });
+}
+
+function toFirestoreCustomer(cust: Customer) {
+  return stripUndefined({
+    id: cust.id,
+    name: cust.name,
+    email: cust.email,
+    phone: cust.phone || '',
+    country: cust.country || '',
+    totalInquiries: Number(cust.totalInquiries ?? 1),
+    confirmedBookings: Number(cust.confirmedBookings ?? 0),
+    lastInteraction: cust.lastInteraction,
+    notes: cust.notes || '',
+    createdAt: cust.createdAt,
+  });
+}
+
+function toFirestorePromotion(promo: Promotion) {
+  return stripUndefined({
+    id: promo.id,
+    title: promo.title,
+    titleAr: promo.titleAr || '',
+    description: promo.description || '',
+    descriptionAr: promo.descriptionAr || '',
+    bannerImage: promo.bannerImage || '',
+    destinationId: promo.destinationId || '',
+    linkedExperienceId: promo.linkedExperienceId || '',
+    ctaText: promo.ctaText || 'Explore',
+    ctaTextAr: promo.ctaTextAr || '',
+    ctaLink: promo.ctaLink || '',
+    active: Boolean(promo.active),
+    badge: promo.badge || '',
+    badgeAr: promo.badgeAr || '',
+    createdAt: promo.createdAt,
+  });
+}
+
+function toFirestoreCoupon(cpn: Coupon) {
+  return stripUndefined({
+    id: cpn.id,
+    code: cpn.code,
+    discountType: cpn.discountType,
+    discountAmount: Number(cpn.discountAmount) || 0,
+    expiryDate: cpn.expiryDate || '2026-12-31',
+    usageLimit: Number(cpn.usageLimit ?? 100),
+    usedCount: Number(cpn.usedCount ?? 0),
+    active: Boolean(cpn.active),
+  });
+}
+
+function toFirestoreQuiz(quiz: QuizQuestion) {
+  return stripUndefined({
+    id: quiz.id,
+    question: quiz.question,
+    questionAr: quiz.questionAr || '',
+    options: Array.isArray(quiz.options) ? quiz.options.slice(0, 10) : [],
+    optionsAr: Array.isArray(quiz.optionsAr) ? quiz.optionsAr.slice(0, 10) : [],
+    correctIndex: Number(quiz.correctIndex) || 0,
+    explanation: quiz.explanation || '',
+    explanationAr: quiz.explanationAr || '',
+    category: quiz.category || 'Heritage',
+    active: Boolean(quiz.active),
+  });
+}
+
+function toFirestoreWebsiteContent(content: WebsiteContent) {
+  return stripUndefined({
+    heroHeadline: content.heroHeadline,
+    heroHeadlineAr: content.heroHeadlineAr || '',
+    heroDescription: content.heroDescription || '',
+    heroDescriptionAr: content.heroDescriptionAr || '',
+    heroImage: content.heroImage || IMAGES.heroAlUla,
+    aboutHeadline: content.aboutHeadline,
+    aboutHeadlineAr: content.aboutHeadlineAr || '',
+    aboutText: content.aboutText || '',
+    aboutTextAr: content.aboutTextAr || '',
+    stats: content.stats,
+    contactEmail: content.contactEmail || '',
+    contactPhone: content.contactPhone || '',
+    whatsappNumber: content.whatsappNumber || '',
+    officeAddress: content.officeAddress || '',
+    officeAddressAr: content.officeAddressAr || '',
+    socialLinks: content.socialLinks || {},
+  });
+}
+
+function toFirestoreBusinessSettings(settings: BusinessSettings) {
+  return stripUndefined({
+    businessName: settings.businessName,
+    businessEmail: settings.businessEmail || '',
+    businessPhone: settings.businessPhone || '',
+    whatsappNumber: settings.whatsappNumber || '',
+    businessAddress: settings.businessAddress || '',
+    currency: settings.currency || 'SAR',
+    defaultLanguage: settings.defaultLanguage || 'en',
+    supportedLanguages: settings.supportedLanguages || ['en', 'ar'],
+    socialLinks: settings.socialLinks || {},
+    enableEmailNotifications: Boolean(settings.enableEmailNotifications),
+    enableWhatsAppNotifications: Boolean(settings.enableWhatsAppNotifications),
+  });
+}
+
+function toFirestoreAnalyticsEvent(event: AnalyticsEvent) {
+  return stripUndefined({
+    id: event.id,
+    type: event.type,
+    path: event.path,
+    metadata: event.metadata,
+    timestamp: event.timestamp,
+  });
+}
+
+function toFirestoreActivityLog(log: ActivityLog) {
+  return stripUndefined({
+    id: log.id,
+    action: log.action,
+    details: log.details,
+    adminUser: log.adminUser || 'Admin',
+    timestamp: log.timestamp,
+  });
+}
+
+function emitLocalListeners(collectionKey: string, data: any) {
+  if (listeners[collectionKey]) {
+    listeners[collectionKey].forEach((listener) => {
       try {
         listener(data);
       } catch (err) {
@@ -881,13 +1128,13 @@ function emitLocalListeners(collection: string, data: any) {
   }
 }
 
-function notifyListeners(collection: string, data: any) {
-  emitLocalListeners(collection, data);
+function notifyListeners(collectionKey: string, data: any) {
+  emitLocalListeners(collectionKey, data);
   if (syncChannel) {
     try {
-      syncChannel.postMessage({ collection, timestamp: Date.now() });
-    } catch (e) {
-      console.warn('Sync postMessage warning:', e);
+      syncChannel.postMessage({ collection: collectionKey, timestamp: Date.now() });
+    } catch {
+      // Ignore broadcast channel errors in restricted contexts
     }
   }
 }
@@ -895,10 +1142,11 @@ function notifyListeners(collection: string, data: any) {
 // Hook up listener for broadcast channel messages
 if (syncChannel) {
   syncChannel.onmessage = (event) => {
-    const { collection } = event.data || {};
-    if (collection && listeners[collection]) {
-      const freshData = loadCollection(collection);
-      emitLocalListeners(collection, freshData);
+    const { collection: key } = event.data || {};
+    if (key && listeners[key]) {
+      const freshData = loadCollection(key);
+      memoryCache[key] = freshData;
+      emitLocalListeners(key, freshData);
     }
   };
 }
@@ -910,6 +1158,7 @@ if (typeof window !== 'undefined') {
     if (event.key && validKeys.has(event.key) && event.newValue) {
       try {
         const parsed = JSON.parse(event.newValue);
+        memoryCache[event.key] = parsed;
         emitLocalListeners(event.key, parsed);
       } catch (e) {
         console.warn('Storage sync parse warning:', e);
@@ -920,11 +1169,16 @@ if (typeof window !== 'undefined') {
 
 // Storage helpers
 function loadCollection<T>(key: string): T {
+  if (memoryCache[key] !== undefined) {
+    return memoryCache[key] as T;
+  }
   if (typeof window === 'undefined') return [] as unknown as T;
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return [] as unknown as T;
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    memoryCache[key] = parsed;
+    return parsed;
   } catch (e) {
     console.error('Failed to parse from localStorage', key, e);
     return [] as unknown as T;
@@ -932,15 +1186,378 @@ function loadCollection<T>(key: string): T {
 }
 
 function saveCollection<T>(key: string, data: T) {
+  memoryCache[key] = data;
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
-    console.error('Failed to save to localStorage', key, e);
+    console.warn('localStorage quota warning for', key, e);
   }
 }
 
-// Initialise storage if first run
+function writeCloudDoc(collectionName: string, docId: string, data: Record<string, unknown>) {
+  if (!isFirebaseConfigured() || !db) return;
+  setDoc(doc(db, collectionName, docId), stripUndefined(data)).catch((err) => {
+    handleFirestoreError(err, OperationType.WRITE, `${collectionName}/${docId}`);
+  });
+}
+
+function deleteCloudDoc(collectionName: string, docId: string) {
+  if (!isFirebaseConfigured() || !db) return;
+  deleteDoc(doc(db, collectionName, docId)).catch((err) => {
+    handleFirestoreError(err, OperationType.DELETE, `${collectionName}/${docId}`);
+  });
+}
+
+function sortByCreatedDesc<T extends { createdAt?: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+}
+
+function applyCloudSnapshot<T>(storageKey: string, items: T) {
+  saveCollection(storageKey, items);
+  notifyListeners(storageKey, items);
+}
+
+/**
+ * Reconciles visitor-submitted inquiries from Firestore into the Admin-only Customer CRM
+ * and promo coupon usage counters.
+ */
+function reconcileVisitorInquiriesIntoCrm(inquiries: Inquiry[]) {
+  if (!adminCloudMode || !isFirebaseConfigured() || !db) return;
+
+  const customers = DataService.getCustomers();
+  const recentThreshold = '2026-11-12T00:00:00.000Z';
+
+  for (const inq of inquiries) {
+    if (reconciledInquiryIds.has(inq.id)) continue;
+    if ((inq.createdAt || '') < recentThreshold) {
+      reconciledInquiryIds.add(inq.id);
+      continue;
+    }
+
+    const emailLower = inq.email.trim().toLowerCase();
+    const existing = customers.find((c) => c.email.trim().toLowerCase() === emailLower);
+
+    if (!existing) {
+      const safeEmailId = emailLower.replace(/[^a-z0-9]/g, '_').slice(0, 64);
+      const newCust: Customer = {
+        id: `cust-${safeEmailId || Date.now()}`,
+        name: inq.customerName,
+        email: inq.email,
+        phone: inq.phone,
+        country: inq.country,
+        totalInquiries: 1,
+        confirmedBookings: inq.status === 'CONFIRMED' || inq.status === 'COMPLETED' ? 1 : 0,
+        lastInteraction: inq.createdAt,
+        notes: `First inquiry on ${new Date(inq.createdAt).toLocaleDateString()} for ${inq.experienceTitle}`,
+        createdAt: inq.createdAt,
+      };
+      reconciledInquiryIds.add(inq.id);
+      customers.unshift(newCust);
+      saveCollection(STORAGE_KEYS.CUSTOMERS, customers);
+      notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
+      writeCloudDoc('customers', newCust.id, toFirestoreCustomer(newCust));
+    } else if ((existing.lastInteraction || '') < (inq.createdAt || '')) {
+      reconciledInquiryIds.add(inq.id);
+      existing.totalInquiries += 1;
+      existing.lastInteraction = inq.createdAt;
+      if (!existing.phone && inq.phone) existing.phone = inq.phone;
+      if (!existing.country && inq.country) existing.country = inq.country;
+      saveCollection(STORAGE_KEYS.CUSTOMERS, customers);
+      notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
+      writeCloudDoc('customers', existing.id, toFirestoreCustomer(existing));
+    } else {
+      reconciledInquiryIds.add(inq.id);
+    }
+  }
+}
+
+/**
+ * Seeds Firestore once when an authenticated admin connects to a fresh database.
+ */
+async function ensureCloudSeeded(): Promise<void> {
+  if (!isFirebaseConfigured() || !db || !auth?.currentUser || cloudSeedingInProgress) return;
+  cloudSeedingInProgress = true;
+
+  try {
+    const [settingsSnap, contentSnap] = await Promise.all([
+      getDoc(doc(db, 'settings', 'main')),
+      getDoc(doc(db, 'websiteContent', 'main')),
+    ]);
+
+    if (settingsSnap.exists() && contentSnap.exists()) {
+      cloudSeedKnown = true;
+      return;
+    }
+
+    const batch = writeBatch(db);
+
+    for (const dest of INITIAL_DESTINATIONS) {
+      batch.set(doc(db, 'destinations', dest.id), toFirestoreDestination(dest));
+    }
+    for (const exp of INITIAL_EXPERIENCES) {
+      batch.set(doc(db, 'experiences', exp.id), toFirestoreExperience(exp));
+    }
+    for (const promo of INITIAL_PROMOTIONS) {
+      batch.set(doc(db, 'promotions', promo.id), toFirestorePromotion(promo));
+    }
+    for (const cpn of INITIAL_COUPONS) {
+      batch.set(doc(db, 'coupons', cpn.id), toFirestoreCoupon(cpn));
+    }
+    for (const quiz of INITIAL_QUIZ_QUESTIONS) {
+      batch.set(doc(db, 'quizzes', quiz.id), toFirestoreQuiz(quiz));
+    }
+    for (const inq of INITIAL_INQUIRIES) {
+      batch.set(doc(db, 'inquiries', inq.id), toFirestoreInquiry(inq));
+    }
+    for (const cust of INITIAL_CUSTOMERS) {
+      batch.set(doc(db, 'customers', cust.id), toFirestoreCustomer(cust));
+    }
+    for (const ev of INITIAL_ANALYTICS) {
+      batch.set(doc(db, 'analyticsEvents', ev.id), toFirestoreAnalyticsEvent(ev));
+    }
+    for (const log of INITIAL_LOGS) {
+      batch.set(doc(db, 'activityLogs', log.id), toFirestoreActivityLog(log));
+    }
+
+    batch.set(doc(db, 'websiteContent', 'main'), toFirestoreWebsiteContent(INITIAL_WEBSITE_CONTENT));
+    batch.set(doc(db, 'settings', 'main'), toFirestoreBusinessSettings(INITIAL_SETTINGS));
+
+    await batch.commit();
+    cloudSeedKnown = true;
+  } catch (err) {
+    console.error('Error seeding Firestore database:', err);
+  } finally {
+    cloudSeedingInProgress = false;
+  }
+}
+
+function stopFirestoreSubscriptions() {
+  firestoreUnsubs.forEach((unsub) => {
+    try {
+      unsub();
+    } catch {
+      // Ignore cleanup errors
+    }
+  });
+  firestoreUnsubs = [];
+  firestoreListenersStarted = false;
+}
+
+function startFirestoreSubscriptions() {
+  if (typeof window === 'undefined' || !isFirebaseConfigured() || !db) return;
+
+  stopFirestoreSubscriptions();
+  firestoreListenersStarted = true;
+
+  // 1. Website Content CMS (Public get, Admin write)
+  firestoreUnsubs.push(
+    onSnapshot(
+      doc(db, 'websiteContent', 'main'),
+      (snap) => {
+        if (snap.exists()) {
+          cloudSeedKnown = true;
+          applyCloudSnapshot(STORAGE_KEYS.WEBSITE_CONTENT, snap.data() as WebsiteContent);
+        }
+      },
+      (err) => {
+        console.warn('WebsiteContent snapshot error:', err.message);
+      }
+    )
+  );
+
+  // 2. Business Settings (Public get, Admin write)
+  firestoreUnsubs.push(
+    onSnapshot(
+      doc(db, 'settings', 'main'),
+      (snap) => {
+        if (snap.exists()) {
+          cloudSeedKnown = true;
+          applyCloudSnapshot(STORAGE_KEYS.SETTINGS, snap.data() as BusinessSettings);
+        }
+      },
+      (err) => {
+        console.warn('Settings snapshot error:', err.message);
+      }
+    )
+  );
+
+  // 3. Experiences (Visitor: published only; Admin: all)
+  const expQuery = adminCloudMode
+    ? collection(db, 'experiences')
+    : query(collection(db, 'experiences'), where('status', '==', 'PUBLISHED'));
+
+  firestoreUnsubs.push(
+    onSnapshot(
+      expQuery,
+      (snap) => {
+        if (!snap.empty || cloudSeedKnown || adminCloudMode) {
+          const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Experience));
+          applyCloudSnapshot(STORAGE_KEYS.EXPERIENCES, items);
+        }
+      },
+      (err) => {
+        console.warn('Experiences snapshot error:', err.message);
+      }
+    )
+  );
+
+  // 4. Destinations (Visitor: published only; Admin: all)
+  const destQuery = adminCloudMode
+    ? collection(db, 'destinations')
+    : query(collection(db, 'destinations'), where('published', '==', true));
+
+  firestoreUnsubs.push(
+    onSnapshot(
+      destQuery,
+      (snap) => {
+        if (!snap.empty || cloudSeedKnown || adminCloudMode) {
+          const items = snap.docs
+            .map((d) => d.data() as Destination)
+            .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+          applyCloudSnapshot(STORAGE_KEYS.DESTINATIONS, items);
+        }
+      },
+      (err) => {
+        console.warn('Destinations snapshot error:', err.message);
+      }
+    )
+  );
+
+  // 5. Promotions (Visitor: active only; Admin: all)
+  const promoQuery = adminCloudMode
+    ? collection(db, 'promotions')
+    : query(collection(db, 'promotions'), where('active', '==', true));
+
+  firestoreUnsubs.push(
+    onSnapshot(
+      promoQuery,
+      (snap) => {
+        if (!snap.empty || cloudSeedKnown || adminCloudMode) {
+          const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Promotion));
+          applyCloudSnapshot(STORAGE_KEYS.PROMOTIONS, items);
+        }
+      },
+      (err) => {
+        console.warn('Promotions snapshot error:', err.message);
+      }
+    )
+  );
+
+  // 6. Coupons (Visitor: active only; Admin: all)
+  const couponQuery = adminCloudMode
+    ? collection(db, 'coupons')
+    : query(collection(db, 'coupons'), where('active', '==', true));
+
+  firestoreUnsubs.push(
+    onSnapshot(
+      couponQuery,
+      (snap) => {
+        if (!snap.empty || cloudSeedKnown || adminCloudMode) {
+          const items = snap.docs.map((d) => d.data() as Coupon);
+          applyCloudSnapshot(STORAGE_KEYS.COUPONS, items);
+        }
+      },
+      (err) => {
+        console.warn('Coupons snapshot error:', err.message);
+      }
+    )
+  );
+
+  // 7. Interactive Quizzes (Visitor: active only; Admin: all)
+  const quizQuery = adminCloudMode
+    ? collection(db, 'quizzes')
+    : query(collection(db, 'quizzes'), where('active', '==', true));
+
+  firestoreUnsubs.push(
+    onSnapshot(
+      quizQuery,
+      (snap) => {
+        if (!snap.empty || cloudSeedKnown || adminCloudMode) {
+          const items = snap.docs
+            .map((d) => d.data() as QuizQuestion)
+            .sort((a, b) => a.id.localeCompare(b.id));
+          applyCloudSnapshot(STORAGE_KEYS.QUIZZES, items);
+        }
+      },
+      (err) => {
+        console.warn('Quizzes snapshot error:', err.message);
+      }
+    )
+  );
+
+  // 8-11. Admin-only collections (PII isolation enforced by firestore.rules)
+  if (adminCloudMode) {
+    firestoreUnsubs.push(
+      onSnapshot(
+        collection(db, 'customers'),
+        (snap) => {
+          if (!snap.empty || cloudSeedKnown) {
+            const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Customer));
+            applyCloudSnapshot(STORAGE_KEYS.CUSTOMERS, items);
+          }
+        },
+        (err) => {
+          console.warn('Customers snapshot error:', err.message);
+        }
+      )
+    );
+
+    firestoreUnsubs.push(
+      onSnapshot(
+        collection(db, 'inquiries'),
+        (snap) => {
+          if (!snap.empty || cloudSeedKnown) {
+            const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Inquiry));
+            applyCloudSnapshot(STORAGE_KEYS.INQUIRIES, items);
+            reconcileVisitorInquiriesIntoCrm(items);
+          }
+        },
+        (err) => {
+          console.warn('Inquiries snapshot error:', err.message);
+        }
+      )
+    );
+
+    firestoreUnsubs.push(
+      onSnapshot(
+        collection(db, 'analyticsEvents'),
+        (snap) => {
+          if (!snap.empty || cloudSeedKnown) {
+            const items = snap.docs
+              .map((d) => d.data() as AnalyticsEvent)
+              .sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''))
+              .slice(-500);
+            applyCloudSnapshot(STORAGE_KEYS.ANALYTICS, items);
+          }
+        },
+        (err) => {
+          console.warn('Analytics snapshot error:', err.message);
+        }
+      )
+    );
+
+    firestoreUnsubs.push(
+      onSnapshot(
+        collection(db, 'activityLogs'),
+        (snap) => {
+          if (!snap.empty || cloudSeedKnown) {
+            const items = snap.docs
+              .map((d) => d.data() as ActivityLog)
+              .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+              .slice(0, 100);
+            applyCloudSnapshot(STORAGE_KEYS.ACTIVITY_LOGS, items);
+          }
+        },
+        (err) => {
+          console.warn('ActivityLogs snapshot error:', err.message);
+        }
+      )
+    );
+  }
+}
+
+// Initialise storage & start real-time Firestore listeners on first boot
 export function initializeRepository() {
   if (typeof window === 'undefined') return;
 
@@ -972,26 +1589,18 @@ export function initializeRepository() {
     saveCollection(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
   }
   if (!localStorage.getItem(STORAGE_KEYS.ACTIVITY_LOGS)) {
-    saveCollection(STORAGE_KEYS.ACTIVITY_LOGS, [
-      {
-        id: 'log-1',
-        action: 'System Initialized',
-        details: 'TourFlow platform seeded with authentic Saudi tourism packages and AlUla assets',
-        adminUser: 'System',
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    saveCollection(STORAGE_KEYS.ACTIVITY_LOGS, INITIAL_LOGS);
   }
   if (!localStorage.getItem(STORAGE_KEYS.ANALYTICS)) {
-    saveCollection(STORAGE_KEYS.ANALYTICS, [
-      { id: 'ev-1', type: 'page_view', path: '/', timestamp: new Date(Date.now() - 3600000 * 24).toISOString() },
-      { id: 'ev-2', type: 'experience_view', path: '/experience/alula-desert-adventure', timestamp: new Date(Date.now() - 3600000 * 12).toISOString() },
-      { id: 'ev-3', type: 'inquiry_submit', metadata: { exp: 'exp-alula-desert' }, timestamp: new Date(Date.now() - 3600000 * 6).toISOString() },
-    ]);
+    saveCollection(STORAGE_KEYS.ANALYTICS, INITIAL_ANALYTICS);
+  }
+
+  if (isFirebaseConfigured() && !firestoreListenersStarted) {
+    startFirestoreSubscriptions();
   }
 }
 
-// Reactive Subscription helper (behaves exactly like onSnapshot)
+// Reactive Subscription helper (behaves like onSnapshot backed by live Firestore)
 export function subscribeTo<T>(collectionKey: string, callback: (data: T) => void): () => void {
   if (!listeners[collectionKey]) {
     listeners[collectionKey] = new Set();
@@ -1009,9 +1618,33 @@ export function subscribeTo<T>(collectionKey: string, callback: (data: T) => voi
 
 // Data Service API
 export const DataService = {
+  /**
+   * Switches Firestore realtime listeners between public Visitor mode and full Admin mode.
+   * Called automatically by AuthContext when Google Admin sign-in state changes.
+   */
+  setAdminCloudMode(isAdmin: boolean) {
+    const changed = adminCloudMode !== isAdmin;
+    adminCloudMode = isAdmin;
+
+    if (!isFirebaseConfigured()) return;
+
+    if (isAdmin) {
+      ensureCloudSeeded().then(() => {
+        startFirestoreSubscriptions();
+      });
+    } else if (changed || !firestoreListenersStarted) {
+      startFirestoreSubscriptions();
+    }
+  },
+
+  isCloudSyncEnabled(): boolean {
+    return isFirebaseConfigured();
+  },
+
   // Experiences
   getExperiences(): Experience[] {
-    return loadCollection<Experience[]>(STORAGE_KEYS.EXPERIENCES) || INITIAL_EXPERIENCES;
+    const loaded = loadCollection<Experience[]>(STORAGE_KEYS.EXPERIENCES);
+    return Array.isArray(loaded) ? loaded : INITIAL_EXPERIENCES;
   },
 
   getPublishedExperiences(): Experience[] {
@@ -1029,42 +1662,56 @@ export const DataService = {
   syncDestinationExperienceCounts(experiencesList?: Experience[]) {
     const exps = experiencesList || this.getExperiences();
     const dests = this.getDestinations();
-    let changed = false;
+    const changedDests: Destination[] = [];
     const updatedDests = dests.map((dest) => {
       const publishedCount = exps.filter(
         (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
       ).length;
       if (dest.experienceCount !== publishedCount) {
-        changed = true;
-        return { ...dest, experienceCount: publishedCount };
+        const nextDest = {
+          ...dest,
+          experienceCount: publishedCount,
+          updatedAt: new Date().toISOString(),
+        };
+        changedDests.push(nextDest);
+        return nextDest;
       }
       return dest;
     });
-    if (changed) {
+    if (changedDests.length > 0) {
       saveCollection(STORAGE_KEYS.DESTINATIONS, updatedDests);
       notifyListeners(STORAGE_KEYS.DESTINATIONS, updatedDests);
+      if (adminCloudMode) {
+        changedDests.forEach((d) => {
+          writeCloudDoc('destinations', d.id, toFirestoreDestination(d));
+        });
+      }
     }
   },
 
   createExperience(exp: Omit<Experience, 'id' | 'createdAt' | 'updatedAt'>): Experience {
-    const list = this.getExperiences();
-    const id = `exp-${Date.now()}`;
+    const list = [...this.getExperiences()];
+    const id = createUniqueId('exp');
+    const now = new Date().toISOString();
     const newExp: Experience = {
       ...exp,
       id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     list.unshift(newExp);
     saveCollection(STORAGE_KEYS.EXPERIENCES, list);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, list);
+    if (adminCloudMode) {
+      writeCloudDoc('experiences', id, toFirestoreExperience(newExp));
+    }
     this.syncDestinationExperienceCounts(list);
     this.logActivity('Experience Created', `Created experience "${newExp.title}" (Status: ${newExp.status})`);
     return newExp;
   },
 
   updateExperience(id: string, updates: Partial<Experience>): Experience | null {
-    const list = this.getExperiences();
+    const list = [...this.getExperiences()];
     const index = list.findIndex((e) => e.id === id);
     if (index === -1) return null;
     const updated: Experience = {
@@ -1075,6 +1722,9 @@ export const DataService = {
     list[index] = updated;
     saveCollection(STORAGE_KEYS.EXPERIENCES, list);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, list);
+    if (adminCloudMode) {
+      writeCloudDoc('experiences', id, toFirestoreExperience(updated));
+    }
     this.syncDestinationExperienceCounts(list);
     this.logActivity('Experience Updated', `Updated "${updated.title}" (Status: ${updated.status})`);
     return updated;
@@ -1087,6 +1737,9 @@ export const DataService = {
     if (filtered.length !== list.length) {
       saveCollection(STORAGE_KEYS.EXPERIENCES, filtered);
       notifyListeners(STORAGE_KEYS.EXPERIENCES, filtered);
+      if (adminCloudMode) {
+        deleteCloudDoc('experiences', id);
+      }
       this.syncDestinationExperienceCounts(filtered);
       this.logActivity('Experience Deleted', `Removed experience "${target?.title || id}"`);
       return true;
@@ -1095,22 +1748,27 @@ export const DataService = {
   },
 
   duplicateExperience(id: string): Experience | null {
-    const list = this.getExperiences();
+    const list = [...this.getExperiences()];
     const original = list.find((e) => e.id === id);
     if (!original) return null;
+    const now = new Date().toISOString();
+    const newId = createUniqueId('exp');
     const duplicated: Experience = {
       ...original,
-      id: `exp-${Date.now()}`,
+      id: newId,
       title: `${original.title} (Copy)`,
       titleAr: `${original.titleAr} (نسخة)`,
       slug: `${original.slug}-copy-${Math.floor(Math.random() * 1000)}`,
       status: 'DRAFT',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     list.unshift(duplicated);
     saveCollection(STORAGE_KEYS.EXPERIENCES, list);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, list);
+    if (adminCloudMode) {
+      writeCloudDoc('experiences', newId, toFirestoreExperience(duplicated));
+    }
     this.syncDestinationExperienceCounts(list);
     this.logActivity('Experience Duplicated', `Duplicated "${original.title}" as DRAFT`);
     return duplicated;
@@ -1118,7 +1776,8 @@ export const DataService = {
 
   // Destinations
   getDestinations(): Destination[] {
-    return loadCollection<Destination[]>(STORAGE_KEYS.DESTINATIONS) || INITIAL_DESTINATIONS;
+    const loaded = loadCollection<Destination[]>(STORAGE_KEYS.DESTINATIONS);
+    return Array.isArray(loaded) ? loaded : INITIAL_DESTINATIONS;
   },
 
   getPublishedDestinations(): Destination[] {
@@ -1130,25 +1789,30 @@ export const DataService = {
   },
 
   createDestination(dest: Omit<Destination, 'id' | 'createdAt' | 'updatedAt'>): Destination {
-    const list = this.getDestinations();
-    const id = `dest-${Date.now()}`;
+    const list = [...this.getDestinations()];
+    const id = createUniqueId('dest');
+    const now = new Date().toISOString();
     const newDest: Destination = {
       ...dest,
       id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     list.push(newDest);
     saveCollection(STORAGE_KEYS.DESTINATIONS, list);
     notifyListeners(STORAGE_KEYS.DESTINATIONS, list);
+    if (adminCloudMode) {
+      writeCloudDoc('destinations', id, toFirestoreDestination(newDest));
+    }
     this.logActivity('Destination Created', `Created destination "${newDest.name}"`);
     return newDest;
   },
 
   updateDestination(id: string, updates: Partial<Destination>): Destination | null {
-    const list = this.getDestinations();
+    const list = [...this.getDestinations()];
     const index = list.findIndex((d) => d.id === id);
     if (index === -1) return null;
+    const previousName = list[index].name;
     const updated: Destination = {
       ...list[index],
       ...updates,
@@ -1157,20 +1821,29 @@ export const DataService = {
     list[index] = updated;
     saveCollection(STORAGE_KEYS.DESTINATIONS, list);
     notifyListeners(STORAGE_KEYS.DESTINATIONS, list);
+    if (adminCloudMode) {
+      writeCloudDoc('destinations', id, toFirestoreDestination(updated));
+    }
 
-    if (updates.name && updates.name !== list[index].name) {
+    if (updates.name && updates.name !== previousName) {
       const exps = this.getExperiences();
-      let expChanged = false;
+      const modifiedExps: Experience[] = [];
       const updatedExps = exps.map((e) => {
         if (e.destinationId === id && e.destinationName !== updates.name) {
-          expChanged = true;
-          return { ...e, destinationName: updates.name! };
+          const updatedExp = { ...e, destinationName: updates.name!, updatedAt: new Date().toISOString() };
+          modifiedExps.push(updatedExp);
+          return updatedExp;
         }
         return e;
       });
-      if (expChanged) {
+      if (modifiedExps.length > 0) {
         saveCollection(STORAGE_KEYS.EXPERIENCES, updatedExps);
         notifyListeners(STORAGE_KEYS.EXPERIENCES, updatedExps);
+        if (adminCloudMode) {
+          modifiedExps.forEach((exp) => {
+            writeCloudDoc('experiences', exp.id, toFirestoreExperience(exp));
+          });
+        }
       }
     }
 
@@ -1180,7 +1853,8 @@ export const DataService = {
 
   // Inquiries
   getInquiries(): Inquiry[] {
-    return loadCollection<Inquiry[]>(STORAGE_KEYS.INQUIRIES) || INITIAL_INQUIRIES;
+    const loaded = loadCollection<Inquiry[]>(STORAGE_KEYS.INQUIRIES);
+    return Array.isArray(loaded) ? loaded : INITIAL_INQUIRIES;
   },
 
   subscribeInquiries(callback: (inquiries: Inquiry[]) => void): () => void {
@@ -1200,29 +1874,35 @@ export const DataService = {
     estimatedValue?: number;
     appliedCouponCode?: string;
   }): Inquiry {
-    const list = this.getInquiries();
-    const id = `INQ-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const list = [...this.getInquiries()];
+    const id = `INQ-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const now = new Date().toISOString();
     const { appliedCouponCode, ...inquiryFields } = data;
     const newInquiry: Inquiry = {
       ...inquiryFields,
       id,
       status: 'NEW',
       internalNotes: appliedCouponCode ? [`Applied promo code: ${appliedCouponCode}`] : [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     list.unshift(newInquiry);
     saveCollection(STORAGE_KEYS.INQUIRIES, list);
     notifyListeners(STORAGE_KEYS.INQUIRIES, list);
 
+    // Visitors AND admins are allowed by firestore.rules to create inquiries with status 'NEW'
+    if (isFirebaseConfigured() && db) {
+      writeCloudDoc('inquiries', id, toFirestoreInquiry(newInquiry));
+    }
+
     if (appliedCouponCode) {
       this.incrementCouponUsage(appliedCouponCode);
     }
 
-    // Sync CRM Customer record automatically
+    // Sync CRM Customer record & admin activity log when admin session is active
     this.syncCustomerFromInquiry(newInquiry);
 
-    // Record analytics event
+    // Visitors AND admins can record analytics events
     this.recordEvent('inquiry_submit', `/experience/${data.experienceId}`, {
       inquiryId: id,
       experienceId: data.experienceId,
@@ -1234,7 +1914,7 @@ export const DataService = {
   },
 
   updateInquiryStatus(id: string, status: InquiryStatus, internalNote?: string): Inquiry | null {
-    const list = this.getInquiries();
+    const list = [...this.getInquiries()];
     const index = list.findIndex((i) => i.id === id);
     if (index === -1) return null;
 
@@ -1252,8 +1932,10 @@ export const DataService = {
     list[index] = updated;
     saveCollection(STORAGE_KEYS.INQUIRIES, list);
     notifyListeners(STORAGE_KEYS.INQUIRIES, list);
+    if (adminCloudMode) {
+      writeCloudDoc('inquiries', id, toFirestoreInquiry(updated));
+    }
 
-    // If confirmed, update customer record
     if (status === 'CONFIRMED') {
       this.incrementCustomerBookings(updated.email);
       this.recordEvent('booking_confirm', undefined, { inquiryId: id, value: updated.estimatedValue });
@@ -1264,7 +1946,7 @@ export const DataService = {
   },
 
   addInquiryNote(id: string, note: string): Inquiry | null {
-    const list = this.getInquiries();
+    const list = [...this.getInquiries()];
     const index = list.findIndex((i) => i.id === id);
     if (index === -1) return null;
 
@@ -1279,12 +1961,16 @@ export const DataService = {
     list[index] = updated;
     saveCollection(STORAGE_KEYS.INQUIRIES, list);
     notifyListeners(STORAGE_KEYS.INQUIRIES, list);
+    if (adminCloudMode) {
+      writeCloudDoc('inquiries', id, toFirestoreInquiry(updated));
+    }
     return updated;
   },
 
   // Customers CRM
   getCustomers(): Customer[] {
-    return loadCollection<Customer[]>(STORAGE_KEYS.CUSTOMERS) || INITIAL_CUSTOMERS;
+    const loaded = loadCollection<Customer[]>(STORAGE_KEYS.CUSTOMERS);
+    return Array.isArray(loaded) ? loaded : INITIAL_CUSTOMERS;
   },
 
   subscribeCustomers(callback: (customers: Customer[]) => void): () => void {
@@ -1292,55 +1978,69 @@ export const DataService = {
   },
 
   syncCustomerFromInquiry(inquiry: Inquiry) {
-    const customers = this.getCustomers();
+    const customers = [...this.getCustomers()];
     const existing = customers.find((c) => c.email.toLowerCase() === inquiry.email.toLowerCase());
+    let changedCustomer: Customer;
     if (existing) {
       existing.totalInquiries += 1;
-      existing.lastInteraction = new Date().toISOString();
+      existing.lastInteraction = inquiry.createdAt || new Date().toISOString();
       if (!existing.phone && inquiry.phone) existing.phone = inquiry.phone;
       if (!existing.country && inquiry.country) existing.country = inquiry.country;
+      changedCustomer = existing;
     } else {
-      customers.unshift({
-        id: `cust-${Date.now()}`,
+      changedCustomer = {
+        id: createUniqueId('cust'),
         name: inquiry.customerName,
         email: inquiry.email,
         phone: inquiry.phone,
         country: inquiry.country,
         totalInquiries: 1,
         confirmedBookings: 0,
-        lastInteraction: new Date().toISOString(),
+        lastInteraction: inquiry.createdAt || new Date().toISOString(),
         notes: `First inquiry on ${new Date().toLocaleDateString()} for ${inquiry.experienceTitle}`,
-        createdAt: new Date().toISOString(),
-      });
+        createdAt: inquiry.createdAt || new Date().toISOString(),
+      };
+      customers.unshift(changedCustomer);
     }
     saveCollection(STORAGE_KEYS.CUSTOMERS, customers);
     notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
+    if (adminCloudMode) {
+      reconciledInquiryIds.add(inquiry.id);
+      writeCloudDoc('customers', changedCustomer.id, toFirestoreCustomer(changedCustomer));
+    }
   },
 
   incrementCustomerBookings(email: string) {
-    const customers = this.getCustomers();
+    const customers = [...this.getCustomers()];
     const existing = customers.find((c) => c.email.toLowerCase() === email.toLowerCase());
     if (existing) {
       existing.confirmedBookings += 1;
       existing.lastInteraction = new Date().toISOString();
       saveCollection(STORAGE_KEYS.CUSTOMERS, customers);
       notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
+      if (adminCloudMode) {
+        writeCloudDoc('customers', existing.id, toFirestoreCustomer(existing));
+      }
     }
   },
 
   updateCustomerNotes(id: string, notes: string): Customer | null {
-    const customers = this.getCustomers();
+    const customers = [...this.getCustomers()];
     const target = customers.find((c) => c.id === id);
     if (!target) return null;
     target.notes = notes;
     saveCollection(STORAGE_KEYS.CUSTOMERS, customers);
     notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
+    if (adminCloudMode) {
+      writeCloudDoc('customers', id, toFirestoreCustomer(target));
+    }
     return target;
   },
 
   // Promotions
   getPromotions(): Promotion[] {
-    return loadCollection<Promotion[]>(STORAGE_KEYS.PROMOTIONS) || INITIAL_PROMOTIONS;
+    const loaded = loadCollection<Promotion[]>(STORAGE_KEYS.PROMOTIONS);
+    return Array.isArray(loaded) ? loaded : INITIAL_PROMOTIONS;
   },
 
   getActivePromotions(): Promotion[] {
@@ -1352,27 +2052,34 @@ export const DataService = {
   },
 
   createPromotion(promo: Omit<Promotion, 'id' | 'createdAt'>): Promotion {
-    const list = this.getPromotions();
+    const list = [...this.getPromotions()];
+    const id = createUniqueId('promo');
     const newPromo: Promotion = {
       ...promo,
-      id: `promo-${Date.now()}`,
+      id,
       createdAt: new Date().toISOString(),
     };
     list.unshift(newPromo);
     saveCollection(STORAGE_KEYS.PROMOTIONS, list);
     notifyListeners(STORAGE_KEYS.PROMOTIONS, list);
+    if (adminCloudMode) {
+      writeCloudDoc('promotions', id, toFirestorePromotion(newPromo));
+    }
     this.logActivity('Promotion Created', `Created campaign "${newPromo.title}"`);
     return newPromo;
   },
 
   updatePromotion(id: string, updates: Partial<Promotion>): Promotion | null {
-    const list = this.getPromotions();
+    const list = [...this.getPromotions()];
     const index = list.findIndex((p) => p.id === id);
     if (index === -1) return null;
     const updated: Promotion = { ...list[index], ...updates };
     list[index] = updated;
     saveCollection(STORAGE_KEYS.PROMOTIONS, list);
     notifyListeners(STORAGE_KEYS.PROMOTIONS, list);
+    if (adminCloudMode) {
+      writeCloudDoc('promotions', id, toFirestorePromotion(updated));
+    }
     this.logActivity('Promotion Updated', `Updated campaign "${updated.title}"`);
     return updated;
   },
@@ -1380,6 +2087,9 @@ export const DataService = {
   // Coupons
   getCoupons(): Coupon[] {
     const loaded = loadCollection<Coupon[]>(STORAGE_KEYS.COUPONS);
+    if (cloudSeedKnown) {
+      return Array.isArray(loaded) ? loaded : [];
+    }
     return Array.isArray(loaded) && loaded.length > 0 ? loaded : INITIAL_COUPONS;
   },
 
@@ -1388,47 +2098,61 @@ export const DataService = {
   },
 
   createCoupon(coupon: Omit<Coupon, 'id' | 'usedCount'>): Coupon {
-    const list = this.getCoupons();
+    const list = [...this.getCoupons()];
+    const id = createUniqueId('cpn');
     const newCoupon: Coupon = {
       ...coupon,
       code: coupon.code.trim().toUpperCase(),
-      id: `cpn-${Date.now()}`,
+      id,
       usedCount: 0,
     };
     list.unshift(newCoupon);
     saveCollection(STORAGE_KEYS.COUPONS, list);
     notifyListeners(STORAGE_KEYS.COUPONS, list);
+    if (adminCloudMode) {
+      writeCloudDoc('coupons', id, toFirestoreCoupon(newCoupon));
+    }
     this.logActivity('Promo Code Created', `Created voucher code "${newCoupon.code}"`);
     return newCoupon;
   },
 
   updateCoupon(id: string, updates: Partial<Coupon>): Coupon | null {
-    const list = this.getCoupons();
+    const list = [...this.getCoupons()];
     const index = list.findIndex((c) => c.id === id);
     if (index === -1) return null;
     const updated: Coupon = { ...list[index], ...updates };
     list[index] = updated;
     saveCollection(STORAGE_KEYS.COUPONS, list);
     notifyListeners(STORAGE_KEYS.COUPONS, list);
+    if (adminCloudMode) {
+      writeCloudDoc('coupons', id, toFirestoreCoupon(updated));
+    }
     this.logActivity('Promo Code Updated', `Updated voucher code "${updated.code}" (${updated.active ? 'Active' : 'Paused'})`);
     return updated;
   },
 
   incrementCouponUsage(code: string) {
-    const list = this.getCoupons();
+    const list = [...this.getCoupons()];
     const index = list.findIndex((c) => c.code.toUpperCase() === code.trim().toUpperCase());
     if (index === -1) return;
-    list[index] = {
+    const updated = {
       ...list[index],
       usedCount: list[index].usedCount + 1,
     };
+    list[index] = updated;
     saveCollection(STORAGE_KEYS.COUPONS, list);
     notifyListeners(STORAGE_KEYS.COUPONS, list);
+    if (adminCloudMode && db) {
+      updateDoc(doc(db, 'coupons', updated.id), { usedCount: updated.usedCount }).catch(() => {
+        // Coupon updates require admin privileges in firestore.rules
+      });
+    }
   },
 
   // Quizzes & Interactive Mini-Game
   getQuizzes(): QuizQuestion[] {
-    return loadCollection<QuizQuestion[]>(STORAGE_KEYS.QUIZZES) || INITIAL_QUIZ_QUESTIONS;
+    const loaded = loadCollection<QuizQuestion[]>(STORAGE_KEYS.QUIZZES);
+    return Array.isArray(loaded) ? loaded : INITIAL_QUIZ_QUESTIONS;
   },
 
   getActiveQuizzes(): QuizQuestion[] {
@@ -1440,27 +2164,35 @@ export const DataService = {
   },
 
   createQuizQuestion(q: Omit<QuizQuestion, 'id'>): QuizQuestion {
-    const list = this.getQuizzes();
+    const list = [...this.getQuizzes()];
+    const id = createUniqueId('quiz');
     const newQ: QuizQuestion = {
       ...q,
-      id: `quiz-${Date.now()}`,
+      id,
     };
     list.push(newQ);
     saveCollection(STORAGE_KEYS.QUIZZES, list);
     notifyListeners(STORAGE_KEYS.QUIZZES, list);
+    if (adminCloudMode) {
+      writeCloudDoc('quizzes', id, toFirestoreQuiz(newQ));
+    }
     this.logActivity('Quiz Question Added', `Added question "${newQ.question}"`);
     return newQ;
   },
 
   updateQuizQuestion(id: string, updates: Partial<QuizQuestion>): QuizQuestion | null {
-    const list = this.getQuizzes();
+    const list = [...this.getQuizzes()];
     const index = list.findIndex((q) => q.id === id);
     if (index === -1) return null;
-    list[index] = { ...list[index], ...updates };
+    const updated = { ...list[index], ...updates };
+    list[index] = updated;
     saveCollection(STORAGE_KEYS.QUIZZES, list);
     notifyListeners(STORAGE_KEYS.QUIZZES, list);
-    this.logActivity('Quiz Question Updated', `Updated question "${list[index].question}"`);
-    return list[index];
+    if (adminCloudMode) {
+      writeCloudDoc('quizzes', id, toFirestoreQuiz(updated));
+    }
+    this.logActivity('Quiz Question Updated', `Updated question "${updated.question}"`);
+    return updated;
   },
 
   deleteQuizQuestion(id: string): boolean {
@@ -1470,6 +2202,9 @@ export const DataService = {
     if (filtered.length !== list.length) {
       saveCollection(STORAGE_KEYS.QUIZZES, filtered);
       notifyListeners(STORAGE_KEYS.QUIZZES, filtered);
+      if (adminCloudMode) {
+        deleteCloudDoc('quizzes', id);
+      }
       this.logActivity('Quiz Question Deleted', `Removed question "${target?.question || id}"`);
       return true;
     }
@@ -1478,7 +2213,11 @@ export const DataService = {
 
   // Website Content CMS
   getWebsiteContent(): WebsiteContent {
-    return loadCollection<WebsiteContent>(STORAGE_KEYS.WEBSITE_CONTENT) || INITIAL_WEBSITE_CONTENT;
+    const loaded = loadCollection<WebsiteContent>(STORAGE_KEYS.WEBSITE_CONTENT);
+    if (loaded && typeof loaded === 'object' && 'heroHeadline' in loaded) {
+      return loaded;
+    }
+    return INITIAL_WEBSITE_CONTENT;
   },
 
   subscribeWebsiteContent(callback: (content: WebsiteContent) => void): () => void {
@@ -1501,6 +2240,9 @@ export const DataService = {
     };
     saveCollection(STORAGE_KEYS.WEBSITE_CONTENT, updated);
     notifyListeners(STORAGE_KEYS.WEBSITE_CONTENT, updated);
+    if (adminCloudMode) {
+      writeCloudDoc('websiteContent', 'main', toFirestoreWebsiteContent(updated));
+    }
 
     // Keep shared contact channels synced with BusinessSettings
     const currentSettings = this.getSettings();
@@ -1513,6 +2255,9 @@ export const DataService = {
     };
     saveCollection(STORAGE_KEYS.SETTINGS, syncedSettings);
     notifyListeners(STORAGE_KEYS.SETTINGS, syncedSettings);
+    if (adminCloudMode) {
+      writeCloudDoc('settings', 'main', toFirestoreBusinessSettings(syncedSettings));
+    }
 
     this.logActivity('Website CMS Updated', 'Homepage content & copy updated');
     return updated;
@@ -1520,7 +2265,11 @@ export const DataService = {
 
   // Business Settings
   getSettings(): BusinessSettings {
-    return loadCollection<BusinessSettings>(STORAGE_KEYS.SETTINGS) || INITIAL_SETTINGS;
+    const loaded = loadCollection<BusinessSettings>(STORAGE_KEYS.SETTINGS);
+    if (loaded && typeof loaded === 'object' && 'businessName' in loaded) {
+      return loaded;
+    }
+    return INITIAL_SETTINGS;
   },
 
   subscribeSettings(callback: (settings: BusinessSettings) => void): () => void {
@@ -1532,6 +2281,9 @@ export const DataService = {
     const updated = { ...current, ...updates };
     saveCollection(STORAGE_KEYS.SETTINGS, updated);
     notifyListeners(STORAGE_KEYS.SETTINGS, updated);
+    if (adminCloudMode) {
+      writeCloudDoc('settings', 'main', toFirestoreBusinessSettings(updated));
+    }
 
     // Keep shared contact channels synced with WebsiteContent
     const currentContent = this.getWebsiteContent();
@@ -1544,6 +2296,9 @@ export const DataService = {
     };
     saveCollection(STORAGE_KEYS.WEBSITE_CONTENT, syncedContent);
     notifyListeners(STORAGE_KEYS.WEBSITE_CONTENT, syncedContent);
+    if (adminCloudMode) {
+      writeCloudDoc('websiteContent', 'main', toFirestoreWebsiteContent(syncedContent));
+    }
 
     this.logActivity('Settings Updated', 'Platform business settings updated');
     return updated;
@@ -1551,9 +2306,10 @@ export const DataService = {
 
   // Analytics & Activity Logs
   recordEvent(type: AnalyticsEvent['type'], path?: string, metadata?: Record<string, any>) {
-    const events = loadCollection<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS) || [];
+    const events = [...(loadCollection<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS) || [])];
+    const id = createUniqueId('ev');
     const newEvent: AnalyticsEvent = {
-      id: `ev-${Date.now()}`,
+      id,
       type,
       path,
       metadata,
@@ -1563,6 +2319,11 @@ export const DataService = {
     if (events.length > 500) events.shift();
     saveCollection(STORAGE_KEYS.ANALYTICS, events);
     notifyListeners(STORAGE_KEYS.ANALYTICS, events);
+
+    // Analytics creation is allowed for both Visitor & Admin in firestore.rules
+    if (isFirebaseConfigured() && db) {
+      writeCloudDoc('analyticsEvents', id, toFirestoreAnalyticsEvent(newEvent));
+    }
   },
 
   getAnalyticsEvents(): AnalyticsEvent[] {
@@ -1573,18 +2334,29 @@ export const DataService = {
     return subscribeTo<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS, callback);
   },
 
-  logActivity(action: string, details: string, adminUser = 'Admin') {
-    const logs = loadCollection<ActivityLog[]>(STORAGE_KEYS.ACTIVITY_LOGS) || [];
-    logs.unshift({
-      id: `log-${Date.now()}`,
+  logActivity(action: string, details: string, adminUser?: string) {
+    const resolvedUser =
+      adminUser ||
+      auth?.currentUser?.displayName ||
+      auth?.currentUser?.email ||
+      'Admin';
+    const logs = [...(loadCollection<ActivityLog[]>(STORAGE_KEYS.ACTIVITY_LOGS) || [])];
+    const id = createUniqueId('log');
+    const entry: ActivityLog = {
+      id,
       action,
       details,
-      adminUser,
+      adminUser: resolvedUser,
       timestamp: new Date().toISOString(),
-    });
+    };
+    logs.unshift(entry);
     if (logs.length > 100) logs.pop();
     saveCollection(STORAGE_KEYS.ACTIVITY_LOGS, logs);
     notifyListeners(STORAGE_KEYS.ACTIVITY_LOGS, logs);
+
+    if (adminCloudMode) {
+      writeCloudDoc('activityLogs', id, toFirestoreActivityLog(entry));
+    }
   },
 
   getActivityLogs(): ActivityLog[] {
@@ -1595,7 +2367,7 @@ export const DataService = {
     return subscribeTo<ActivityLog[]>(STORAGE_KEYS.ACTIVITY_LOGS, callback);
   },
 
-  // Reset to initial demo data
+  // Reset to initial demo data across local cache and cloud Firestore
   resetDemoData() {
     const initialEvents: AnalyticsEvent[] = [
       { id: 'ev-1', type: 'page_view', path: '/', timestamp: new Date(Date.now() - 3600000 * 24).toISOString() },
@@ -1604,10 +2376,10 @@ export const DataService = {
     ];
     const initialLogs: ActivityLog[] = [
       {
-        id: `log-${Date.now()}`,
+        id: createUniqueId('log'),
         action: 'Database Reset',
         details: 'Demo database restored to default seed state',
-        adminUser: 'Admin',
+        adminUser: auth?.currentUser?.displayName || auth?.currentUser?.email || 'Admin',
         timestamp: new Date().toISOString(),
       },
     ];
@@ -1624,7 +2396,7 @@ export const DataService = {
     saveCollection(STORAGE_KEYS.ANALYTICS, initialEvents);
     saveCollection(STORAGE_KEYS.ACTIVITY_LOGS, initialLogs);
 
-    // Notify all subscribers across tabs & panels
+    // Notify all local subscribers across tabs & panels
     notifyListeners(STORAGE_KEYS.DESTINATIONS, INITIAL_DESTINATIONS);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, INITIAL_EXPERIENCES);
     notifyListeners(STORAGE_KEYS.PROMOTIONS, INITIAL_PROMOTIONS);
@@ -1636,5 +2408,54 @@ export const DataService = {
     notifyListeners(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
     notifyListeners(STORAGE_KEYS.ANALYTICS, initialEvents);
     notifyListeners(STORAGE_KEYS.ACTIVITY_LOGS, initialLogs);
+
+    // Push reset cleanly to Firestore so every connected device syncs immediately
+    if (adminCloudMode && isFirebaseConfigured() && db) {
+      const firestoreDb = db;
+      (async () => {
+        try {
+          const collectionDefaults: Array<{ name: string; docs: { id: string }[] }> = [
+            { name: 'destinations', docs: INITIAL_DESTINATIONS },
+            { name: 'experiences', docs: INITIAL_EXPERIENCES },
+            { name: 'promotions', docs: INITIAL_PROMOTIONS },
+            { name: 'coupons', docs: INITIAL_COUPONS },
+            { name: 'quizzes', docs: INITIAL_QUIZ_QUESTIONS },
+            { name: 'inquiries', docs: INITIAL_INQUIRIES },
+            { name: 'customers', docs: INITIAL_CUSTOMERS },
+            { name: 'analyticsEvents', docs: initialEvents },
+            { name: 'activityLogs', docs: initialLogs },
+          ];
+
+          const batch = writeBatch(firestoreDb);
+
+          for (const col of collectionDefaults) {
+            const existingSnap = await getDocs(collection(firestoreDb, col.name));
+            const keepIds = new Set(col.docs.map((item) => item.id));
+            existingSnap.docs.forEach((d) => {
+              if (!keepIds.has(d.id)) {
+                batch.delete(d.ref);
+              }
+            });
+          }
+
+          INITIAL_DESTINATIONS.forEach((d) => batch.set(doc(firestoreDb, 'destinations', d.id), toFirestoreDestination(d)));
+          INITIAL_EXPERIENCES.forEach((e) => batch.set(doc(firestoreDb, 'experiences', e.id), toFirestoreExperience(e)));
+          INITIAL_PROMOTIONS.forEach((p) => batch.set(doc(firestoreDb, 'promotions', p.id), toFirestorePromotion(p)));
+          INITIAL_COUPONS.forEach((c) => batch.set(doc(firestoreDb, 'coupons', c.id), toFirestoreCoupon(c)));
+          INITIAL_QUIZ_QUESTIONS.forEach((q) => batch.set(doc(firestoreDb, 'quizzes', q.id), toFirestoreQuiz(q)));
+          INITIAL_INQUIRIES.forEach((i) => batch.set(doc(firestoreDb, 'inquiries', i.id), toFirestoreInquiry(i)));
+          INITIAL_CUSTOMERS.forEach((c) => batch.set(doc(firestoreDb, 'customers', c.id), toFirestoreCustomer(c)));
+          initialEvents.forEach((e) => batch.set(doc(firestoreDb, 'analyticsEvents', e.id), toFirestoreAnalyticsEvent(e)));
+          initialLogs.forEach((l) => batch.set(doc(firestoreDb, 'activityLogs', l.id), toFirestoreActivityLog(l)));
+
+          batch.set(doc(firestoreDb, 'websiteContent', 'main'), toFirestoreWebsiteContent(INITIAL_WEBSITE_CONTENT));
+          batch.set(doc(firestoreDb, 'settings', 'main'), toFirestoreBusinessSettings(INITIAL_SETTINGS));
+
+          await batch.commit();
+        } catch (err) {
+          handleFirestoreError(err, OperationType.WRITE, 'resetDemoData');
+        }
+      })();
+    }
   },
 };
