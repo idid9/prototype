@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { QuizQuestion } from '../../../types';
 import { DataService } from '../../../services/dataService';
-import { Sparkles, Edit2, Plus, CheckCircle, X, Trophy } from 'lucide-react';
+import { GlassContainer } from '../../glass/GlassContainer';
+import { Edit2, Plus, CheckCircle, X, Trash2 } from 'lucide-react';
 
 interface InteractiveTabProps {
   quizzes: QuizQuestion[];
@@ -10,6 +12,7 @@ interface InteractiveTabProps {
 
 export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
   const { isRtl } = useLanguage();
+  const { currentAccentHex } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -20,11 +23,35 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
   const [option2, setOption2] = useState('');
   const [option3, setOption3] = useState('');
   const [option4, setOption4] = useState('');
+  const [option1Ar, setOption1Ar] = useState('');
+  const [option2Ar, setOption2Ar] = useState('');
+  const [option3Ar, setOption3Ar] = useState('');
+  const [option4Ar, setOption4Ar] = useState('');
   const [correctIndex, setCorrectIndex] = useState(0);
   const [explanation, setExplanation] = useState('');
   const [explanationAr, setExplanationAr] = useState('');
   const [category, setCategory] = useState('Heritage & History');
   const [active, setActive] = useState(true);
+
+  const handleOpenCreate = () => {
+    setEditingId(null);
+    setQuestion('');
+    setQuestionAr('');
+    setOption1('');
+    setOption2('');
+    setOption3('');
+    setOption4('');
+    setOption1Ar('');
+    setOption2Ar('');
+    setOption3Ar('');
+    setOption4Ar('');
+    setCorrectIndex(0);
+    setExplanation('');
+    setExplanationAr('');
+    setCategory('Heritage & History');
+    setActive(true);
+    setIsModalOpen(true);
+  };
 
   const handleOpenEdit = (q: QuizQuestion) => {
     setEditingId(q.id);
@@ -34,6 +61,10 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
     setOption2(q.options[1] || '');
     setOption3(q.options[2] || '');
     setOption4(q.options[3] || '');
+    setOption1Ar(q.optionsAr?.[0] || '');
+    setOption2Ar(q.optionsAr?.[1] || '');
+    setOption3Ar(q.optionsAr?.[2] || '');
+    setOption4Ar(q.optionsAr?.[3] || '');
     setCorrectIndex(q.correctIndex);
     setExplanation(q.explanation);
     setExplanationAr(q.explanationAr);
@@ -46,24 +77,42 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
     DataService.updateQuizQuestion(q.id, { active: !q.active });
   };
 
+  const handleDelete = (id: string) => {
+    DataService.deleteQuizQuestion(id);
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim()) return;
 
-    const options = [option1.trim(), option2.trim(), option3.trim(), option4.trim()].filter(Boolean);
+    const rawOptions = [option1.trim(), option2.trim(), option3.trim(), option4.trim()];
+    const rawOptionsAr = [option1Ar.trim(), option2Ar.trim(), option3Ar.trim(), option4Ar.trim()];
+    const paired = rawOptions
+      .map((opt, i) => ({ en: opt, ar: rawOptionsAr[i] || opt }))
+      .filter((item) => Boolean(item.en));
+
+    if (paired.length < 2) return;
+
+    const options = paired.map((p) => p.en);
+    const optionsAr = paired.map((p) => p.ar);
+    const safeCorrectIndex = Math.min(correctIndex, options.length - 1);
+
+    const payload = {
+      question: question.trim(),
+      questionAr: questionAr.trim() || question.trim(),
+      options,
+      optionsAr,
+      correctIndex: safeCorrectIndex,
+      explanation: explanation.trim(),
+      explanationAr: explanationAr.trim() || explanation.trim(),
+      category: category.trim() || 'Heritage & History',
+      active,
+    };
 
     if (editingId) {
-      DataService.updateQuizQuestion(editingId, {
-        question: question.trim(),
-        questionAr: questionAr.trim() || question.trim(),
-        options,
-        optionsAr: options, // fallback to same choices if unstated
-        correctIndex,
-        explanation: explanation.trim(),
-        explanationAr: explanationAr.trim() || explanation.trim(),
-        category,
-        active,
-      });
+      DataService.updateQuizQuestion(editingId, payload);
+    } else {
+      DataService.createQuizQuestion(payload);
     }
 
     setIsModalOpen(false);
@@ -74,39 +123,51 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#123B32]">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
             Interactive Quiz & Mini-Game Questions
           </h2>
-          <p className="text-xs text-[#777D75]">
+          <p className="text-xs text-[var(--tf-muted)]">
             Manage gamified destination questions and matcher heuristics shown on the visitor portal.
           </p>
         </div>
+
+        <button
+          onClick={handleOpenCreate}
+          style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+          className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Quiz Question</span>
+        </button>
       </div>
 
       {/* Questions List */}
       <div className="space-y-4">
         {quizzes.map((q, idx) => (
-          <div
+          <GlassContainer
             key={q.id}
-            className="bg-white border border-[#D9C29A]/50 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-start justify-between gap-4"
+            delay={idx * 0.04}
+            className="p-5 flex flex-col md:flex-row md:items-start justify-between gap-4"
           >
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-bold text-[#123B32]">Q{idx + 1}.</span>
-                <span className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#D9C29A]/40 text-[#777D75] text-[11px]">
+                <span className="font-bold text-[var(--tf-heading)]">Q{idx + 1}.</span>
+                <span className="px-2 py-0.5 rounded bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-muted)] text-[11px]">
                   {q.category}
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    q.active ? 'bg-emerald-50 text-emerald-800' : 'bg-neutral-100 text-neutral-600'
+                    q.active
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : 'bg-neutral-500/15 text-[var(--tf-muted)]'
                   }`}
                 >
                   {q.active ? 'ACTIVE' : 'INACTIVE'}
                 </span>
               </div>
 
-              <h3 className="font-serif text-base font-bold text-[#123B32]">{q.question}</h3>
-              <p className="text-xs text-[#777D75]" dir="rtl">
+              <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">{q.question}</h3>
+              <p className="text-xs text-[var(--tf-muted)]" dir="rtl">
                 {q.questionAr}
               </p>
 
@@ -117,21 +178,21 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                     key={i}
                     className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
                       i === q.correctIndex
-                        ? 'border-emerald-500 bg-emerald-50/70 text-emerald-900 font-bold'
-                        : 'border-[#D9C29A]/30 bg-[#FAF8F5] text-[#202923]'
+                        ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300 font-bold'
+                        : 'border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-text)]'
                     }`}
                   >
                     <span>{opt}</span>
                     {i === q.correctIndex && (
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     )}
                   </div>
                 ))}
               </div>
 
               {/* Explanation */}
-              <div className="p-3 bg-[#D9C29A]/15 border border-[#D9C29A]/30 rounded-xl text-xs text-[#123B32] mt-2">
-                <span className="font-bold">Explanation: </span>
+              <div className="p-3 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl text-xs text-[var(--tf-text)] mt-2">
+                <span className="font-bold text-[var(--tf-heading)]">Explanation: </span>
                 <span>{q.explanation}</span>
               </div>
             </div>
@@ -140,29 +201,38 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
             <div className="flex md:flex-col items-center gap-2 shrink-0">
               <button
                 onClick={() => handleToggleActive(q)}
-                className="py-1.5 px-3 bg-[#FAF8F5] hover:bg-[#D9C29A]/20 border border-[#D9C29A]/40 rounded-xl text-xs font-semibold text-[#123B32] cursor-pointer"
+                className="py-1.5 px-3 bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-xl text-xs font-semibold text-[var(--tf-heading)] cursor-pointer"
               >
                 {q.active ? 'Deactivate' : 'Activate'}
               </button>
-              <button
-                onClick={() => handleOpenEdit(q)}
-                className="p-2 text-[#123B32] hover:bg-[#D9C29A]/20 rounded-xl border border-[#D9C29A]/40 cursor-pointer"
-                title="Edit Question"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handleOpenEdit(q)}
+                  className="p-2 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl border border-[var(--tf-border)] cursor-pointer"
+                  title="Edit Question"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(q.id)}
+                  className="p-2 text-red-400 hover:bg-red-500/15 rounded-xl border border-red-400/40 cursor-pointer"
+                  title="Delete Question"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          </GlassContainer>
         ))}
       </div>
 
-      {/* EDIT MODAL */}
+      {/* CREATE / EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
               <h3 className="font-serif text-xl font-bold text-[#123B32]">
-                Edit Quiz Question
+                {editingId ? 'Edit Quiz Question' : 'Create Quiz Question'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-[#777D75]">
                 <X className="w-5 h-5" />
@@ -170,6 +240,32 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                    Category
+                  </label>
+                  <input
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="e.g. Heritage & History"
+                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  />
+                </div>
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[#123B32] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={(e) => setActive(e.target.checked)}
+                      className="rounded text-[#123B32]"
+                    />
+                    <span>Active on Visitor Portal Quiz</span>
+                  </label>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-[#123B32] mb-1">
                   Question (English) *
@@ -202,40 +298,67 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                   Multiple Choice Options (Select radio for correct answer):
                 </label>
                 {[
-                  { val: option1, set: setOption1, idx: 0 },
-                  { val: option2, set: setOption2, idx: 1 },
-                  { val: option3, set: setOption3, idx: 2 },
-                  { val: option4, set: setOption4, idx: 3 },
+                  { val: option1, set: setOption1, valAr: option1Ar, setAr: setOption1Ar, idx: 0 },
+                  { val: option2, set: setOption2, valAr: option2Ar, setAr: setOption2Ar, idx: 1 },
+                  { val: option3, set: setOption3, valAr: option3Ar, setAr: setOption3Ar, idx: 2 },
+                  { val: option4, set: setOption4, valAr: option4Ar, setAr: setOption4Ar, idx: 3 },
                 ].map((item) => (
-                  <div key={item.idx} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="correctIdxRadio"
-                      checked={correctIndex === item.idx}
-                      onChange={() => setCorrectIndex(item.idx)}
-                      className="text-[#123B32]"
-                    />
-                    <input
-                      type="text"
-                      placeholder={`Option ${item.idx + 1}`}
-                      value={item.val}
-                      onChange={(e) => item.set(e.target.value)}
-                      className="flex-1 text-xs p-2 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-lg"
-                    />
+                  <div key={item.idx} className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2">
+                    <div className="sm:col-span-6 flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="correctIdxRadio"
+                        checked={correctIndex === item.idx}
+                        onChange={() => setCorrectIndex(item.idx)}
+                        className="text-[#123B32]"
+                      />
+                      <input
+                        type="text"
+                        required={item.idx < 2}
+                        placeholder={`Option ${item.idx + 1} (EN)`}
+                        value={item.val}
+                        onChange={(e) => item.set(e.target.value)}
+                        className="flex-1 text-xs p-2 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-lg"
+                      />
+                    </div>
+                    <div className="sm:col-span-6">
+                      <input
+                        type="text"
+                        dir="rtl"
+                        placeholder={`الخيار ${item.idx + 1} (AR)`}
+                        value={item.valAr}
+                        onChange={(e) => item.setAr(e.target.value)}
+                        className="w-full text-xs p-2 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-lg"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                  Explanation / Historical Fact
-                </label>
-                <textarea
-                  rows={2}
-                  value={explanation}
-                  onChange={(e) => setExplanation(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                    Explanation / Historical Fact (EN)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={explanation}
+                    onChange={(e) => setExplanation(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                    Explanation (AR)
+                  </label>
+                  <textarea
+                    rows={2}
+                    dir="rtl"
+                    value={explanationAr}
+                    onChange={(e) => setExplanationAr(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  />
+                </div>
               </div>
 
               <div className="pt-4 border-t border-[#D9C29A]/40 flex justify-end gap-3">
@@ -248,9 +371,9 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                 </button>
                 <button
                   type="submit"
-                  className="py-2 px-5 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold"
+                  className="py-2 px-5 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
                 >
-                  Save Question
+                  {editingId ? 'Save Question' : 'Create Question'}
                 </button>
               </div>
             </form>

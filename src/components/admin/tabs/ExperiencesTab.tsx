@@ -3,6 +3,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { Experience, Destination, ExperienceCategory, ExperienceStatus } from '../../../types';
 import { DataService, IMAGES } from '../../../services/dataService';
+import { GlassContainer } from '../../glass/GlassContainer';
 import {
   Plus,
   Edit2,
@@ -29,7 +30,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
   onPreviewExperience,
 }) => {
   const { language, isRtl } = useLanguage();
-  const { getGlassyCardStyle, currentAccentHex } = useTheme();
+  const { currentAccentHex } = useTheme();
   const isArabic = language === 'ar';
 
   const [searchFilter, setSearchFilter] = useState('');
@@ -217,17 +218,18 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
       {/* Action Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#123B32]">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
             Experience Catalog & Offerings
           </h2>
-          <p className="text-xs text-[#777D75]">
+          <p className="text-xs text-[var(--tf-muted)]">
             Manage published packages, draft itineraries, pricing, and live public visibility.
           </p>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="py-2.5 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
+          style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+          className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Experience</span>
@@ -235,19 +237,16 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div
-        className="rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 transition-all duration-300"
-        style={getGlassyCardStyle()}
-      >
+      <GlassContainer className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Search */}
         <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-[#777D75] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[var(--tf-muted)] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search by title, destination, category..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-white/70 border border-[#D9C29A]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
           />
         </div>
 
@@ -256,7 +255,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs py-2 px-3 bg-white/70 border border-[#D9C29A]/40 rounded-xl text-[#123B32] font-semibold cursor-pointer"
+            className="text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] font-semibold cursor-pointer"
           >
             <option value="all">All Statuses ({experiences.length})</option>
             <option value="PUBLISHED">Published</option>
@@ -267,7 +266,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
           <select
             value={destinationFilter}
             onChange={(e) => setDestinationFilter(e.target.value)}
-            className="text-xs py-2 px-3 bg-white/70 border border-[#D9C29A]/40 rounded-xl text-[#123B32] font-semibold cursor-pointer"
+            className="text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] font-semibold cursor-pointer"
           >
             <option value="all">All Destinations</option>
             {destinations.map((d) => (
@@ -277,17 +276,14 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
             ))}
           </select>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Experiences Table */}
-      <div
-        className="rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
-        style={getGlassyCardStyle()}
-      >
+      <GlassContainer delay={0.05} className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead>
-              <tr className="bg-[#FAF8F5] border-b border-[#D9C29A]/40 text-[#777D75] uppercase tracking-wider">
+              <tr className="bg-[var(--tf-table-head)] border-b border-[var(--tf-border)] text-[var(--tf-muted)] uppercase tracking-wider">
                 <th className="py-3 px-4 font-semibold text-start">Experience</th>
                 <th className="py-3 px-4 font-semibold text-start">Destination</th>
                 <th className="py-3 px-4 font-semibold text-start">Category</th>
@@ -297,60 +293,60 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                 <th className="py-3 px-4 font-semibold text-end">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D9C29A]/20">
+            <tbody className="divide-y divide-[var(--tf-border)]">
               {filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#777D75]">
+                  <td colSpan={7} className="py-12 text-center text-[var(--tf-muted)]">
                     No experiences found matching current filters.
                   </td>
                 </tr>
               ) : (
                 filteredList.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-[#FAF8F5] transition-colors">
+                  <tr key={exp.id} className="hover:bg-[var(--tf-surface-hover)] transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <img
                           src={exp.coverImage}
                           alt={exp.title}
-                          className="w-12 h-10 object-cover rounded-lg shrink-0 border border-[#D9C29A]/40"
+                          className="w-12 h-10 object-cover rounded-lg shrink-0 border border-[var(--tf-border)]"
                         />
                         <div>
-                          <div className="font-bold text-[#123B32] line-clamp-1 max-w-xs">
+                          <div className="font-bold text-[var(--tf-heading)] line-clamp-1 max-w-xs">
                             {exp.title}
                           </div>
                           {exp.featured && (
-                            <span className="text-[10px] font-bold text-[#C6A46B]">
+                            <span className="text-[10px] font-bold" style={{ color: currentAccentHex }}>
                               ★ Featured Package
                             </span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-[#202923] font-medium">
+                    <td className="py-3 px-4 text-[var(--tf-text)] font-medium">
                       {exp.destinationName}
                     </td>
-                    <td className="py-3 px-4 text-[#777D75] whitespace-nowrap">
+                    <td className="py-3 px-4 text-[var(--tf-muted)] whitespace-nowrap">
                       {exp.category}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#123B32] tabular-nums">
+                    <td className="py-3 px-4 font-mono font-bold text-[var(--tf-heading)] tabular-nums">
                       {exp.price} SAR
                     </td>
-                    <td className="py-3 px-4 text-[#777D75] whitespace-nowrap">
+                    <td className="py-3 px-4 text-[var(--tf-muted)] whitespace-nowrap">
                       {exp.duration}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       {exp.status === 'PUBLISHED' && (
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-400/35">
                           PUBLISHED
                         </span>
                       )}
                       {exp.status === 'DRAFT' && (
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-amber-500/15 text-amber-400 border border-amber-400/35">
                           DRAFT (Hidden)
                         </span>
                       )}
                       {exp.status === 'ARCHIVED' && (
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-neutral-100 text-neutral-600 border border-neutral-300">
+                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-neutral-500/15 text-[var(--tf-muted)] border border-[var(--tf-border)]">
                           ARCHIVED
                         </span>
                       )}
@@ -360,7 +356,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                         {onPreviewExperience && exp.status === 'PUBLISHED' && (
                           <button
                             onClick={() => onPreviewExperience(exp)}
-                            className="p-1.5 text-[#777D75] hover:text-[#123B32] rounded hover:bg-[#D9C29A]/20 transition-colors"
+                            className="p-1.5 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] rounded hover:bg-[var(--tf-surface-subtle)] transition-colors cursor-pointer"
                             title="Preview On Website"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -368,21 +364,21 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                         )}
                         <button
                           onClick={() => handleDuplicate(exp.id)}
-                          className="p-1.5 text-[#777D75] hover:text-[#123B32] rounded hover:bg-[#D9C29A]/20 transition-colors"
+                          className="p-1.5 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] rounded hover:bg-[var(--tf-surface-subtle)] transition-colors cursor-pointer"
                           title="Duplicate as Draft"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleOpenEdit(exp)}
-                          className="p-1.5 text-[#123B32] hover:text-[#1D5546] rounded hover:bg-[#D9C29A]/20 transition-colors"
+                          className="p-1.5 text-[var(--tf-heading)] rounded hover:bg-[var(--tf-surface-subtle)] transition-colors cursor-pointer"
                           title="Edit Experience"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setDeleteConfirmationId(exp.id)}
-                          className="p-1.5 text-red-600 hover:text-red-700 rounded hover:bg-red-50 transition-colors"
+                          className="p-1.5 text-red-400 hover:text-red-300 rounded hover:bg-red-500/15 transition-colors cursor-pointer"
                           title="Delete Experience"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -395,7 +391,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
             </tbody>
           </table>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* DELETE CONFIRMATION DIALOG */}
       {deleteConfirmationId && (

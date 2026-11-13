@@ -807,6 +807,39 @@ const INITIAL_SETTINGS: BusinessSettings = {
   enableWhatsAppNotifications: true,
 };
 
+const INITIAL_COUPONS: Coupon[] = [
+  {
+    id: 'cpn-1',
+    code: 'FOUNDING2026',
+    discountType: 'percentage',
+    discountAmount: 15,
+    expiryDate: '2026-12-31',
+    usageLimit: 200,
+    usedCount: 42,
+    active: true,
+  },
+  {
+    id: 'cpn-2',
+    code: 'ALULA_WINTER',
+    discountType: 'fixed',
+    discountAmount: 200,
+    expiryDate: '2026-12-31',
+    usageLimit: 150,
+    usedCount: 88,
+    active: true,
+  },
+  {
+    id: 'cpn-3',
+    code: 'REDSEA_VIP',
+    discountType: 'percentage',
+    discountAmount: 20,
+    expiryDate: '2026-08-31',
+    usageLimit: 50,
+    usedCount: 19,
+    active: false,
+  },
+];
+
 // Storage keys
 const STORAGE_KEYS = {
   EXPERIENCES: 'tourflow_experiences_v1',
@@ -814,6 +847,7 @@ const STORAGE_KEYS = {
   INQUIRIES: 'tourflow_inquiries_v1',
   CUSTOMERS: 'tourflow_customers_v1',
   PROMOTIONS: 'tourflow_promotions_v1',
+  COUPONS: 'tourflow_coupons_v1',
   QUIZZES: 'tourflow_quizzes_v1',
   WEBSITE_CONTENT: 'tourflow_website_content_v1',
   SETTINGS: 'tourflow_settings_v1',
@@ -835,7 +869,7 @@ try {
 type Listener<T> = (data: T) => void;
 const listeners: Record<string, Set<Listener<any>>> = {};
 
-function notifyListeners(collection: string, data: any) {
+function emitLocalListeners(collection: string, data: any) {
   if (listeners[collection]) {
     listeners[collection].forEach((listener) => {
       try {
@@ -845,6 +879,10 @@ function notifyListeners(collection: string, data: any) {
       }
     });
   }
+}
+
+function notifyListeners(collection: string, data: any) {
+  emitLocalListeners(collection, data);
   if (syncChannel) {
     try {
       syncChannel.postMessage({ collection, timestamp: Date.now() });
@@ -860,9 +898,24 @@ if (syncChannel) {
     const { collection } = event.data || {};
     if (collection && listeners[collection]) {
       const freshData = loadCollection(collection);
-      listeners[collection].forEach((listener) => listener(freshData));
+      emitLocalListeners(collection, freshData);
     }
   };
+}
+
+// Fallback cross-tab storage event listener
+if (typeof window !== 'undefined') {
+  const validKeys = new Set(Object.values(STORAGE_KEYS));
+  window.addEventListener('storage', (event) => {
+    if (event.key && validKeys.has(event.key) && event.newValue) {
+      try {
+        const parsed = JSON.parse(event.newValue);
+        emitLocalListeners(event.key, parsed);
+      } catch (e) {
+        console.warn('Storage sync parse warning:', e);
+      }
+    }
+  });
 }
 
 // Storage helpers
@@ -899,6 +952,9 @@ export function initializeRepository() {
   }
   if (!localStorage.getItem(STORAGE_KEYS.PROMOTIONS)) {
     saveCollection(STORAGE_KEYS.PROMOTIONS, INITIAL_PROMOTIONS);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.COUPONS)) {
+    saveCollection(STORAGE_KEYS.COUPONS, INITIAL_COUPONS);
   }
   if (!localStorage.getItem(STORAGE_KEYS.INQUIRIES)) {
     saveCollection(STORAGE_KEYS.INQUIRIES, INITIAL_INQUIRIES);
@@ -970,6 +1026,26 @@ export const DataService = {
     return subscribeTo<Experience[]>(STORAGE_KEYS.EXPERIENCES, callback);
   },
 
+  syncDestinationExperienceCounts(experiencesList?: Experience[]) {
+    const exps = experiencesList || this.getExperiences();
+    const dests = this.getDestinations();
+    let changed = false;
+    const updatedDests = dests.map((dest) => {
+      const publishedCount = exps.filter(
+        (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
+      ).length;
+      if (dest.experienceCount !== publishedCount) {
+        changed = true;
+        return { ...dest, experienceCount: publishedCount };
+      }
+      return dest;
+    });
+    if (changed) {
+      saveCollection(STORAGE_KEYS.DESTINATIONS, updatedDests);
+      notifyListeners(STORAGE_KEYS.DESTINATIONS, updatedDests);
+    }
+  },
+
   createExperience(exp: Omit<Experience, 'id' | 'createdAt' | 'updatedAt'>): Experience {
     const list = this.getExperiences();
     const id = `exp-${Date.now()}`;
@@ -982,6 +1058,7 @@ export const DataService = {
     list.unshift(newExp);
     saveCollection(STORAGE_KEYS.EXPERIENCES, list);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, list);
+    this.syncDestinationExperienceCounts(list);
     this.logActivity('Experience Created', `Created experience "${newExp.title}" (Status: ${newExp.status})`);
     return newExp;
   },
@@ -998,6 +1075,7 @@ export const DataService = {
     list[index] = updated;
     saveCollection(STORAGE_KEYS.EXPERIENCES, list);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, list);
+    this.syncDestinationExperienceCounts(list);
     this.logActivity('Experience Updated', `Updated "${updated.title}" (Status: ${updated.status})`);
     return updated;
   },
@@ -1009,6 +1087,7 @@ export const DataService = {
     if (filtered.length !== list.length) {
       saveCollection(STORAGE_KEYS.EXPERIENCES, filtered);
       notifyListeners(STORAGE_KEYS.EXPERIENCES, filtered);
+      this.syncDestinationExperienceCounts(filtered);
       this.logActivity('Experience Deleted', `Removed experience "${target?.title || id}"`);
       return true;
     }
@@ -1032,6 +1111,7 @@ export const DataService = {
     list.unshift(duplicated);
     saveCollection(STORAGE_KEYS.EXPERIENCES, list);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, list);
+    this.syncDestinationExperienceCounts(list);
     this.logActivity('Experience Duplicated', `Duplicated "${original.title}" as DRAFT`);
     return duplicated;
   },
@@ -1077,6 +1157,23 @@ export const DataService = {
     list[index] = updated;
     saveCollection(STORAGE_KEYS.DESTINATIONS, list);
     notifyListeners(STORAGE_KEYS.DESTINATIONS, list);
+
+    if (updates.name && updates.name !== list[index].name) {
+      const exps = this.getExperiences();
+      let expChanged = false;
+      const updatedExps = exps.map((e) => {
+        if (e.destinationId === id && e.destinationName !== updates.name) {
+          expChanged = true;
+          return { ...e, destinationName: updates.name! };
+        }
+        return e;
+      });
+      if (expChanged) {
+        saveCollection(STORAGE_KEYS.EXPERIENCES, updatedExps);
+        notifyListeners(STORAGE_KEYS.EXPERIENCES, updatedExps);
+      }
+    }
+
     this.logActivity('Destination Updated', `Updated destination "${updated.name}"`);
     return updated;
   },
@@ -1101,20 +1198,26 @@ export const DataService = {
     guests: number;
     message: string;
     estimatedValue?: number;
+    appliedCouponCode?: string;
   }): Inquiry {
     const list = this.getInquiries();
     const id = `INQ-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const { appliedCouponCode, ...inquiryFields } = data;
     const newInquiry: Inquiry = {
-      ...data,
+      ...inquiryFields,
       id,
       status: 'NEW',
-      internalNotes: [],
+      internalNotes: appliedCouponCode ? [`Applied promo code: ${appliedCouponCode}`] : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     list.unshift(newInquiry);
     saveCollection(STORAGE_KEYS.INQUIRIES, list);
     notifyListeners(STORAGE_KEYS.INQUIRIES, list);
+
+    if (appliedCouponCode) {
+      this.incrementCouponUsage(appliedCouponCode);
+    }
 
     // Sync CRM Customer record automatically
     this.syncCustomerFromInquiry(newInquiry);
@@ -1274,6 +1377,55 @@ export const DataService = {
     return updated;
   },
 
+  // Coupons
+  getCoupons(): Coupon[] {
+    const loaded = loadCollection<Coupon[]>(STORAGE_KEYS.COUPONS);
+    return Array.isArray(loaded) && loaded.length > 0 ? loaded : INITIAL_COUPONS;
+  },
+
+  subscribeCoupons(callback: (coupons: Coupon[]) => void): () => void {
+    return subscribeTo<Coupon[]>(STORAGE_KEYS.COUPONS, callback);
+  },
+
+  createCoupon(coupon: Omit<Coupon, 'id' | 'usedCount'>): Coupon {
+    const list = this.getCoupons();
+    const newCoupon: Coupon = {
+      ...coupon,
+      code: coupon.code.trim().toUpperCase(),
+      id: `cpn-${Date.now()}`,
+      usedCount: 0,
+    };
+    list.unshift(newCoupon);
+    saveCollection(STORAGE_KEYS.COUPONS, list);
+    notifyListeners(STORAGE_KEYS.COUPONS, list);
+    this.logActivity('Promo Code Created', `Created voucher code "${newCoupon.code}"`);
+    return newCoupon;
+  },
+
+  updateCoupon(id: string, updates: Partial<Coupon>): Coupon | null {
+    const list = this.getCoupons();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+    const updated: Coupon = { ...list[index], ...updates };
+    list[index] = updated;
+    saveCollection(STORAGE_KEYS.COUPONS, list);
+    notifyListeners(STORAGE_KEYS.COUPONS, list);
+    this.logActivity('Promo Code Updated', `Updated voucher code "${updated.code}" (${updated.active ? 'Active' : 'Paused'})`);
+    return updated;
+  },
+
+  incrementCouponUsage(code: string) {
+    const list = this.getCoupons();
+    const index = list.findIndex((c) => c.code.toUpperCase() === code.trim().toUpperCase());
+    if (index === -1) return;
+    list[index] = {
+      ...list[index],
+      usedCount: list[index].usedCount + 1,
+    };
+    saveCollection(STORAGE_KEYS.COUPONS, list);
+    notifyListeners(STORAGE_KEYS.COUPONS, list);
+  },
+
   // Quizzes & Interactive Mini-Game
   getQuizzes(): QuizQuestion[] {
     return loadCollection<QuizQuestion[]>(STORAGE_KEYS.QUIZZES) || INITIAL_QUIZ_QUESTIONS;
@@ -1287,6 +1439,19 @@ export const DataService = {
     return subscribeTo<QuizQuestion[]>(STORAGE_KEYS.QUIZZES, callback);
   },
 
+  createQuizQuestion(q: Omit<QuizQuestion, 'id'>): QuizQuestion {
+    const list = this.getQuizzes();
+    const newQ: QuizQuestion = {
+      ...q,
+      id: `quiz-${Date.now()}`,
+    };
+    list.push(newQ);
+    saveCollection(STORAGE_KEYS.QUIZZES, list);
+    notifyListeners(STORAGE_KEYS.QUIZZES, list);
+    this.logActivity('Quiz Question Added', `Added question "${newQ.question}"`);
+    return newQ;
+  },
+
   updateQuizQuestion(id: string, updates: Partial<QuizQuestion>): QuizQuestion | null {
     const list = this.getQuizzes();
     const index = list.findIndex((q) => q.id === id);
@@ -1294,7 +1459,21 @@ export const DataService = {
     list[index] = { ...list[index], ...updates };
     saveCollection(STORAGE_KEYS.QUIZZES, list);
     notifyListeners(STORAGE_KEYS.QUIZZES, list);
+    this.logActivity('Quiz Question Updated', `Updated question "${list[index].question}"`);
     return list[index];
+  },
+
+  deleteQuizQuestion(id: string): boolean {
+    const list = this.getQuizzes();
+    const target = list.find((q) => q.id === id);
+    const filtered = list.filter((q) => q.id !== id);
+    if (filtered.length !== list.length) {
+      saveCollection(STORAGE_KEYS.QUIZZES, filtered);
+      notifyListeners(STORAGE_KEYS.QUIZZES, filtered);
+      this.logActivity('Quiz Question Deleted', `Removed question "${target?.question || id}"`);
+      return true;
+    }
+    return false;
   },
 
   // Website Content CMS
@@ -1315,9 +1494,26 @@ export const DataService = {
         ...current.stats,
         ...(updates.stats || {}),
       },
+      socialLinks: {
+        ...current.socialLinks,
+        ...(updates.socialLinks || {}),
+      },
     };
     saveCollection(STORAGE_KEYS.WEBSITE_CONTENT, updated);
     notifyListeners(STORAGE_KEYS.WEBSITE_CONTENT, updated);
+
+    // Keep shared contact channels synced with BusinessSettings
+    const currentSettings = this.getSettings();
+    const syncedSettings: BusinessSettings = {
+      ...currentSettings,
+      businessEmail: updated.contactEmail,
+      businessPhone: updated.contactPhone,
+      whatsappNumber: updated.whatsappNumber,
+      businessAddress: updated.officeAddress,
+    };
+    saveCollection(STORAGE_KEYS.SETTINGS, syncedSettings);
+    notifyListeners(STORAGE_KEYS.SETTINGS, syncedSettings);
+
     this.logActivity('Website CMS Updated', 'Homepage content & copy updated');
     return updated;
   },
@@ -1336,6 +1532,19 @@ export const DataService = {
     const updated = { ...current, ...updates };
     saveCollection(STORAGE_KEYS.SETTINGS, updated);
     notifyListeners(STORAGE_KEYS.SETTINGS, updated);
+
+    // Keep shared contact channels synced with WebsiteContent
+    const currentContent = this.getWebsiteContent();
+    const syncedContent: WebsiteContent = {
+      ...currentContent,
+      contactEmail: updated.businessEmail,
+      contactPhone: updated.businessPhone,
+      whatsappNumber: updated.whatsappNumber,
+      officeAddress: updated.businessAddress,
+    };
+    saveCollection(STORAGE_KEYS.WEBSITE_CONTENT, syncedContent);
+    notifyListeners(STORAGE_KEYS.WEBSITE_CONTENT, syncedContent);
+
     this.logActivity('Settings Updated', 'Platform business settings updated');
     return updated;
   },
@@ -1360,6 +1569,10 @@ export const DataService = {
     return loadCollection<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS) || [];
   },
 
+  subscribeAnalyticsEvents(callback: (events: AnalyticsEvent[]) => void): () => void {
+    return subscribeTo<AnalyticsEvent[]>(STORAGE_KEYS.ANALYTICS, callback);
+  },
+
   logActivity(action: string, details: string, adminUser = 'Admin') {
     const logs = loadCollection<ActivityLog[]>(STORAGE_KEYS.ACTIVITY_LOGS) || [];
     logs.unshift({
@@ -1378,27 +1591,50 @@ export const DataService = {
     return loadCollection<ActivityLog[]>(STORAGE_KEYS.ACTIVITY_LOGS) || [];
   },
 
+  subscribeActivityLogs(callback: (logs: ActivityLog[]) => void): () => void {
+    return subscribeTo<ActivityLog[]>(STORAGE_KEYS.ACTIVITY_LOGS, callback);
+  },
+
   // Reset to initial demo data
   resetDemoData() {
+    const initialEvents: AnalyticsEvent[] = [
+      { id: 'ev-1', type: 'page_view', path: '/', timestamp: new Date(Date.now() - 3600000 * 24).toISOString() },
+      { id: 'ev-2', type: 'experience_view', path: '/experience/alula-desert-adventure', timestamp: new Date(Date.now() - 3600000 * 12).toISOString() },
+      { id: 'ev-3', type: 'inquiry_submit', metadata: { exp: 'exp-alula-desert' }, timestamp: new Date(Date.now() - 3600000 * 6).toISOString() },
+    ];
+    const initialLogs: ActivityLog[] = [
+      {
+        id: `log-${Date.now()}`,
+        action: 'Database Reset',
+        details: 'Demo database restored to default seed state',
+        adminUser: 'Admin',
+        timestamp: new Date().toISOString(),
+      },
+    ];
+
     saveCollection(STORAGE_KEYS.DESTINATIONS, INITIAL_DESTINATIONS);
     saveCollection(STORAGE_KEYS.EXPERIENCES, INITIAL_EXPERIENCES);
     saveCollection(STORAGE_KEYS.PROMOTIONS, INITIAL_PROMOTIONS);
+    saveCollection(STORAGE_KEYS.COUPONS, INITIAL_COUPONS);
     saveCollection(STORAGE_KEYS.INQUIRIES, INITIAL_INQUIRIES);
     saveCollection(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
     saveCollection(STORAGE_KEYS.QUIZZES, INITIAL_QUIZ_QUESTIONS);
     saveCollection(STORAGE_KEYS.WEBSITE_CONTENT, INITIAL_WEBSITE_CONTENT);
     saveCollection(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    saveCollection(STORAGE_KEYS.ANALYTICS, initialEvents);
+    saveCollection(STORAGE_KEYS.ACTIVITY_LOGS, initialLogs);
 
-    // Notify all
+    // Notify all subscribers across tabs & panels
     notifyListeners(STORAGE_KEYS.DESTINATIONS, INITIAL_DESTINATIONS);
     notifyListeners(STORAGE_KEYS.EXPERIENCES, INITIAL_EXPERIENCES);
     notifyListeners(STORAGE_KEYS.PROMOTIONS, INITIAL_PROMOTIONS);
+    notifyListeners(STORAGE_KEYS.COUPONS, INITIAL_COUPONS);
     notifyListeners(STORAGE_KEYS.INQUIRIES, INITIAL_INQUIRIES);
     notifyListeners(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
     notifyListeners(STORAGE_KEYS.QUIZZES, INITIAL_QUIZ_QUESTIONS);
     notifyListeners(STORAGE_KEYS.WEBSITE_CONTENT, INITIAL_WEBSITE_CONTENT);
     notifyListeners(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
-
-    this.logActivity('Database Reset', 'Demo database restored to default seed state');
+    notifyListeners(STORAGE_KEYS.ANALYTICS, initialEvents);
+    notifyListeners(STORAGE_KEYS.ACTIVITY_LOGS, initialLogs);
   },
 };

@@ -8,6 +8,7 @@ import {
   Inquiry,
   Customer,
   Promotion,
+  Coupon,
   QuizQuestion,
   WebsiteContent,
   BusinessSettings,
@@ -28,8 +29,7 @@ import { AnalyticsTab } from '../../components/admin/tabs/AnalyticsTab';
 import { WebsiteContentTab } from '../../components/admin/tabs/WebsiteContentTab';
 import { AppearanceSettingsTab } from '../../components/admin/tabs/AppearanceSettingsTab';
 import { SettingsTab } from '../../components/admin/tabs/SettingsTab';
-import { AppearanceDrawer } from '../../components/admin/AppearanceDrawer';
-import { Lock, AlertCircle } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface AdminDashboardPageProps {
   onGoToVisitorSite: () => void;
@@ -42,7 +42,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 }) => {
   const { isAdminAuthenticated, logout, openLoginModal } = useAuth();
   const { isRtl } = useLanguage();
-  const { getDashboardBgStyle } = useTheme();
+  const { getDashboardBgStyle, isDarkGlass } = useTheme();
 
   const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -53,6 +53,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [quizzes, setQuizzes] = useState<QuizQuestion[]>([]);
   const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(DataService.getWebsiteContent());
   const [settings, setSettings] = useState<BusinessSettings>(DataService.getSettings());
@@ -66,12 +67,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     const unsubInq = DataService.subscribeInquiries(setInquiries);
     const unsubCust = DataService.subscribeCustomers(setCustomers);
     const unsubPromo = DataService.subscribePromotions(setPromotions);
+    const unsubCoupons = DataService.subscribeCoupons(setCoupons);
     const unsubQuiz = DataService.subscribeQuizzes(setQuizzes);
     const unsubContent = DataService.subscribeWebsiteContent(setWebsiteContent);
     const unsubSettings = DataService.subscribeSettings(setSettings);
-
-    setAnalyticsEvents(DataService.getAnalyticsEvents());
-    setActivityLogs(DataService.getActivityLogs());
+    const unsubAnalytics = DataService.subscribeAnalyticsEvents(setAnalyticsEvents);
+    const unsubLogs = DataService.subscribeActivityLogs(setActivityLogs);
 
     return () => {
       unsubExp();
@@ -79,9 +80,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       unsubInq();
       unsubCust();
       unsubPromo();
+      unsubCoupons();
       unsubQuiz();
       unsubContent();
       unsubSettings();
+      unsubAnalytics();
+      unsubLogs();
     };
   }, []);
 
@@ -122,7 +126,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
   return (
     <div
-      className="min-h-screen text-[#202923] transition-all duration-500"
+      data-glass-tone={isDarkGlass ? 'dark' : 'light'}
+      className="min-h-screen text-[var(--tf-text)] transition-all duration-500"
       style={getDashboardBgStyle()}
     >
       {/* Sidebar */}
@@ -139,7 +144,6 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       {/* Header */}
       <AdminHeader
         currentTab={currentTab}
-        onGoToVisitorSite={onGoToVisitorSite}
         collapsed={sidebarCollapsed}
       />
 
@@ -163,6 +167,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               destinations={destinations}
               analyticsEvents={analyticsEvents}
               activityLogs={activityLogs}
+              currency={settings.currency}
               onNavigateTab={setCurrentTab}
               onOpenCreateExperience={() => setCurrentTab('experiences')}
             />
@@ -177,7 +182,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           )}
 
           {currentTab === 'destinations' && (
-            <DestinationsTab destinations={destinations} />
+            <DestinationsTab destinations={destinations} experiences={experiences} />
           )}
 
           {currentTab === 'inquiries' && (
@@ -191,6 +196,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           {currentTab === 'promotions' && (
             <PromotionsTab
               promotions={promotions}
+              coupons={coupons}
               experiences={experiences}
               destinations={destinations}
             />
@@ -222,9 +228,6 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           )}
         </div>
       </main>
-
-      {/* Quick Appearance Customization Drawer */}
-      <AppearanceDrawer />
     </div>
   );
 };

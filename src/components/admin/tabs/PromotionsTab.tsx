@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
-import { Promotion, Experience, Destination } from '../../../types';
+import { useTheme } from '../../../context/ThemeContext';
+import { Promotion, Coupon, Experience, Destination } from '../../../types';
 import { DataService, IMAGES } from '../../../services/dataService';
-import { Plus, Megaphone, Edit2, Tag, Check, X, Eye, EyeOff } from 'lucide-react';
+import { GlassContainer } from '../../glass/GlassContainer';
+import { Plus, Edit2, X, Eye, EyeOff } from 'lucide-react';
 
 interface PromotionsTabProps {
   promotions: Promotion[];
+  coupons: Coupon[];
   experiences: Experience[];
   destinations: Destination[];
 }
 
 export const PromotionsTab: React.FC<PromotionsTabProps> = ({
   promotions,
-  experiences,
-  destinations,
+  coupons,
 }) => {
   const { isRtl } = useLanguage();
+  const { currentAccentHex } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
@@ -33,12 +36,10 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
   const [badgeAr, setBadgeAr] = useState('عرض الموسم');
   const [active, setActive] = useState(true);
 
-  // Sample Coupon management state
-  const [coupons, setCoupons] = useState([
-    { code: 'FOUNDING2026', discount: '15% Off', expiry: '2026-12-31', uses: 42, active: true },
-    { code: 'ALULA_WINTER', discount: '200 SAR Off', expiry: '2026-04-30', uses: 88, active: true },
-    { code: 'REDSEA_VIP', discount: '20% Off', expiry: '2026-08-31', uses: 19, active: false },
-  ]);
+  // Coupon creator fields
+  const [newCouponCode, setNewCouponCode] = useState('');
+  const [newCouponType, setNewCouponType] = useState<'percentage' | 'fixed'>('percentage');
+  const [newCouponAmount, setNewCouponAmount] = useState(15);
 
   const handleOpenCreate = () => {
     setEditingPromoId(null);
@@ -103,22 +104,37 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
     setIsModalOpen(false);
   };
 
+  const handleCreateCoupon = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCouponCode.trim()) return;
+    DataService.createCoupon({
+      code: newCouponCode.trim().toUpperCase(),
+      discountType: newCouponType,
+      discountAmount: Number(newCouponAmount) || 10,
+      expiryDate: '2026-12-31',
+      usageLimit: 100,
+      active: true,
+    });
+    setNewCouponCode('');
+  };
+
   return (
     <div className="space-y-8" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#123B32]">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
             Marketing & Promotional Campaigns
           </h2>
-          <p className="text-xs text-[#777D75]">
-            Create and broadcast seasonal campaigns that immediately appear on the visitor homepage.
+          <p className="text-xs text-[var(--tf-muted)]">
+            Create and broadcast seasonal campaigns and voucher codes synced in real time with the visitor portal.
           </p>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="py-2.5 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
+          style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+          className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>New Campaign Banner</span>
@@ -127,17 +143,22 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
 
       {/* Campaigns Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {promotions.map((promo) => (
-          <div
+        {promotions.map((promo, idx) => (
+          <GlassContainer
             key={promo.id}
-            className="bg-white border border-[#D9C29A]/50 rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between"
+            delay={idx * 0.04}
+            hoverLift
+            className="overflow-hidden flex flex-col justify-between"
           >
             <div>
               <div className="relative h-40 overflow-hidden bg-neutral-900">
                 <img src={promo.bannerImage} alt={promo.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 {promo.badge && (
-                  <div className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-2 py-0.5 rounded bg-[#D9C29A] text-[#123B32] text-[10px] font-bold">
+                  <div
+                    className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-2 py-0.5 rounded text-[#102E29] text-[10px] font-bold"
+                    style={{ backgroundColor: currentAccentHex }}
+                  >
                     {promo.badge}
                   </div>
                 )}
@@ -147,29 +168,29 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
               </div>
 
               <div className="p-4">
-                <p className="text-xs text-[#777D75] line-clamp-2 leading-relaxed mb-4">
+                <p className="text-xs text-[var(--tf-muted)] line-clamp-2 leading-relaxed mb-4">
                   {promo.description}
                 </p>
 
-                <div className="flex items-center justify-between text-xs text-[#202923] pt-2 border-t border-[#D9C29A]/30">
-                  <span className="font-semibold text-[#123B32]">CTA: {promo.ctaText}</span>
+                <div className="flex items-center justify-between text-xs text-[var(--tf-text)] pt-2 border-t border-[var(--tf-border)]">
+                  <span className="font-semibold text-[var(--tf-heading)]">CTA: {promo.ctaText}</span>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                       promo.active
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                        : 'bg-neutral-100 text-neutral-600 border-neutral-300'
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-400/35'
+                        : 'bg-neutral-500/15 text-[var(--tf-muted)] border-[var(--tf-border)]'
                     }`}
                   >
-                    {promo.active ? 'ACTIVE ON HOMEPAGE' : 'PAUSED'}
+                    {promo.active ? 'ACTIVE' : 'PAUSED'}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="p-3 bg-[#FAF8F5] border-t border-[#D9C29A]/40 flex items-center justify-between">
+            <div className="p-3 bg-[var(--tf-surface-subtle)] border-t border-[var(--tf-border)] flex items-center justify-between">
               <button
                 onClick={() => handleToggleActive(promo)}
-                className="text-xs font-semibold text-[#123B32] hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-[var(--tf-heading)] hover:underline flex items-center gap-1 cursor-pointer"
               >
                 {promo.active ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 <span>{promo.active ? 'Pause Campaign' : 'Publish to Site'}</span>
@@ -177,65 +198,112 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
 
               <button
                 onClick={() => handleOpenEdit(promo)}
-                className="p-1.5 text-[#123B32] hover:bg-[#D9C29A]/20 rounded-lg cursor-pointer"
+                className="p-1.5 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-lg cursor-pointer"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
             </div>
-          </div>
+          </GlassContainer>
         ))}
       </div>
 
-      {/* Coupon Management Section (§6.F) */}
-      <div className="bg-white border border-[#D9C29A]/50 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      {/* Coupon Management Section */}
+      <GlassContainer delay={0.1} className="p-6 space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h3 className="font-serif text-lg font-bold text-[#123B32]">
+            <h3 className="font-serif text-lg font-bold text-[var(--tf-heading)]">
               Promotional Codes & Operator Vouchers
             </h3>
-            <p className="text-xs text-[#777D75]">
-              Informational promo discounts applicable for concierge bookings.
+            <p className="text-xs text-[var(--tf-muted)]">
+              Active promo codes are immediately redeemable on visitor experience booking cards.
             </p>
           </div>
+
+          <form onSubmit={handleCreateCoupon} className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              placeholder="NEWCODE2026"
+              value={newCouponCode}
+              onChange={(e) => setNewCouponCode(e.target.value)}
+              className="text-xs px-3 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl font-mono uppercase w-36"
+            />
+            <select
+              value={newCouponType}
+              onChange={(e) => setNewCouponType(e.target.value as 'percentage' | 'fixed')}
+              className="text-xs px-2.5 py-2 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl font-semibold text-[var(--tf-heading)]"
+            >
+              <option value="percentage">% Off</option>
+              <option value="fixed">SAR Off</option>
+            </select>
+            <input
+              type="number"
+              min={1}
+              value={newCouponAmount}
+              onChange={(e) => setNewCouponAmount(Number(e.target.value))}
+              className="text-xs px-2.5 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl font-mono w-20"
+            />
+            <button
+              type="submit"
+              style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+              className="py-2 px-3.5 rounded-xl text-xs font-bold cursor-pointer transition-opacity hover:opacity-90"
+            >
+              Add Voucher
+            </button>
+          </form>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead>
-              <tr className="border-b border-[#D9C29A]/40 text-[#777D75] uppercase tracking-wider">
+              <tr className="border-b border-[var(--tf-border)] text-[var(--tf-muted)] uppercase tracking-wider">
                 <th className="py-2.5 px-3 font-semibold text-start">Code</th>
                 <th className="py-2.5 px-3 font-semibold text-start">Discount</th>
                 <th className="py-2.5 px-3 font-semibold text-start">Expiry Date</th>
                 <th className="py-2.5 px-3 font-semibold text-start">Redemptions</th>
                 <th className="py-2.5 px-3 font-semibold text-start">Status</th>
+                <th className="py-2.5 px-3 font-semibold text-end">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D9C29A]/20">
-              {coupons.map((c, i) => (
-                <tr key={i} className="hover:bg-[#FAF8F5]">
-                  <td className="py-3 px-3 font-mono font-bold text-[#123B32]">
+            <tbody className="divide-y divide-[var(--tf-border)]">
+              {coupons.map((c) => (
+                <tr key={c.id} className="hover:bg-[var(--tf-surface-hover)]">
+                  <td className="py-3 px-3 font-mono font-bold text-[var(--tf-heading)]">
                     {c.code}
                   </td>
-                  <td className="py-3 px-3 font-semibold text-[#202923]">
-                    {c.discount}
+                  <td className="py-3 px-3 font-semibold text-[var(--tf-text)]">
+                    {c.discountType === 'percentage' ? `${c.discountAmount}% Off` : `${c.discountAmount} SAR Off`}
                   </td>
-                  <td className="py-3 px-3 text-[#777D75]">{c.expiry}</td>
-                  <td className="py-3 px-3 font-mono tabular-nums">{c.uses} redeemed</td>
+                  <td className="py-3 px-3 text-[var(--tf-muted)]">{c.expiryDate}</td>
+                  <td className="py-3 px-3 font-mono tabular-nums text-[var(--tf-text)]">
+                    {c.usedCount} redeemed
+                  </td>
                   <td className="py-3 px-3">
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        c.active ? 'bg-emerald-50 text-emerald-800' : 'bg-neutral-100 text-neutral-600'
+                        c.active
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : 'bg-neutral-500/15 text-[var(--tf-muted)]'
                       }`}
                     >
-                      {c.active ? 'ACTIVE' : 'EXPIRED'}
+                      {c.active ? 'ACTIVE' : 'PAUSED'}
                     </span>
+                  </td>
+                  <td className="py-3 px-3 text-end">
+                    <button
+                      type="button"
+                      onClick={() => DataService.updateCoupon(c.id, { active: !c.active })}
+                      className="text-xs font-semibold hover:underline cursor-pointer"
+                      style={{ color: currentAccentHex }}
+                    >
+                      {c.active ? 'Pause' : 'Activate'}
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* CREATE / EDIT MODAL */}
       {isModalOpen && (

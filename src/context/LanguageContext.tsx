@@ -210,10 +210,13 @@ const LanguageContext = createContext<LanguageContextType>({
   isRtl: false,
 });
 
+const LANG_STORAGE_KEY = 'tourflow_lang';
+const LANG_BROADCAST_CHANNEL = 'tourflow_lang_sync';
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('tourflow_lang') as Language;
+      const saved = localStorage.getItem(LANG_STORAGE_KEY) as Language;
       return saved === 'ar' || saved === 'en' ? saved : 'en';
     }
     return 'en';
@@ -223,14 +226,47 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('tourflow_lang', language);
+      localStorage.setItem(LANG_STORAGE_KEY, language);
       document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
       document.documentElement.lang = language;
     }
   }, [language, isRtl]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === LANG_STORAGE_KEY && (e.newValue === 'en' || e.newValue === 'ar')) {
+        setLanguageState(e.newValue);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    let bc: BroadcastChannel | null = null;
+    if ('BroadcastChannel' in window) {
+      bc = new BroadcastChannel(LANG_BROADCAST_CHANNEL);
+      bc.onmessage = (event) => {
+        if (event.data === 'en' || event.data === 'ar') {
+          setLanguageState(event.data);
+        }
+      };
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      bc?.close();
+    };
+  }, []);
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel(LANG_BROADCAST_CHANNEL);
+        bc.postMessage(lang);
+        bc.close();
+      } catch {}
+    }
   };
 
   const t = (key: string): string => {

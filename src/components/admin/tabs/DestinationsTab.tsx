@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { Destination } from '../../../types';
+import { Destination, Experience } from '../../../types';
 import { DataService, IMAGES } from '../../../services/dataService';
-import { Plus, Edit2, MapPin, Eye, EyeOff, X, Check, Compass } from 'lucide-react';
+import { GlassContainer } from '../../glass/GlassContainer';
+import { Plus, Edit2, Eye, EyeOff, X } from 'lucide-react';
 
 interface DestinationsTabProps {
   destinations: Destination[];
+  experiences?: Experience[];
 }
 
-export const DestinationsTab: React.FC<DestinationsTabProps> = ({ destinations }) => {
+export const DestinationsTab: React.FC<DestinationsTabProps> = ({
+  destinations,
+  experiences = [],
+}) => {
   const { isRtl } = useLanguage();
-  const { getGlassyCardStyle } = useTheme();
+  const { currentAccentHex } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDestId, setEditingDestId] = useState<string | null>(null);
@@ -95,17 +100,18 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({ destinations }
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#123B32]">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
             Saudi Tourism Destinations
           </h2>
-          <p className="text-xs text-[#777D75]">
+          <p className="text-xs text-[var(--tf-muted)]">
             Manage featured Saudi regions, photography, editorial summaries, and public discoverability.
           </p>
         </div>
 
         <button
           onClick={handleOpenCreate}
-          className="py-2.5 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
+          style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+          className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Destination</span>
@@ -114,11 +120,12 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({ destinations }
 
       {/* Destination Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {destinations.map((dest) => (
-          <div
+        {destinations.map((dest, idx) => (
+          <GlassContainer
             key={dest.id}
-            className="rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300"
-            style={getGlassyCardStyle()}
+            delay={idx * 0.04}
+            hoverLift
+            className="overflow-hidden flex flex-col justify-between"
           >
             <div>
               <div className="relative h-44 overflow-hidden bg-neutral-900">
@@ -127,7 +134,7 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({ destinations }
                   alt={dest.name}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-white text-[11px]">
                   {dest.region}
                 </div>
@@ -138,17 +145,24 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({ destinations }
               </div>
 
               <div className="p-5">
-                <p className="text-xs text-[#777D75] line-clamp-2 leading-relaxed mb-4">
+                <p className="text-xs text-[var(--tf-muted)] line-clamp-2 leading-relaxed mb-4">
                   {dest.description}
                 </p>
 
-                <div className="flex items-center justify-between text-xs text-[#202923] pt-2 border-t border-[#D9C29A]/30">
-                  <span className="font-semibold">{dest.experienceCount} Experiences</span>
+                <div className="flex items-center justify-between text-xs text-[var(--tf-text)] pt-2 border-t border-[var(--tf-border)]">
+                  <span className="font-semibold">
+                    {experiences.length > 0
+                      ? experiences.filter(
+                          (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
+                        ).length
+                      : dest.experienceCount}{' '}
+                    Published Experiences
+                  </span>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                       dest.published
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                        : 'bg-neutral-100 text-neutral-600 border-neutral-300'
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-400/35'
+                        : 'bg-neutral-500/15 text-[var(--tf-muted)] border-[var(--tf-border)]'
                     }`}
                   >
                     {dest.published ? 'PUBLISHED' : 'HIDDEN'}
@@ -158,10 +172,10 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({ destinations }
             </div>
 
             {/* Actions */}
-            <div className="p-4 bg-[#FAF8F5] border-t border-[#D9C29A]/40 flex items-center justify-between">
+            <div className="p-4 bg-[var(--tf-surface-subtle)] border-t border-[var(--tf-border)] flex items-center justify-between">
               <button
                 onClick={() => handleTogglePublish(dest)}
-                className="text-xs font-semibold text-[#123B32] hover:underline flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-semibold text-[var(--tf-heading)] hover:underline flex items-center gap-1.5 cursor-pointer"
               >
                 {dest.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 <span>{dest.published ? 'Unpublish' : 'Publish'}</span>
@@ -169,13 +183,13 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({ destinations }
 
               <button
                 onClick={() => handleOpenEdit(dest)}
-                className="p-1.5 text-[#123B32] hover:bg-[#D9C29A]/20 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-lg transition-colors cursor-pointer"
                 title="Edit Destination"
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
             </div>
-          </div>
+          </GlassContainer>
         ))}
       </div>
 

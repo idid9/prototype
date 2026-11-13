@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import {
   LayoutDashboard,
   Compass,
@@ -51,6 +52,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   newInquiriesCount = 0,
 }) => {
   const { language, isRtl } = useLanguage();
+  const { settings, isDarkGlass, blurPixels, currentAccentHex } = useTheme();
   const isArabic = language === 'ar';
 
   const menuItems: { id: AdminTab; label: string; labelAr: string; icon: React.ReactNode; badge?: number }[] = [
@@ -63,29 +65,47 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'interactive', label: 'Interactive Content', labelAr: 'المحتوى التفاعلي', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'analytics', label: 'Analytics', labelAr: 'التحليلات', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'website', label: 'Website CMS', labelAr: 'محتوى الموقع', icon: <Globe2 className="w-4 h-4" /> },
-    { id: 'appearance', label: 'Appearance & Theme', labelAr: 'المظهر والتخصيص', icon: <Palette className="w-4 h-4" /> },
+    { id: 'appearance', label: 'Glassy & Theme Studio', labelAr: 'المظهر والزجاجي', icon: <Palette className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', labelAr: 'الإعدادات', icon: <Settings className="w-4 h-4" /> },
   ];
 
+  const sidebarStyle: React.CSSProperties = settings.isGlassyEnabled
+    ? {
+        backgroundColor: isDarkGlass
+          ? `rgba(12, 18, 16, ${Math.min(0.86, settings.cardTranslucency + 0.25)})`
+          : 'rgba(18, 59, 50, 0.88)',
+        backdropFilter: `blur(${blurPixels}px) saturate(150%)`,
+        WebkitBackdropFilter: `blur(${blurPixels}px) saturate(150%)`,
+        borderInlineEnd: `1px solid rgba(255, 255, 255, ${Math.max(0.14, settings.borderOpacity * 0.7)})`,
+      }
+    : {
+        backgroundColor: '#123B32',
+        borderInlineEnd: '1px solid #1D5546',
+      };
+
   return (
     <aside
-      className={`fixed top-0 bottom-0 z-30 flex flex-col bg-[#123B32] text-white transition-all duration-300 border-e border-[#1D5546] ${
+      style={sidebarStyle}
+      className={`fixed top-0 bottom-0 z-30 flex flex-col text-white transition-all duration-300 ${
         isRtl ? 'right-0' : 'left-0'
       } ${collapsed ? 'w-20' : 'w-64'}`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-[#1D5546]/80">
+      <div className="h-16 flex items-center justify-between px-5 border-b border-white/15">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#D9C29A] text-[#123B32] flex items-center justify-center font-bold">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[#102E29]"
+              style={{ backgroundColor: currentAccentHex }}
+            >
               <Compass className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-base tracking-tight leading-none">
-                Tour<span className="text-[#C6A46B]">Flow</span>
+              <span className="font-bold text-base tracking-tight leading-none whitespace-nowrap">
+                Tour<span style={{ color: currentAccentHex }}>Flow</span>
               </span>
-              <span className="text-[10px] text-[#D9C29A] tracking-wider uppercase mt-1">
+              <span className="text-[10px] text-white/60 tracking-wider uppercase mt-1">
                 Operator SaaS
               </span>
             </div>

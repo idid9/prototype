@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { Customer, Inquiry } from '../../../types';
 import { DataService } from '../../../services/dataService';
-import { Search, Download, User, Mail, Phone, MapPin, Calendar, Clock, Edit2, X, ShieldAlert } from 'lucide-react';
+import { GlassContainer } from '../../glass/GlassContainer';
+import { Search, Download, User, X, Check } from 'lucide-react';
 
 interface CustomersTabProps {
   customers: Customer[];
@@ -11,11 +13,23 @@ interface CustomersTabProps {
 
 export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries }) => {
   const { isRtl } = useLanguage();
+  const { currentAccentHex } = useTheme();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [notesInput, setNotesInput] = useState('');
+  const [notesSaved, setNotesSaved] = useState(false);
+
+  const selectedCustomer = selectedCustomerId
+    ? customers.find((c) => c.id === selectedCustomerId) || null
+    : null;
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      setNotesInput(selectedCustomer.notes || '');
+    }
+  }, [selectedCustomer?.id, selectedCustomer?.notes]);
 
   const countries = Array.from(new Set(customers.map((c) => c.country).filter(Boolean)));
 
@@ -34,16 +48,17 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
   });
 
   const handleOpenProfile = (c: Customer) => {
-    setSelectedCustomer(c);
+    setSelectedCustomerId(c.id);
     setNotesInput(c.notes || '');
+    setNotesSaved(false);
   };
 
   const handleSaveNotes = () => {
     if (!selectedCustomer) return;
     const updated = DataService.updateCustomerNotes(selectedCustomer.id, notesInput);
     if (updated) {
-      setSelectedCustomer(updated);
-      alert('Customer CRM notes updated.');
+      setNotesSaved(true);
+      setTimeout(() => setNotesSaved(false), 3000);
     }
   };
 
@@ -76,33 +91,33 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#123B32]">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
             Customer Relationship Management (CRM)
           </h2>
-          <p className="text-xs text-[#777D75]">
+          <p className="text-xs text-[var(--tf-muted)]">
             Private client profiles, inquiry histories, country origins, and concierge notes.
           </p>
         </div>
 
         <button
           onClick={handleExportCSV}
-          className="py-2.5 px-4 bg-white border border-[#D9C29A]/60 text-[#123B32] hover:bg-[#FAF8F5] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
+          className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <Download className="w-4 h-4 text-[#C6A46B]" />
+          <Download className="w-4 h-4" style={{ color: currentAccentHex }} />
           <span>Export Customer Directory</span>
         </button>
       </div>
 
       {/* Filter and Search */}
-      <div className="bg-white border border-[#D9C29A]/50 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+      <GlassContainer className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-[#777D75] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[var(--tf-muted)] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search by customer name, email, country..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
           />
         </div>
 
@@ -110,7 +125,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
           <select
             value={countryFilter}
             onChange={(e) => setCountryFilter(e.target.value)}
-            className="text-xs py-2 px-3 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl text-[#123B32] font-semibold cursor-pointer"
+            className="text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] font-semibold cursor-pointer"
           >
             <option value="all">All Countries ({customers.length})</option>
             {countries.map((c) => (
@@ -120,14 +135,14 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
             ))}
           </select>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Customers Table */}
-      <div className="bg-white border border-[#D9C29A]/50 rounded-2xl overflow-hidden shadow-sm">
+      <GlassContainer delay={0.05} className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead>
-              <tr className="bg-[#FAF8F5] border-b border-[#D9C29A]/40 text-[#777D75] uppercase tracking-wider">
+              <tr className="bg-[var(--tf-table-head)] border-b border-[var(--tf-border)] text-[var(--tf-muted)] uppercase tracking-wider">
                 <th className="py-3 px-4 font-semibold text-start">Customer</th>
                 <th className="py-3 px-4 font-semibold text-start">Country</th>
                 <th className="py-3 px-4 font-semibold text-start">Inquiries</th>
@@ -137,39 +152,39 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                 <th className="py-3 px-4 font-semibold text-end">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D9C29A]/20">
+            <tbody className="divide-y divide-[var(--tf-border)]">
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#777D75]">
+                  <td colSpan={7} className="py-12 text-center text-[var(--tf-muted)]">
                     No customer records found.
                   </td>
                 </tr>
               ) : (
                 filteredCustomers.map((cust) => (
-                  <tr key={cust.id} className="hover:bg-[#FAF8F5] transition-colors">
+                  <tr key={cust.id} className="hover:bg-[var(--tf-surface-hover)] transition-colors">
                     <td className="py-3 px-4">
-                      <div className="font-bold text-[#123B32]">{cust.name}</div>
-                      <div className="text-[11px] text-[#777D75]">{cust.email}</div>
+                      <div className="font-bold text-[var(--tf-heading)]">{cust.name}</div>
+                      <div className="text-[11px] text-[var(--tf-muted)]">{cust.email}</div>
                     </td>
-                    <td className="py-3 px-4 text-[#202923] font-medium whitespace-nowrap">
+                    <td className="py-3 px-4 text-[var(--tf-text)] font-medium whitespace-nowrap">
                       {cust.country || 'International'}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#123B32] tabular-nums">
+                    <td className="py-3 px-4 font-mono font-bold text-[var(--tf-heading)] tabular-nums">
                       {cust.totalInquiries}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-emerald-700 tabular-nums">
+                    <td className="py-3 px-4 font-mono font-bold text-emerald-400 tabular-nums">
                       {cust.confirmedBookings}
                     </td>
-                    <td className="py-3 px-4 text-[#777D75] whitespace-nowrap">
+                    <td className="py-3 px-4 text-[var(--tf-muted)] whitespace-nowrap">
                       {new Date(cust.lastInteraction).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-4 text-[#777D75] max-w-xs truncate">
+                    <td className="py-3 px-4 text-[var(--tf-muted)] max-w-xs truncate">
                       {cust.notes || '—'}
                     </td>
                     <td className="py-3 px-4 text-end whitespace-nowrap">
                       <button
                         onClick={() => handleOpenProfile(cust)}
-                        className="py-1 px-3 text-xs font-semibold text-[#123B32] bg-[#FAF8F5] hover:bg-[#D9C29A]/20 border border-[#D9C29A]/50 rounded-lg cursor-pointer"
+                        className="py-1 px-3 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
                       >
                         Profile
                       </button>
@@ -180,7 +195,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
             </tbody>
           </table>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* CUSTOMER PROFILE MODAL */}
       {selectedCustomer && (
@@ -201,7 +216,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                 </div>
               </div>
               <button
-                onClick={() => setSelectedCustomer(null)}
+                onClick={() => setSelectedCustomerId(null)}
                 className="p-1.5 text-[#777D75] hover:text-[#123B32]"
               >
                 <X className="w-5 h-5" />
@@ -269,7 +284,15 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                 placeholder="Add private client preferences (e.g. VIP status, dietary restrictions, preferred language)..."
                 className="w-full text-xs p-3 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32] mb-3"
               />
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between gap-3">
+                {notesSaved ? (
+                  <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5" />
+                    Notes saved in real time
+                  </span>
+                ) : (
+                  <span />
+                )}
                 <button
                   type="button"
                   onClick={handleSaveNotes}

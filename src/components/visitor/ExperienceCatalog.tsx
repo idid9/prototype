@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { Experience, ExperienceCategory, Destination } from '../../types';
-import { Clock, Star, ArrowRight, Search, SlidersHorizontal, MapPin, Compass } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { Experience, Destination } from '../../types';
+import { Clock, Star, ArrowRight, Search, MapPin, Compass } from 'lucide-react';
 
 interface ExperienceCatalogProps {
   experiences: Experience[];
   destinations: Destination[];
+  currency?: string;
   selectedDestination: string;
   onSelectDestination: (destId: string) => void;
   selectedCategory: string;
@@ -16,6 +18,7 @@ interface ExperienceCatalogProps {
 export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
   experiences,
   destinations,
+  currency,
   selectedDestination,
   onSelectDestination,
   selectedCategory,
@@ -23,7 +26,22 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
   onOpenExperienceDetail,
 }) => {
   const { language, t, isRtl } = useLanguage();
+  const {
+    getVisitorGlassyStyle,
+    isVisitorTargetGlassy,
+    isDarkGlass,
+    currentAccentHex,
+  } = useTheme();
   const isArabic = language === 'ar';
+
+  const isFilterGlassy = isVisitorTargetGlassy('filterBarGlassy');
+  const filterGlassyStyle = getVisitorGlassyStyle('filterBarGlassy');
+  const cardGlassyStyle = getVisitorGlassyStyle('experienceCardsGlassy');
+  const cardBodyGlassyStyle = getVisitorGlassyStyle('experienceCardsGlassy', {
+    borderSides: 'none',
+  });
+
+  const optionClass = isDarkGlass ? 'bg-[#102420] text-white' : 'bg-white text-[#202923]';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc'>('featured');
@@ -38,23 +56,25 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
     { label: 'Family Activities', labelAr: 'أنشطة عائلية', value: 'Family Activities' },
   ];
 
-  // Filter ONLY published experiences (§5.D)
+  // Filter ONLY published experiences whose destination is also published
   const publishedExperiences = useMemo(() => {
-    return experiences.filter((exp) => exp.status === 'PUBLISHED');
-  }, [experiences]);
+    const publishedDestIds = new Set(destinations.filter((d) => d.published).map((d) => d.id));
+    return experiences.filter(
+      (exp) =>
+        exp.status === 'PUBLISHED' &&
+        (destinations.length === 0 || publishedDestIds.has(exp.destinationId))
+    );
+  }, [experiences, destinations]);
 
   const filteredExperiences = useMemo(() => {
     return publishedExperiences
       .filter((exp) => {
-        // Destination filter
         if (selectedDestination !== 'all' && exp.destinationId !== selectedDestination) {
           return false;
         }
-        // Category filter
         if (selectedCategory !== 'all' && exp.category !== selectedCategory) {
           return false;
         }
-        // Search text
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchTitle = exp.title.toLowerCase().includes(q) || exp.titleAr.includes(q);
@@ -67,55 +87,68 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
       .sort((a, b) => {
         if (sortBy === 'price-asc') return a.price - b.price;
         if (sortBy === 'price-desc') return b.price - a.price;
-        // Default: featured first
         return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
       });
   }, [publishedExperiences, selectedDestination, selectedCategory, searchQuery, sortBy]);
 
   return (
-    <section id="experiences" className="py-20 bg-white" dir={isRtl ? 'rtl' : 'ltr'}>
+    <section
+      id="experiences"
+      className="py-20 bg-transparent border-t border-[var(--tf-border)] transition-colors duration-300"
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div>
-            <div className="text-xs font-bold tracking-widest uppercase text-[#C6A46B] mb-2">
+            <div
+              className="text-xs font-bold tracking-widest uppercase mb-2"
+              style={{ color: currentAccentHex }}
+            >
               {t('section.experiences.featured')}
             </div>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#123B32] tracking-tight">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
               {t('section.experiences.title')}
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-[#777D75] max-w-2xl">
+            <p className="mt-2 text-sm sm:text-base text-[var(--tf-muted)] max-w-2xl">
               {t('section.experiences.sub')}
             </p>
           </div>
 
-          {/* Search bar inside catalog */}
+          {/* Search bar & Sort inside catalog */}
           <div className="flex items-center gap-3">
             <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-[#777D75] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-[var(--tf-muted)] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 z-10" />
               <input
                 type="text"
                 placeholder={isArabic ? 'ابحث في التجارب...' : 'Search experiences...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full text-xs sm:text-sm pl-9 pr-4 rtl:pl-4 rtl:pr-9 py-2 bg-[#F6F4EF] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                style={filterGlassyStyle}
+                className="w-full text-xs sm:text-sm pl-9 pr-4 rtl:pl-4 rtl:pr-9 py-2 rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] focus:outline-none transition-all"
               />
             </div>
             {/* Sort Dropdown */}
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs sm:text-sm py-2 px-3 bg-[#F6F4EF] border border-[#D9C29A]/50 rounded-xl text-[#123B32] font-medium focus:outline-none cursor-pointer"
+              onChange={(e) => setSortBy(e.target.value as 'featured' | 'price-asc' | 'price-desc')}
+              style={filterGlassyStyle}
+              className="text-xs sm:text-sm py-2 px-3 rounded-xl text-[var(--tf-heading)] font-medium focus:outline-none cursor-pointer transition-all"
             >
-              <option value="featured">Featured First</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
+              <option value="featured" className={optionClass}>Featured First</option>
+              <option value="price-asc" className={optionClass}>Price: Low to High</option>
+              <option value="price-desc" className={optionClass}>Price: High to Low</option>
             </select>
           </div>
         </div>
 
-        {/* Category Filter Tabs (Zero-pill discipline: segmented interactive controls) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scrollbar-none">
+        {/* Category Filter Tabs */}
+        <div
+          style={filterGlassyStyle}
+          className={`flex items-center gap-2 overflow-x-auto scrollbar-none transition-all duration-300 ${
+            isFilterGlassy ? 'p-2.5 rounded-2xl mb-8' : 'p-2.5 rounded-2xl mb-8'
+          }`}
+        >
           {categories.map((cat) => {
             const isActive = selectedCategory === cat.value;
             const label = isArabic ? cat.labelAr : cat.label;
@@ -123,10 +156,19 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
               <button
                 key={cat.value}
                 onClick={() => onSelectCategory(cat.value)}
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: currentAccentHex,
+                        color: '#102E29',
+                        borderColor: currentAccentHex,
+                      }
+                    : undefined
+                }
                 className={`px-4 py-2 text-xs font-semibold rounded-xl whitespace-nowrap transition-all cursor-pointer border ${
                   isActive
-                    ? 'bg-[#123B32] text-white border-[#123B32] shadow-sm'
-                    : 'bg-[#F6F4EF] text-[#777D75] border-[#D9C29A]/40 hover:bg-[#D9C29A]/20 hover:text-[#123B32]'
+                    ? 'shadow-sm font-bold'
+                    : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)] hover:bg-[var(--tf-surface-hover)] hover:text-[var(--tf-heading)]'
                 }`}
               >
                 {label}
@@ -135,16 +177,17 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
           })}
         </div>
 
-        {/* Destination Pills / Active Filters */}
+        {/* Active Destination Filter */}
         {selectedDestination !== 'all' && (
-          <div className="flex items-center gap-2 mb-6 text-xs text-[#777D75]">
+          <div className="flex items-center gap-2 mb-6 text-xs text-[var(--tf-muted)]">
             <span>Filtered by destination:</span>
-            <span className="font-bold text-[#123B32]">
+            <span className="font-bold text-[var(--tf-heading)]">
               {destinations.find((d) => d.id === selectedDestination)?.name}
             </span>
             <button
               onClick={() => onSelectDestination('all')}
-              className="text-[#C6A46B] hover:underline cursor-pointer ml-2"
+              style={{ color: currentAccentHex }}
+              className="hover:underline cursor-pointer ml-2 font-semibold"
             >
               Clear filter
             </button>
@@ -153,10 +196,15 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
 
         {/* Catalog Grid */}
         {filteredExperiences.length === 0 ? (
-          <div className="text-center py-20 bg-[#F6F4EF] rounded-2xl border border-dashed border-[#D9C29A]">
-            <Compass className="w-10 h-10 text-[#C6A46B] mx-auto mb-3" />
-            <h3 className="text-base font-bold text-[#123B32]">No published experiences match your filter</h3>
-            <p className="text-xs text-[#777D75] mt-1">
+          <div
+            style={cardGlassyStyle}
+            className="text-center py-20 rounded-2xl transition-all"
+          >
+            <Compass className="w-10 h-10 mx-auto mb-3" style={{ color: currentAccentHex }} />
+            <h3 className="text-base font-bold text-[var(--tf-heading)]">
+              No published experiences match your filter
+            </h3>
+            <p className="text-xs text-[var(--tf-muted)] mt-1">
               Try adjusting your category or destination selection.
             </p>
             <button
@@ -165,7 +213,8 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
                 onSelectDestination('all');
                 setSearchQuery('');
               }}
-              className="mt-4 px-4 py-2 text-xs font-semibold bg-[#123B32] text-white rounded-xl"
+              style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+              className="mt-4 px-4 py-2 text-xs font-bold rounded-xl cursor-pointer hover:brightness-105 transition-all"
             >
               Reset All Filters
             </button>
@@ -181,10 +230,16 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
                 <div
                   key={exp.id}
                   onClick={() => onOpenExperienceDetail(exp)}
-                  className="group flex flex-col bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
+                  style={{
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: cardGlassyStyle.borderColor || 'var(--tf-border)',
+                    boxShadow: cardGlassyStyle.boxShadow,
+                  }}
+                  className="group flex flex-col rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
                   {/* Card Image */}
-                  <div className="relative h-56 overflow-hidden bg-neutral-200">
+                  <div className="relative h-56 overflow-hidden bg-neutral-900">
                     <img
                       src={exp.coverImage}
                       alt={title}
@@ -193,64 +248,70 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
                     />
 
                     {/* Scrim */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
 
-                    {/* Category Label (clean unboxed tag) */}
-                    <div className="absolute top-3.5 left-3.5 rtl:left-auto rtl:right-3.5 text-[11px] font-semibold tracking-wide text-white bg-[#123B32]/90 backdrop-blur-sm px-2.5 py-1 rounded-md">
+                    {/* Category Label */}
+                    <div className="absolute top-3.5 left-3.5 rtl:left-auto rtl:right-3.5 text-[11px] font-semibold tracking-wide text-white bg-black/55 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/15">
                       {isArabic ? exp.categoryAr : exp.category}
                     </div>
 
                     {/* Rating if available */}
                     {exp.rating && exp.rating > 0 && (
-                      <div className="absolute top-3.5 right-3.5 rtl:right-auto rtl:left-3.5 flex items-center gap-1 text-[11px] font-bold text-white bg-black/60 backdrop-blur-sm px-2 py-1 rounded-md">
-                        <Star className="w-3 h-3 fill-[#C6A46B] text-[#C6A46B]" />
-                        <span>{exp.rating.toFixed(1)}</span>
+                      <div className="absolute top-3.5 right-3.5 rtl:right-auto rtl:left-3.5 flex items-center gap-1 text-[11px] font-bold text-white bg-black/60 backdrop-blur-md px-2 py-1 rounded-md border border-white/15">
+                        <Star className="w-3 h-3" style={{ color: currentAccentHex, fill: currentAccentHex }} />
+                        <span className="tabular-nums">{exp.rating.toFixed(1)}</span>
                         {exp.reviewsCount && (
-                          <span className="text-white/70">({exp.reviewsCount})</span>
+                          <span className="text-white/70 tabular-nums">({exp.reviewsCount})</span>
                         )}
                       </div>
                     )}
 
                     {/* Destination Banner */}
                     <div className="absolute bottom-3 left-3.5 rtl:left-auto rtl:right-3.5 flex items-center gap-1 text-xs font-medium text-white/95">
-                      <MapPin className="w-3.5 h-3.5 text-[#D9C29A]" />
+                      <MapPin className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
                       <span>{exp.destinationName}</span>
                     </div>
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div
+                    style={cardBodyGlassyStyle}
+                    className="p-5 flex-1 flex flex-col justify-between transition-all duration-300"
+                  >
                     <div>
-                      <h3 className="font-serif text-lg font-bold text-[#123B32] group-hover:text-[#1D5546] transition-colors line-clamp-1 mb-2">
+                      <h3 className="font-serif text-lg font-bold text-[var(--tf-heading)] transition-colors line-clamp-1 mb-2">
                         {title}
                       </h3>
-                      <p className="text-xs text-[#777D75] line-clamp-2 leading-relaxed mb-4">
+                      <p className="text-xs text-[var(--tf-muted)] line-clamp-2 leading-relaxed mb-4">
                         {description}
                       </p>
                     </div>
 
                     {/* Meta & Price Footer */}
-                    <div className="pt-3 border-t border-[#D9C29A]/30 flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-xs text-[#777D75]">
-                        <Clock className="w-3.5 h-3.5 text-[#123B32]" />
+                    <div className="pt-3 border-t border-[var(--tf-border)] flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-xs text-[var(--tf-muted)]">
+                        <Clock className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
                         <span>{duration}</span>
                       </div>
 
                       <div className="flex items-baseline gap-1">
-                        <span className="text-[11px] text-[#777D75]">{t('section.experiences.from')}</span>
-                        <span className="text-base font-bold text-[#123B32] font-mono tabular-nums">
+                        <span className="text-[11px] text-[var(--tf-muted)]">{t('section.experiences.from')}</span>
+                        <span className="text-base font-bold text-[var(--tf-heading)] font-mono tabular-nums">
                           {exp.price}
                         </span>
-                        <span className="text-xs font-semibold text-[#C6A46B]">
-                          {t('section.experiences.sar')}
+                        <span className="text-xs font-semibold" style={{ color: currentAccentHex }}>
+                          {currency || t('section.experiences.sar')}
                         </span>
                       </div>
                     </div>
 
                     {/* Button */}
-                    <div className="mt-4 pt-3 flex items-center justify-between text-xs font-bold text-[#123B32] group-hover:text-[#C6A46B] transition-colors">
-                      <span>{t('section.experiences.viewDetails')}</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180 transition-transform" />
+                    <div className="mt-4 pt-3 flex items-center justify-between text-xs font-bold text-[var(--tf-heading)] transition-colors">
+                      <span className="group-hover:underline">{t('section.experiences.viewDetails')}</span>
+                      <ArrowRight
+                        className="w-3.5 h-3.5 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180 transition-transform"
+                        style={{ color: currentAccentHex }}
+                      />
                     </div>
                   </div>
                 </div>

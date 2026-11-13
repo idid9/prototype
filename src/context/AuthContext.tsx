@@ -21,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const AUTH_STORAGE_KEY = 'tourflow_admin_auth_v1';
+const AUTH_BROADCAST_CHANNEL = 'tourflow_auth_sync';
 const DEMO_PASSWORD = '12341234';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -47,6 +48,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isAdminAuthenticated]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === AUTH_STORAGE_KEY) {
+        setIsAdminAuthenticated(e.newValue === 'true');
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    let bc: BroadcastChannel | null = null;
+    if ('BroadcastChannel' in window) {
+      bc = new BroadcastChannel(AUTH_BROADCAST_CHANNEL);
+      bc.onmessage = (event) => {
+        if (typeof event.data === 'boolean') {
+          setIsAdminAuthenticated(event.data);
+          if (event.data) setLoginModalOpen(false);
+        }
+      };
+    }
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      bc?.close();
+    };
+  }, []);
+
+  const broadcastAuth = (authed: boolean) => {
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel(AUTH_BROADCAST_CHANNEL);
+        bc.postMessage(authed);
+        bc.close();
+      } catch {}
+    }
+  };
+
   const openLoginModal = () => setLoginModalOpen(true);
   const closeLoginModal = () => setLoginModalOpen(false);
 
@@ -54,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (password === DEMO_PASSWORD) {
       setIsAdminAuthenticated(true);
       setLoginModalOpen(false);
+      broadcastAuth(true);
       return true;
     }
     return false;
@@ -64,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
+    broadcastAuth(false);
   };
 
   return (

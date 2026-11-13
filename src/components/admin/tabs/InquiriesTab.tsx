@@ -3,20 +3,12 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { Inquiry, InquiryStatus } from '../../../types';
 import { DataService } from '../../../services/dataService';
+import { GlassContainer } from '../../glass/GlassContainer';
 import {
   Search,
   Download,
-  Filter,
-  Eye,
-  MessageCircle,
-  Mail,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
   X,
-  Plus,
   Send,
-  User,
 } from 'lucide-react';
 
 interface InquiriesTabProps {
@@ -25,12 +17,16 @@ interface InquiriesTabProps {
 
 export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
   const { isRtl } = useLanguage();
-  const { getGlassyCardStyle } = useTheme();
+  const { currentAccentHex } = useTheme();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeInquiryModal, setActiveInquiryModal] = useState<Inquiry | null>(null);
+  const [activeInquiryId, setActiveInquiryId] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
+
+  const activeInquiryModal = activeInquiryId
+    ? inquiries.find((i) => i.id === activeInquiryId) || null
+    : null;
 
   const statusOptions: InquiryStatus[] = [
     'NEW',
@@ -57,10 +53,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
   });
 
   const handleStatusChange = (inquiryId: string, newStatus: InquiryStatus) => {
-    const updated = DataService.updateInquiryStatus(inquiryId, newStatus);
-    if (activeInquiryModal && activeInquiryModal.id === inquiryId && updated) {
-      setActiveInquiryModal(updated);
-    }
+    DataService.updateInquiryStatus(inquiryId, newStatus);
   };
 
   const handleAddNote = (e: React.FormEvent) => {
@@ -68,7 +61,6 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
     if (!activeInquiryModal || !newNote.trim()) return;
     const updated = DataService.addInquiryNote(activeInquiryModal.id, newNote.trim());
     if (updated) {
-      setActiveInquiryModal(updated);
       setNewNote('');
     }
   };
@@ -121,80 +113,85 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
       {/* Header & Export Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#123B32]">
+          <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
             Bookings & Customer Inquiries
           </h2>
-          <p className="text-xs text-[#777D75]">
+          <p className="text-xs text-[var(--tf-muted)]">
             Real-time pipeline of traveler requests, operator coordination, and booking confirmations.
           </p>
         </div>
 
         <button
           onClick={handleExportCSV}
-          className="py-2.5 px-4 bg-white border border-[#D9C29A]/60 text-[#123B32] hover:bg-[#FAF8F5] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
+          className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <Download className="w-4 h-4 text-[#C6A46B]" />
+          <Download className="w-4 h-4" style={{ color: currentAccentHex }} />
           <span>Export CSV Report</span>
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div
-        className="rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 transition-all duration-300"
-        style={getGlassyCardStyle()}
-      >
+      <GlassContainer className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Search */}
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-[#777D75] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[var(--tf-muted)] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search by customer name, email, ID, or country..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
           />
         </div>
 
-        {/* Filter by Status Tabs (Zero-pill segmented controls) */}
+        {/* Filter by Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none pb-1 md:pb-0">
           <button
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap border ${
               statusFilter === 'all'
-                ? 'bg-[#123B32] text-white border-[#123B32]'
-                : 'bg-[#FAF8F5] text-[#777D75] border-[#D9C29A]/30 hover:bg-[#D9C29A]/20'
+                ? 'text-[#102E29]'
+                : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)] hover:text-[var(--tf-heading)]'
             }`}
+            style={
+              statusFilter === 'all'
+                ? { backgroundColor: currentAccentHex, borderColor: currentAccentHex }
+                : undefined
+            }
           >
             All ({inquiries.length})
           </button>
           {statusOptions.map((st) => {
             const count = inquiries.filter((i) => i.status === st).length;
+            const active = statusFilter === st;
             return (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
                 className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap border ${
-                  statusFilter === st
-                    ? 'bg-[#123B32] text-white border-[#123B32]'
-                    : 'bg-[#FAF8F5] text-[#777D75] border-[#D9C29A]/30 hover:bg-[#D9C29A]/20'
+                  active
+                    ? 'text-[#102E29]'
+                    : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)] hover:text-[var(--tf-heading)]'
                 }`}
+                style={
+                  active
+                    ? { backgroundColor: currentAccentHex, borderColor: currentAccentHex }
+                    : undefined
+                }
               >
                 {st} ({count})
               </button>
             );
           })}
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Inquiries Table */}
-      <div
-        className="rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
-        style={getGlassyCardStyle()}
-      >
+      <GlassContainer delay={0.05} className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs">
             <thead>
-              <tr className="bg-[#FAF8F5] border-b border-[#D9C29A]/40 text-[#777D75] uppercase tracking-wider">
+              <tr className="bg-[var(--tf-table-head)] border-b border-[var(--tf-border)] text-[var(--tf-muted)] uppercase tracking-wider">
                 <th className="py-3 px-4 font-semibold text-start">Inquiry ID</th>
                 <th className="py-3 px-4 font-semibold text-start">Customer Details</th>
                 <th className="py-3 px-4 font-semibold text-start">Selected Experience</th>
@@ -204,31 +201,31 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                 <th className="py-3 px-4 font-semibold text-end">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D9C29A]/20">
+            <tbody className="divide-y divide-[var(--tf-border)]">
               {filteredInquiries.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-[#777D75]">
+                  <td colSpan={7} className="py-12 text-center text-[var(--tf-muted)]">
                     No inquiries found matching current filters. New visitor requests appear automatically here.
                   </td>
                 </tr>
               ) : (
                 filteredInquiries.map((inq) => (
-                  <tr key={inq.id} className="hover:bg-[#FAF8F5] transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-[#123B32] whitespace-nowrap">
+                  <tr key={inq.id} className="hover:bg-[var(--tf-surface-hover)] transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-[var(--tf-heading)] whitespace-nowrap">
                       {inq.id}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-bold text-[#202923]">{inq.customerName}</div>
-                      <div className="text-[11px] text-[#777D75]">{inq.email} · {inq.country}</div>
+                      <div className="font-bold text-[var(--tf-heading)]">{inq.customerName}</div>
+                      <div className="text-[11px] text-[var(--tf-muted)]">{inq.email} · {inq.country}</div>
                     </td>
                     <td className="py-3 px-4 max-w-[220px]">
-                      <div className="font-semibold text-[#123B32] truncate">{inq.experienceTitle}</div>
-                      <div className="text-[11px] text-[#777D75]">{inq.guests} {inq.guests > 1 ? 'Guests' : 'Guest'}</div>
+                      <div className="font-semibold text-[var(--tf-heading)] truncate">{inq.experienceTitle}</div>
+                      <div className="text-[11px] text-[var(--tf-muted)]">{inq.guests} {inq.guests > 1 ? 'Guests' : 'Guest'}</div>
                     </td>
-                    <td className="py-3 px-4 text-[#202923] whitespace-nowrap">
+                    <td className="py-3 px-4 text-[var(--tf-text)] whitespace-nowrap">
                       {inq.preferredDate}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#123B32] whitespace-nowrap tabular-nums">
+                    <td className="py-3 px-4 font-mono font-bold text-[var(--tf-heading)] whitespace-nowrap tabular-nums">
                       {inq.estimatedValue ? `${inq.estimatedValue.toLocaleString()} SAR` : '—'}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
@@ -248,8 +245,8 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                     </td>
                     <td className="py-3 px-4 text-end whitespace-nowrap">
                       <button
-                        onClick={() => setActiveInquiryModal(inq)}
-                        className="py-1 px-2.5 text-xs font-semibold text-[#123B32] bg-[#FAF8F5] hover:bg-[#D9C29A]/20 border border-[#D9C29A]/50 rounded-lg cursor-pointer"
+                        onClick={() => setActiveInquiryId(inq.id)}
+                        className="py-1 px-2.5 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
                       >
                         Details & Notes
                       </button>
@@ -260,7 +257,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
             </tbody>
           </table>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* INQUIRY DETAIL & NOTES MODAL */}
       {activeInquiryModal && (
@@ -282,7 +279,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                 </h3>
               </div>
               <button
-                onClick={() => setActiveInquiryModal(null)}
+                onClick={() => setActiveInquiryId(null)}
                 className="p-1.5 text-[#777D75] hover:text-[#123B32] rounded-lg hover:bg-neutral-100"
               >
                 <X className="w-5 h-5" />

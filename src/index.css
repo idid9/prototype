@@ -10,6 +10,34 @@
     --color-text: #202923;
     --color-muted: #777D75;
     --color-dark: #102E29;
+
+    /* Glassy Dashboard V4 dynamic CSS variables */
+    --glass-blur: 20px;
+    --glass-bg-opacity: 0.45;
+    --glass-border-opacity: 0.22;
+    --glass-glow-strength: 0.35;
+    --tourflow-accent: #C6A46B;
+
+    /* Semantic Light Surface Tokens */
+    --tf-heading: #123B32;
+    --tf-text: #202923;
+    --tf-muted: #646B63;
+    --tf-surface-subtle: rgba(250, 248, 245, 0.72);
+    --tf-surface-hover: rgba(217, 194, 154, 0.16);
+    --tf-border: rgba(217, 194, 154, 0.42);
+    --tf-input-bg: rgba(255, 255, 255, 0.78);
+    --tf-table-head: rgba(250, 248, 245, 0.82);
+  }
+
+  [data-glass-tone="dark"] {
+    --tf-heading: #FFFFFF;
+    --tf-text: rgba(255, 255, 255, 0.92);
+    --tf-muted: rgba(255, 255, 255, 0.65);
+    --tf-surface-subtle: rgba(255, 255, 255, 0.08);
+    --tf-surface-hover: rgba(255, 255, 255, 0.12);
+    --tf-border: rgba(255, 255, 255, 0.18);
+    --tf-input-bg: rgba(14, 22, 20, 0.62);
+    --tf-table-head: rgba(255, 255, 255, 0.06);
   }
 
   body {
@@ -41,14 +69,7 @@
   background: rgba(18, 59, 50, 0.85);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(217, 194, 154, 0.2);
-}
-
-.glass-nav {
-  background: rgba(246, 244, 239, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(217, 194, 154, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Smooth custom scrollbars */
@@ -58,14 +79,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #F6F4EF;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D9C29A;
+  background: rgba(198, 164, 107, 0.45);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #C6A46B;
+  background: rgba(198, 164, 107, 0.75);
 }

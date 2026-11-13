@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import {
   Experience,
   Destination,
   Promotion,
+  Coupon,
   QuizQuestion,
   WebsiteContent,
+  BusinessSettings,
 } from '../../types';
 import { DataService } from '../../services/dataService';
 import { VisitorNavbar } from '../../components/visitor/VisitorNavbar';
@@ -27,13 +30,16 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
   initialSelectedExperience = null,
 }) => {
   const { isRtl } = useLanguage();
+  const { isDarkGlass, getDashboardBgStyle } = useTheme();
 
   // Real-time synced data state
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [quizzes, setQuizzes] = useState<QuizQuestion[]>([]);
   const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(DataService.getWebsiteContent());
+  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>(DataService.getSettings());
 
   // Search & Filter State
   const [selectedDestination, setSelectedDestination] = useState<string>('all');
@@ -45,12 +51,18 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
   });
   const [guestsCount, setGuestsCount] = useState<number>(2);
 
-  // Active Experience Detail view
-  const [activeExperience, setActiveExperience] = useState<Experience | null>(initialSelectedExperience);
+  // Active Experience Detail view tracked by ID so real-time admin edits update the open detail view immediately
+  const [activeExperienceId, setActiveExperienceId] = useState<string | null>(
+    initialSelectedExperience?.id || null
+  );
+
+  const activeExperience = activeExperienceId
+    ? experiences.find((e) => e.id === activeExperienceId) || null
+    : null;
 
   useEffect(() => {
     if (initialSelectedExperience) {
-      setActiveExperience(initialSelectedExperience);
+      setActiveExperienceId(initialSelectedExperience.id);
     }
   }, [initialSelectedExperience]);
 
@@ -62,21 +74,25 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
     const unsubExp = DataService.subscribeExperiences(setExperiences);
     const unsubDest = DataService.subscribeDestinations(setDestinations);
     const unsubPromo = DataService.subscribePromotions(setPromotions);
+    const unsubCoupons = DataService.subscribeCoupons(setCoupons);
     const unsubQuiz = DataService.subscribeQuizzes(setQuizzes);
     const unsubContent = DataService.subscribeWebsiteContent(setWebsiteContent);
+    const unsubSettings = DataService.subscribeSettings(setBusinessSettings);
 
     return () => {
       unsubExp();
       unsubDest();
       unsubPromo();
+      unsubCoupons();
       unsubQuiz();
       unsubContent();
+      unsubSettings();
     };
   }, []);
 
   const handleScrollToSection = (sectionId: string) => {
-    if (activeExperience) {
-      setActiveExperience(null);
+    if (activeExperienceId) {
+      setActiveExperienceId(null);
     }
     setTimeout(() => {
       const el = document.getElementById(sectionId);
@@ -89,7 +105,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
   };
 
   const handleSelectExperience = (exp: Experience) => {
-    setActiveExperience(exp);
+    setActiveExperienceId(exp.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     DataService.recordEvent('experience_view', `/experience/${exp.slug}`, {
       experienceId: exp.id,
@@ -121,9 +137,15 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F4EF] flex flex-col justify-between" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div
+      data-glass-tone={isDarkGlass ? 'dark' : 'light'}
+      style={getDashboardBgStyle()}
+      className="min-h-screen text-[var(--tf-text)] flex flex-col justify-between transition-colors duration-300"
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
       {/* Navigation */}
       <VisitorNavbar
+        businessName={businessSettings.businessName}
         onNavigateSection={handleScrollToSection}
         onGoToAdmin={onGoToAdmin}
       />
@@ -133,7 +155,9 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
         <ExperienceDetailPage
           experience={activeExperience}
           websiteContent={websiteContent}
-          onBack={() => setActiveExperience(null)}
+          coupons={coupons}
+          currency={businessSettings.currency}
+          onBack={() => setActiveExperienceId(null)}
           onExperienceBooked={(inqId) => {
             console.log('Inquiry confirmed:', inqId);
           }}
@@ -166,6 +190,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
           {/* Section: Featured Destinations */}
           <FeaturedDestinations
             destinations={destinations}
+            experiences={experiences}
             onSelectDestination={(id) => {
               setSelectedDestination(id);
               handleScrollToSection('experiences');
@@ -176,6 +201,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
           <ExperienceCatalog
             experiences={experiences}
             destinations={destinations}
+            currency={businessSettings.currency}
             selectedDestination={selectedDestination}
             onSelectDestination={setSelectedDestination}
             selectedCategory={selectedCategory}
@@ -187,13 +213,15 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
           <InteractiveQuiz
             quizQuestions={quizzes}
             experiences={experiences}
+            currency={businessSettings.currency}
             onSelectExperience={handleSelectExperience}
           />
 
-          {/* Section: Campaigns, Why Local, and About */}
+          {/* Section: Campaigns, Why Local, Guest Ratings, and About */}
           <MarketingSections
             promotions={promotions}
             content={websiteContent}
+            experiences={experiences}
             onSelectPromotion={handleSelectPromotion}
           />
         </main>
@@ -202,8 +230,13 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
       {/* Footer */}
       <VisitorFooter
         content={websiteContent}
+        destinations={destinations}
+        businessSettings={businessSettings}
+        onSelectDestination={(destId) => {
+          setSelectedDestination(destId);
+          handleScrollToSection('experiences');
+        }}
         onNavigateSection={handleScrollToSection}
-        onGoToAdmin={onGoToAdmin}
       />
     </div>
   );
