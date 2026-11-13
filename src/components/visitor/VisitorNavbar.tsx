@@ -20,6 +20,7 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
   const { isAdminAuthenticated, openLoginModal } = useAuth();
   const {
     getVisitorGlassyStyle,
+    getGlassyIconStyle,
     isVisitorTargetGlassy,
     isDarkGlass,
     currentAccentHex,
@@ -86,8 +87,13 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
           : isScrolled
           ? 'shadow-sm py-3'
           : 'bg-gradient-to-b from-[#102E29]/85 via-[#102E29]/40 to-transparent py-5'
-      } ${useLightText ? 'text-white' : 'text-[#202923]'}`}
-      style={headerGlassyStyle}
+      } ${useLightText ? 'text-white' : 'text-[var(--tf-heading)]'}`}
+      style={{
+        ...headerGlassyStyle,
+        ...(useLightText
+          ? { textShadow: '0 1px 2px rgba(0, 0, 0, 0.45)' }
+          : { textShadow: 'var(--tf-text-shadow)' }),
+      }}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,20 +104,8 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
             className="flex items-center gap-2 cursor-pointer group whitespace-nowrap shrink-0 text-start"
           >
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors border"
-              style={
-                useLightText
-                  ? {
-                      backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                      color: currentAccentHex,
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
-                    }
-                  : {
-                      backgroundColor: '#123B32',
-                      color: currentAccentHex,
-                      borderColor: 'transparent',
-                    }
-              }
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+              style={getGlassyIconStyle({ forceDark: useLightText })}
             >
               <Compass className="w-5 h-5 group-hover:rotate-45 transition-transform duration-500" />
             </div>
@@ -119,17 +113,19 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
               {isDefaultBrand ? (
                 isArabic ? (
                   <>
-                    <span className={useLightText ? 'text-white' : 'text-[#123B32]'}>تور</span>
+                    <span className={useLightText ? 'text-white' : 'text-[var(--tf-heading)]'}>تور</span>
                     <span style={{ color: currentAccentHex }}>فلو</span>
                   </>
                 ) : (
                   <>
-                    <span className={useLightText ? 'text-white' : 'text-[#123B32]'}>Tour</span>
+                    <span className={useLightText ? 'text-white' : 'text-[var(--tf-heading)]'}>Tour</span>
                     <span style={{ color: currentAccentHex }}>Flow</span>
                   </>
                 )
               ) : (
-                <span className={useLightText ? 'text-white' : 'text-[#123B32]'}>{businessName}</span>
+                <span className={useLightText ? 'text-white' : 'text-[var(--tf-heading)]'}>
+                  {businessName}
+                </span>
               )}
             </div>
           </button>
@@ -141,7 +137,9 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 className={`text-sm font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  useLightText ? 'text-white/90 hover:text-white' : 'text-[#202923] hover:text-[#123B32]'
+                  useLightText
+                    ? 'text-white/95 hover:text-white'
+                    : 'text-[var(--tf-text)] hover:text-[var(--tf-heading)]'
                 }`}
               >
                 {item.label}
@@ -156,8 +154,8 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
               onClick={toggleLanguage}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide border transition-all cursor-pointer ${
                 useLightText
-                  ? 'border-white/25 text-white hover:bg-white/10'
-                  : 'border-[#D9C29A]/60 text-[#123B32] hover:bg-[#D9C29A]/15'
+                  ? 'border-white/30 bg-white/10 text-white hover:bg-white/20'
+                  : 'border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)]'
               }`}
               title={isArabic ? 'تغيير اللغة' : 'Switch Language'}
             >
@@ -170,8 +168,8 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
               onClick={isAdminAuthenticated ? onGoToAdmin : openLoginModal}
               className={`p-2 rounded-lg transition-colors cursor-pointer ${
                 useLightText
-                  ? 'text-white/80 hover:text-white hover:bg-white/15'
-                  : 'text-[#777D75] hover:text-[#123B32] hover:bg-[#D9C29A]/15'
+                  ? 'text-white/85 hover:text-white hover:bg-white/15'
+                  : 'text-[var(--tf-muted)] hover:text-[var(--tf-heading)] hover:bg-[var(--tf-surface-subtle)]'
               }`}
               title={
                 isAdminAuthenticated

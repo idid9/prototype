@@ -112,10 +112,16 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
             >
               {t('section.experiences.featured')}
             </div>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
+            <h2
+              className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight"
+              style={{ textShadow: 'var(--tf-text-shadow)' }}
+            >
               {t('section.experiences.title')}
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-[var(--tf-muted)] max-w-2xl">
+            <p
+              className="mt-2 text-sm sm:text-base text-[var(--tf-muted)] max-w-2xl"
+              style={{ textShadow: 'var(--tf-text-shadow)' }}
+            >
               {t('section.experiences.sub')}
             </p>
           </div>
@@ -297,10 +303,16 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
                     className="p-5 flex-1 flex flex-col justify-between transition-all duration-300"
                   >
                     <div>
-                      <h3 className="font-serif text-lg font-bold text-[var(--tf-heading)] transition-colors line-clamp-1 mb-2">
+                      <h3
+                        className="font-serif text-lg font-bold text-[var(--tf-heading)] transition-colors line-clamp-1 mb-2"
+                        style={{ textShadow: 'var(--tf-text-shadow)' }}
+                      >
                         {title}
                       </h3>
-                      <p className="text-xs text-[var(--tf-muted)] line-clamp-2 leading-relaxed mb-4">
+                      <p
+                        className="text-xs text-[var(--tf-muted)] line-clamp-2 leading-relaxed mb-4"
+                        style={{ textShadow: 'var(--tf-text-shadow)' }}
+                      >
                         {description}
                       </p>
                     </div>
@@ -314,7 +326,10 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
 
                       <div className="flex items-baseline gap-1">
                         <span className="text-[11px] text-[var(--tf-muted)]">{t('section.experiences.from')}</span>
-                        <span className="text-base font-bold text-[var(--tf-heading)] font-mono tabular-nums">
+                        <span
+                          className="text-base font-bold text-[var(--tf-heading)] font-mono tabular-nums"
+                          style={{ textShadow: 'var(--tf-text-shadow)' }}
+                        >
                           {exp.price}
                         </span>
                         <span className="text-xs font-semibold" style={{ color: currentAccentHex }}>

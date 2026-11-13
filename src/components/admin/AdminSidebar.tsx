@@ -52,7 +52,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   newInquiriesCount = 0,
 }) => {
   const { language, isRtl } = useLanguage();
-  const { settings, isDarkGlass, blurPixels, currentAccentHex } = useTheme();
+  const { settings, isDarkGlass, blurPixels, currentAccentHex, currentAccentRgb, getGlassyIconStyle } = useTheme();
   const isArabic = language === 'ar';
 
   const menuItems: { id: AdminTab; label: string; labelAr: string; icon: React.ReactNode; badge?: number }[] = [
@@ -69,17 +69,26 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'settings', label: 'Settings', labelAr: 'الإعدادات', icon: <Settings className="w-4 h-4" /> },
   ];
 
+  const sheen = settings.glassSheen ?? 0.72;
   const sidebarStyle: React.CSSProperties = settings.isGlassyEnabled
     ? {
         backgroundColor: isDarkGlass
-          ? `rgba(12, 18, 16, ${Math.min(0.86, settings.cardTranslucency + 0.25)})`
-          : 'rgba(18, 59, 50, 0.88)',
-        backdropFilter: `blur(${blurPixels}px) saturate(150%)`,
-        WebkitBackdropFilter: `blur(${blurPixels}px) saturate(150%)`,
-        borderInlineEnd: `1px solid rgba(255, 255, 255, ${Math.max(0.14, settings.borderOpacity * 0.7)})`,
+          ? `rgba(12, 18, 16, ${Math.min(0.76, Math.max(0.24, settings.cardTranslucency + 0.12))})`
+          : `rgba(18, 59, 50, ${Math.min(0.84, Math.max(0.45, settings.cardTranslucency + 0.35))})`,
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, ${(0.04 + sheen * 0.12).toFixed(3)}) 0%, rgba(255, 255, 255, 0.01) 100%)`,
+        backdropFilter:
+          blurPixels > 0
+            ? `blur(${blurPixels}px) saturate(${Math.round(145 + sheen * 60)}%)`
+            : `saturate(${Math.round(145 + sheen * 60)}%)`,
+        WebkitBackdropFilter:
+          blurPixels > 0
+            ? `blur(${blurPixels}px) saturate(${Math.round(145 + sheen * 60)}%)`
+            : `saturate(${Math.round(145 + sheen * 60)}%)`,
+        borderInlineEnd: `1px solid rgba(255, 255, 255, ${Math.max(0.14, settings.borderOpacity * 0.85)})`,
       }
     : {
         backgroundColor: '#123B32',
+        backgroundImage: 'none',
         borderInlineEnd: '1px solid #1D5546',
       };
 
@@ -94,10 +103,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {/* Brand Header */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-white/15">
         {!collapsed && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[#102E29]"
-              style={{ backgroundColor: currentAccentHex }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-all"
+              style={getGlassyIconStyle({ forceDark: true })}
             >
               <Compass className="w-5 h-5" />
             </div>
@@ -113,7 +122,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   </>
                 )}
               </span>
-              <span className="text-[10px] text-white/60 tracking-wider uppercase mt-1">
+              <span className="text-[10px] text-white/65 tracking-wider uppercase mt-1">
                 {isArabic ? 'نظام إدارة المشغلين' : 'Operator SaaS'}
               </span>
             </div>
@@ -121,7 +130,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         )}
 
         {collapsed && (
-          <div className="w-8 h-8 rounded-lg bg-[#D9C29A] text-[#123B32] flex items-center justify-center font-bold mx-auto">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold mx-auto transition-all"
+            style={getGlassyIconStyle({ forceDark: true })}
+          >
             <Compass className="w-5 h-5" />
           </div>
         )}
@@ -155,28 +167,47 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              style={
                 isActive
-                  ? 'bg-[#1D5546] text-[#D9C29A] shadow-sm'
-                  : 'text-white/80 hover:bg-white/5 hover:text-white'
+                  ? {
+                      backgroundColor: `rgba(${currentAccentRgb}, 0.2)`,
+                      color: currentAccentHex,
+                      borderColor: `rgba(${currentAccentRgb}, 0.45)`,
+                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.14)',
+                    }
+                  : undefined
+              }
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                isActive
+                  ? 'shadow-sm'
+                  : 'border-transparent text-white/85 hover:bg-white/10 hover:text-white'
               } ${collapsed ? 'justify-center px-0' : 'justify-between'}`}
               title={isArabic ? item.labelAr : item.label}
             >
               <div className="flex items-center gap-3">
-                <span className={isActive ? 'text-[#D9C29A]' : 'text-white/70'}>
+                <span
+                  className={isActive ? '' : 'text-white/75'}
+                  style={isActive ? { color: currentAccentHex } : undefined}
+                >
                   {item.icon}
                 </span>
                 {!collapsed && <span>{isArabic ? item.labelAr : item.label}</span>}
               </div>
 
               {!collapsed && item.badge !== undefined && item.badge > 0 && (
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-[#C6A46B] text-[#123B32]">
+                <span
+                  className="px-2 py-0.5 text-[10px] font-bold rounded-full"
+                  style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                >
                   {item.badge}
                 </span>
               )}
 
               {collapsed && item.badge !== undefined && item.badge > 0 && (
-                <span className="w-2 h-2 rounded-full bg-[#C6A46B] absolute top-2 right-2 rtl:right-auto rtl:left-2" />
+                <span
+                  className="w-2 h-2 rounded-full absolute top-2 right-2 rtl:right-auto rtl:left-2"
+                  style={{ backgroundColor: currentAccentHex }}
+                />
               )}
             </button>
           );
@@ -184,16 +215,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </nav>
 
       {/* Bottom Footer Actions */}
-      <div className="p-3 border-t border-[#1D5546]/80 space-y-1">
+      <div className="p-3 border-t border-white/15 space-y-1">
         {/* Switch to Visitor Portal */}
         <button
           onClick={onGoToVisitorSite}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer ${
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-white/85 hover:bg-white/10 hover:text-white transition-colors cursor-pointer ${
             collapsed ? 'justify-center px-0' : ''
           }`}
           title={isArabic ? 'فتح موقع الزوار' : 'Open Visitor Website'}
         >
-          <ExternalLink className="w-4 h-4 text-[#D9C29A] shrink-0" />
+          <ExternalLink className="w-4 h-4 shrink-0" style={{ color: currentAccentHex }} />
           {!collapsed && <span>{isArabic ? 'موقع الزوار' : 'Visitor Website'}</span>}
         </button>
 

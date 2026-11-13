@@ -37,7 +37,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
   onPreviewExperience,
 }) => {
   const { language, isRtl } = useLanguage();
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, isDarkGlass } = useTheme();
   const isArabic = language === 'ar';
 
   const [searchFilter, setSearchFilter] = useState('');
@@ -378,17 +378,29 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       {exp.status === 'PUBLISHED' && (
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-400/35">
+                        <span
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-full border ${
+                            isDarkGlass
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                              : 'bg-emerald-500/15 text-emerald-800 border-emerald-600/35'
+                          }`}
+                        >
                           {localizeExperienceStatus(exp.status, language)}
                         </span>
                       )}
                       {exp.status === 'DRAFT' && (
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-amber-500/15 text-amber-400 border border-amber-400/35">
+                        <span
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-full border ${
+                            isDarkGlass
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-400/35'
+                              : 'bg-amber-500/15 text-amber-800 border-amber-600/35'
+                          }`}
+                        >
                           {localizeExperienceStatus(exp.status, language)}
                         </span>
                       )}
                       {exp.status === 'ARCHIVED' && (
-                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-neutral-500/15 text-[var(--tf-muted)] border border-[var(--tf-border)]">
+                        <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border border-[var(--tf-border)]">
                           {localizeExperienceStatus(exp.status, language)}
                         </span>
                       )}
@@ -420,7 +432,11 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                         </button>
                         <button
                           onClick={() => setDeleteConfirmationId(exp.id)}
-                          className="p-1.5 text-red-400 hover:text-red-300 rounded hover:bg-red-500/15 transition-colors cursor-pointer"
+                          className={`p-1.5 rounded hover:bg-rose-500/15 transition-colors cursor-pointer ${
+                            isDarkGlass
+                              ? 'text-rose-400 hover:text-rose-300'
+                              : 'text-rose-600 hover:text-rose-700'
+                          }`}
                           title={isArabic ? 'حذف التجربة' : 'Delete Experience'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />

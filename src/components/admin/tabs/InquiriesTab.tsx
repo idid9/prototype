@@ -26,7 +26,7 @@ interface InquiriesTabProps {
 export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experiences = [] }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, isDarkGlass } = useTheme();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,20 +100,33 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
     document.body.removeChild(link);
   };
 
-  const getStatusBadge = (status: InquiryStatus) => {
+  const getStatusBadge = (status: InquiryStatus, forceLightModal = false) => {
+    const dark = !forceLightModal && isDarkGlass;
     switch (status) {
       case 'NEW':
-        return 'bg-amber-50 text-amber-800 border-amber-300 font-bold';
+        return dark
+          ? 'bg-amber-500/20 text-amber-300 border-amber-400/35 font-bold'
+          : 'bg-amber-500/15 text-amber-800 border-amber-600/35 font-bold';
       case 'CONTACTED':
-        return 'bg-blue-50 text-blue-800 border-blue-300 font-semibold';
+        return dark
+          ? 'bg-sky-500/20 text-sky-300 border-sky-400/35 font-semibold'
+          : 'bg-sky-500/15 text-sky-800 border-sky-600/35 font-semibold';
       case 'PENDING':
-        return 'bg-purple-50 text-purple-800 border-purple-300 font-semibold';
+        return dark
+          ? 'bg-purple-500/20 text-purple-300 border-purple-400/35 font-semibold'
+          : 'bg-purple-500/15 text-purple-800 border-purple-600/35 font-semibold';
       case 'CONFIRMED':
-        return 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold';
+        return dark
+          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35 font-bold'
+          : 'bg-emerald-500/15 text-emerald-800 border-emerald-600/35 font-bold';
       case 'COMPLETED':
-        return 'bg-neutral-100 text-neutral-700 border-neutral-300';
+        return forceLightModal
+          ? 'bg-neutral-100 text-neutral-700 border-neutral-300'
+          : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)]';
       case 'CANCELLED':
-        return 'bg-red-50 text-red-700 border-red-300';
+        return dark
+          ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
+          : 'bg-rose-500/15 text-rose-800 border-rose-600/35';
     }
   };
 
@@ -317,7 +330,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
                   <span className="font-mono text-xs font-bold px-2 py-0.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded text-[#123B32]">
                     {activeInquiryModal.id}
                   </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded border ${getStatusBadge(activeInquiryModal.status)}`}>
+                  <span className={`text-[10px] px-2 py-0.5 rounded border ${getStatusBadge(activeInquiryModal.status, true)}`}>
                     {localizeInquiryStatus(activeInquiryModal.status, language)}
                   </span>
                 </div>

@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type BlurIntensity = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type BlurIntensity = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type GlassSurfaceTone = 'dark' | 'light';
+export type TextColorMode = 'auto' | 'crisp_white' | 'warm_ivory' | 'obsidian_ink' | 'emerald_ink';
+export type IconThemeStyle = 'frosted' | 'solid' | 'glow_outline';
 export type BackgroundPreset =
   | 'lounge_interior'
   | 'ambient'
@@ -12,6 +14,84 @@ export type BackgroundPreset =
 export type AccentPreset = 'gold' | 'emerald' | 'cyan' | 'violet' | 'rose' | 'custom';
 
 export const LOUNGE_INTERIOR_IMAGE = '/src/assets/images/glassy_lounge_backdrop_1794551389317.jpg';
+
+export interface TextColorOption {
+  id: TextColorMode;
+  name: string;
+  nameAr: string;
+  swatchHex: string;
+  isLightText: boolean | 'auto';
+}
+
+export const TEXT_COLOR_OPTIONS: TextColorOption[] = [
+  {
+    id: 'auto',
+    name: 'Auto High-Contrast',
+    nameAr: 'تباين تلقائي ذكي',
+    swatchHex: '#94A3B8',
+    isLightText: 'auto',
+  },
+  {
+    id: 'crisp_white',
+    name: 'Pure Crisp White',
+    nameAr: 'أبيض ناصع عالي الوضوح',
+    swatchHex: '#FFFFFF',
+    isLightText: true,
+  },
+  {
+    id: 'warm_ivory',
+    name: 'Warm Sand Ivory',
+    nameAr: 'عاجي رملي دافئ',
+    swatchHex: '#FAF0DC',
+    isLightText: true,
+  },
+  {
+    id: 'obsidian_ink',
+    name: 'Obsidian Dark Ink',
+    nameAr: 'حبر داكن فاحم',
+    swatchHex: '#0D1916',
+    isLightText: false,
+  },
+  {
+    id: 'emerald_ink',
+    name: 'Saudi Emerald Ink',
+    nameAr: 'حبر زمردي داكن',
+    swatchHex: '#0B3B30',
+    isLightText: false,
+  },
+];
+
+export interface IconThemeOption {
+  id: IconThemeStyle;
+  name: string;
+  nameAr: string;
+  desc: string;
+  descAr: string;
+}
+
+export const ICON_THEME_OPTIONS: IconThemeOption[] = [
+  {
+    id: 'frosted',
+    name: 'Frosted Glass Badge',
+    nameAr: 'أيقونة زجاجية مصنفرة',
+    desc: 'Translucent glass tile with accent border & frosted sheen',
+    descAr: 'خلفية زجاجية شفافة مع إطار ملون وبريق مصنفر',
+  },
+  {
+    id: 'solid',
+    name: 'Solid Accent Fill',
+    nameAr: 'تعبئة لونية صلبة',
+    desc: 'High-contrast solid accent fill for bold icon clarity',
+    descAr: 'تعبئة بلون التمييز لوضوح بارز ومباشر للأيقونات',
+  },
+  {
+    id: 'glow_outline',
+    name: 'Luminous Glass Ring',
+    nameAr: 'حلقة زجاجية متوهجة',
+    desc: 'Clear glass outline framed by a soft glowing accent halo',
+    descAr: 'إطار زجاجي شفاف محاط بهالة إضاءة ناعمة',
+  },
+];
 
 export interface AccentColorOption {
   id: AccentPreset;
@@ -29,7 +109,7 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     nameAr: 'شامبين صحراوي',
     hex: '#C6A46B',
     rgb: '198, 164, 107',
-    glow: 'rgba(198, 164, 107, 0.4)',
+    glow: 'rgba(198, 164, 107, 0.45)',
   },
   {
     id: 'emerald',
@@ -37,7 +117,7 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     nameAr: 'زمرد سعودي',
     hex: '#10B981',
     rgb: '16, 185, 129',
-    glow: 'rgba(16, 185, 129, 0.4)',
+    glow: 'rgba(16, 185, 129, 0.45)',
   },
   {
     id: 'cyan',
@@ -45,7 +125,7 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     nameAr: 'فيروز البحر الأحمر',
     hex: '#06B6D4',
     rgb: '6, 182, 212',
-    glow: 'rgba(6, 182, 212, 0.4)',
+    glow: 'rgba(6, 182, 212, 0.45)',
   },
   {
     id: 'violet',
@@ -53,7 +133,7 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     nameAr: 'جاكاراندا ملكي',
     hex: '#8B5CF6',
     rgb: '139, 92, 246',
-    glow: 'rgba(139, 92, 246, 0.4)',
+    glow: 'rgba(139, 92, 246, 0.45)',
   },
   {
     id: 'rose',
@@ -61,7 +141,7 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     nameAr: 'ورد الطائف',
     hex: '#F43F5E',
     rgb: '244, 63, 94',
-    glow: 'rgba(244, 63, 94, 0.4)',
+    glow: 'rgba(244, 63, 94, 0.45)',
   },
 ];
 
@@ -94,20 +174,22 @@ export const BACKGROUND_PRESETS: BackgroundPresetOption[] = [
     id: 'deep_emerald',
     name: 'Dark Oasis Emerald',
     nameAr: 'واحة الزمرد الداكنة',
-    previewBg: 'radial-gradient(circle at 15% 20%, #16483D 0%, #091B17 85%)',
+    previewBg: 'radial-gradient(circle at 15% 20%, #247864 0%, #091B17 85%)',
     baseColor: '#091B17',
-    gradientImage: 'radial-gradient(circle at 15% 20%, #16483D 0%, #091B17 85%)',
+    gradientImage:
+      'radial-gradient(circle at 18% 18%, rgba(36, 130, 106, 0.85) 0%, transparent 45%), radial-gradient(circle at 82% 75%, rgba(198, 164, 107, 0.42) 0%, transparent 48%), radial-gradient(circle at 50% 45%, #123B32 0%, #071411 90%)',
     recommendedTone: 'dark',
-    description: 'Rich obsidian-emerald depth engineered for smoked glass contrast',
-    descriptionAr: 'عمق زمردي داكن مصمم لتباين أنيق مع الزجاج المدخن',
+    description: 'Rich obsidian-emerald depth with luminous gold & emerald light orbs for glass refraction',
+    descriptionAr: 'عمق زمردي داكن مع هالات إضاءة ذهبية تبرز انكسار الزجاج المدخن',
   },
   {
     id: 'ambient',
     name: 'Ambient Warm Sand',
     nameAr: 'توهج رملي دافئ',
     previewBg: 'radial-gradient(at 0% 0%, #FAF6EE 0px, transparent 50%), radial-gradient(at 100% 100%, #E7DCC6 0px, transparent 50%), #F6F4EF',
-    baseColor: '#F6F4EF',
-    gradientImage: 'radial-gradient(at 0% 0%, #FAF6EE 0px, transparent 50%), radial-gradient(at 100% 100%, #E7DCC6 0px, transparent 50%)',
+    baseColor: '#EDE6D8',
+    gradientImage:
+      'radial-gradient(circle at 15% 15%, rgba(198, 164, 107, 0.45) 0px, transparent 42%), radial-gradient(circle at 85% 25%, rgba(18, 59, 50, 0.18) 0px, transparent 45%), radial-gradient(circle at 75% 85%, rgba(217, 194, 154, 0.65) 0px, transparent 50%)',
     recommendedTone: 'light',
     description: 'Soft warm desert glow paired with bright crystal frosted cards',
     descriptionAr: 'توهج صحراوي ناعم مع بطاقات زجاجية كريستالية مشرقة',
@@ -116,23 +198,25 @@ export const BACKGROUND_PRESETS: BackgroundPresetOption[] = [
     id: 'gradient',
     name: 'Modern Executive Mesh',
     nameAr: 'تدرج تنفيذي حديث',
-    previewBg: 'linear-gradient(135deg, #F3EFE6 0%, #E6DDD0 50%, #D9CDB8 100%)',
+    previewBg: 'linear-gradient(135deg, #F3EFE6 0%, #DFD1BA 50%, #C8B494 100%)',
     baseColor: '#E6DDD0',
-    gradientImage: 'linear-gradient(135deg, #F3EFE6 0%, #E6DDD0 50%, #D9CDB8 100%)',
+    gradientImage:
+      'radial-gradient(circle at 20% 80%, rgba(18, 59, 50, 0.22) 0%, transparent 45%), radial-gradient(circle at 85% 15%, rgba(198, 164, 107, 0.5) 0%, transparent 42%), linear-gradient(135deg, #F5F1E8 0%, #E4D7C1 52%, #D4C1A1 100%)',
     recommendedTone: 'light',
-    description: 'Clean executive champagne mesh gradient',
-    descriptionAr: 'تدرج لوني تنفيذي نقي بدرجات الشامبين الدافئة',
+    description: 'Layered champagne & sage mesh crafted to showcase light glass blur',
+    descriptionAr: 'تدرج لوني تنفيذي بدرجات الشامبين يبرز شفافية الزجاج النهاري',
   },
   {
     id: 'desert_dawn',
     name: 'AlUla Dawn Horizon',
     nameAr: 'فجر العلا الذهبي',
-    previewBg: 'radial-gradient(circle at 80% 10%, #F5E8D0 0%, #EADAC0 45%, #DECBA9 100%)',
+    previewBg: 'radial-gradient(circle at 80% 10%, #F5E8D0 0%, #E5CCA4 45%, #CFA875 100%)',
     baseColor: '#EADAC0',
-    gradientImage: 'radial-gradient(circle at 80% 10%, #F5E8D0 0%, #EADAC0 45%, #DECBA9 100%)',
+    gradientImage:
+      'radial-gradient(circle at 80% 15%, rgba(244, 162, 97, 0.36) 0%, transparent 44%), radial-gradient(circle at 18% 72%, rgba(18, 59, 50, 0.2) 0%, transparent 45%), radial-gradient(circle at 50% 45%, #F4E7D0 0%, #E0C59D 55%, #C9A678 100%)',
     recommendedTone: 'light',
-    description: 'Sunrise sandstone tones for bright editorial clarity',
-    descriptionAr: 'درجات الصخور الرملية عند شروق الشمس لوضوح تحريري مشرق',
+    description: 'Sunrise sandstone tones with warm depth behind frosted crystal panels',
+    descriptionAr: 'درجات الصخور الرملية الدافئة لإبراز عمق الألواح الزجاجية',
   },
 ];
 
@@ -157,10 +241,14 @@ export interface VisitorGlassySettings {
 export interface ThemeSettings {
   isGlassyEnabled: boolean;
   glassSurfaceTone: GlassSurfaceTone;
+  textColorMode: TextColorMode;
+  iconThemeStyle: IconThemeStyle;
   blurIntensity: BlurIntensity;
-  cardTranslucency: number; // 0.1 to 0.92
-  borderOpacity: number; // 0.08 to 0.75
+  blurRadius: number; // Continuous 0..64 px
+  cardTranslucency: number; // 0.10 to 0.88
+  borderOpacity: number; // 0.12 to 0.80
   glowStrength: number; // 0 to 1
+  glassSheen: number; // 0 to 1 specular frost highlight
   backgroundPreset: BackgroundPreset;
   customBgUrl: string;
   accentPreset: AccentPreset;
@@ -181,10 +269,14 @@ const DEFAULT_VISITOR_GLASSY: VisitorGlassySettings = {
 const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   isGlassyEnabled: true,
   glassSurfaceTone: 'dark',
-  blurIntensity: 'xl',
-  cardTranslucency: 0.46,
-  borderOpacity: 0.22,
-  glowStrength: 0.4,
+  textColorMode: 'auto',
+  iconThemeStyle: 'frosted',
+  blurIntensity: 'lg',
+  blurRadius: 24,
+  cardTranslucency: 0.34,
+  borderOpacity: 0.28,
+  glowStrength: 0.45,
+  glassSheen: 0.65,
   backgroundPreset: 'lounge_interior',
   customBgUrl: '',
   accentPreset: 'gold',
@@ -218,6 +310,7 @@ interface ThemeContextType {
   blurTailwindClass: string;
   blurPixels: number;
   getGlassyCardStyle: (forceDark?: boolean) => React.CSSProperties;
+  getGlassyIconStyle: (options?: { forceDark?: boolean }) => React.CSSProperties;
   getVisitorGlassyStyle: (
     target: VisitorGlassyTarget,
     options?: {
@@ -237,38 +330,107 @@ const ThemeContext = createContext<ThemeContextType>({
   resetToDefaults: () => {},
   currentAccentHex: '#C6A46B',
   currentAccentRgb: '198, 164, 107',
-  currentAccentGlow: 'rgba(198, 164, 107, 0.4)',
+  currentAccentGlow: 'rgba(198, 164, 107, 0.45)',
   blurTailwindClass: 'backdrop-blur-xl',
-  blurPixels: 28,
+  blurPixels: 24,
   getGlassyCardStyle: () => ({}),
+  getGlassyIconStyle: () => ({}),
   getVisitorGlassyStyle: () => ({}),
   isVisitorTargetGlassy: () => false,
   getDashboardBgStyle: () => ({}),
 });
 
-const mergeThemeSettings = (parsed: Partial<ThemeSettings>): ThemeSettings => ({
-  ...DEFAULT_THEME_SETTINGS,
-  ...parsed,
-  visitorGlassy: {
-    ...DEFAULT_VISITOR_GLASSY,
-    ...(parsed.visitorGlassy || {}),
-  },
-});
-
 export const getBlurPixels = (intensity: BlurIntensity): number => {
   switch (intensity) {
+    case 'none':
+      return 0;
     case 'sm':
-      return 6;
+      return 8;
     case 'md':
-      return 12;
+      return 16;
     case 'lg':
-      return 20;
+      return 24;
     case 'xl':
-      return 28;
-    case '2xl':
       return 40;
+    case '2xl':
+      return 56;
   }
 };
+
+export const closestBlurIntensity = (px: number): BlurIntensity => {
+  if (px <= 2) return 'none';
+  if (px <= 11) return 'sm';
+  if (px <= 20) return 'md';
+  if (px <= 32) return 'lg';
+  if (px <= 48) return 'xl';
+  return '2xl';
+};
+
+const mergeThemeSettings = (parsed: Partial<ThemeSettings>): ThemeSettings => {
+  const mergedBlurRadius =
+    typeof parsed.blurRadius === 'number'
+      ? Math.max(0, Math.min(64, parsed.blurRadius))
+      : parsed.blurIntensity
+      ? getBlurPixels(parsed.blurIntensity)
+      : DEFAULT_THEME_SETTINGS.blurRadius;
+
+  return {
+    ...DEFAULT_THEME_SETTINGS,
+    ...parsed,
+    blurRadius: mergedBlurRadius,
+    blurIntensity: parsed.blurIntensity || closestBlurIntensity(mergedBlurRadius),
+    textColorMode: parsed.textColorMode || DEFAULT_THEME_SETTINGS.textColorMode,
+    iconThemeStyle: parsed.iconThemeStyle || DEFAULT_THEME_SETTINGS.iconThemeStyle,
+    glassSheen:
+      typeof parsed.glassSheen === 'number'
+        ? Math.max(0, Math.min(1, parsed.glassSheen))
+        : DEFAULT_THEME_SETTINGS.glassSheen,
+    visitorGlassy: {
+      ...DEFAULT_VISITOR_GLASSY,
+      ...(parsed.visitorGlassy || {}),
+    },
+  };
+};
+
+function resolveTextPalette(mode: TextColorMode, surfaceIsDark: boolean) {
+  const resolvedMode: Exclude<TextColorMode, 'auto'> =
+    mode === 'auto' ? (surfaceIsDark ? 'crisp_white' : 'obsidian_ink') : mode;
+
+  switch (resolvedMode) {
+    case 'crisp_white':
+      return {
+        isLightText: true,
+        heading: '#FFFFFF',
+        text: 'rgba(247, 250, 248, 0.96)',
+        muted: 'rgba(222, 234, 228, 0.86)',
+        shadow: '0 1px 2px rgba(0, 0, 0, 0.48)',
+      };
+    case 'warm_ivory':
+      return {
+        isLightText: true,
+        heading: '#FFF8EB',
+        text: '#F5EBD8',
+        muted: 'rgba(235, 222, 198, 0.88)',
+        shadow: '0 1px 2px rgba(0, 0, 0, 0.45)',
+      };
+    case 'obsidian_ink':
+      return {
+        isLightText: false,
+        heading: '#0A241E',
+        text: '#162420',
+        muted: '#384B45',
+        shadow: '0 1px 1px rgba(255, 255, 255, 0.45)',
+      };
+    case 'emerald_ink':
+      return {
+        isLightText: false,
+        heading: '#0B3B30',
+        text: '#134035',
+        muted: '#2D594E',
+        shadow: '0 1px 1px rgba(255, 255, 255, 0.45)',
+      };
+  }
+}
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<ThemeSettings>(() => {
@@ -296,10 +458,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const currentAccentGlow =
     settings.accentPreset === 'custom'
-      ? `rgba(${currentAccentRgb}, 0.4)`
-      : currentAccent?.glow || 'rgba(198, 164, 107, 0.4)';
+      ? `rgba(${currentAccentRgb}, 0.45)`
+      : currentAccent?.glow || 'rgba(198, 164, 107, 0.45)';
 
   const blurTailwindClass = {
+    none: 'backdrop-blur-none',
     sm: 'backdrop-blur-sm',
     md: 'backdrop-blur-md',
     lg: 'backdrop-blur-lg',
@@ -307,12 +470,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     '2xl': 'backdrop-blur-2xl',
   }[settings.blurIntensity];
 
-  const blurPixels = getBlurPixels(settings.blurIntensity);
+  const blurPixels = settings.blurRadius;
 
-  // Unified Surface Tone applies across BOTH Admin and Visitor Panels (even when Solid is toggled!)
-  const isDarkGlass = settings.glassSurfaceTone === 'dark';
+  // Ensure surface tone adapts safely if textColorMode explicitly locks light or dark text
+  const textPalette = resolveTextPalette(
+    settings.textColorMode,
+    settings.glassSurfaceTone === 'dark'
+  );
+  const isDarkGlass =
+    settings.textColorMode === 'auto'
+      ? settings.glassSurfaceTone === 'dark'
+      : textPalette.isLightText;
 
-  // Persist to localStorage and bind CSS variables dynamically
+  // Persist to localStorage and bind high-contrast CSS variables dynamically
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -328,8 +498,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.style.setProperty('--glass-bg-opacity', settings.cardTranslucency.toString());
       root.style.setProperty('--glass-border-opacity', settings.borderOpacity.toString());
       root.style.setProperty('--glass-glow-strength', settings.glowStrength.toString());
+
+      // Dynamic Contrast-Protected Text & Inner Control Tokens
+      root.style.setProperty('--tf-heading', textPalette.heading);
+      root.style.setProperty('--tf-text', textPalette.text);
+      root.style.setProperty('--tf-muted', textPalette.muted);
+      root.style.setProperty('--tf-text-shadow', textPalette.shadow);
+
+      if (textPalette.isLightText) {
+        root.style.setProperty('--tf-surface-subtle', 'rgba(12, 20, 18, 0.48)');
+        root.style.setProperty('--tf-surface-hover', 'rgba(20, 32, 28, 0.68)');
+        root.style.setProperty('--tf-border', 'rgba(255, 255, 255, 0.22)');
+        root.style.setProperty('--tf-input-bg', 'rgba(10, 18, 16, 0.72)');
+        root.style.setProperty('--tf-table-head', 'rgba(10, 18, 16, 0.55)');
+      } else {
+        root.style.setProperty('--tf-surface-subtle', 'rgba(255, 255, 255, 0.72)');
+        root.style.setProperty('--tf-surface-hover', 'rgba(255, 255, 255, 0.90)');
+        root.style.setProperty('--tf-border', 'rgba(18, 59, 50, 0.18)');
+        root.style.setProperty('--tf-input-bg', 'rgba(255, 255, 255, 0.88)');
+        root.style.setProperty('--tf-table-head', 'rgba(255, 255, 255, 0.68)');
+      }
     }
-  }, [settings, currentAccentHex, currentAccentGlow, blurPixels]);
+  }, [settings, currentAccentHex, currentAccentGlow, blurPixels, textPalette]);
 
   // Cross-tab synchronization listener
   useEffect(() => {
@@ -373,7 +563,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSettings = (partial: Partial<ThemeSettings>) => {
     setSettings((prev) => {
-      const next = { ...prev, ...partial };
+      const next: ThemeSettings = { ...prev, ...partial };
+      if (partial.blurRadius !== undefined && partial.blurIntensity === undefined) {
+        next.blurIntensity = closestBlurIntensity(partial.blurRadius);
+      } else if (partial.blurIntensity !== undefined && partial.blurRadius === undefined) {
+        next.blurRadius = getBlurPixels(partial.blurIntensity);
+      }
       broadcastUpdate(next);
       return next;
     });
@@ -398,48 +593,157 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     broadcastUpdate(DEFAULT_THEME_SETTINGS);
   };
 
+  const buildGlassOpticalSurface = (
+    useDark: boolean,
+    borderSides: 'all' | 'bottom' | 'none' = 'all'
+  ): React.CSSProperties => {
+    const alpha = settings.cardTranslucency;
+    const borderAlpha = settings.borderOpacity;
+    const glowAlpha = settings.glowStrength;
+    const sheen = settings.glassSheen;
+
+    const topHighlight = useDark
+      ? (0.04 + sheen * 0.16).toFixed(3)
+      : (0.28 + sheen * 0.4).toFixed(3);
+    const midHighlight = useDark
+      ? (0.01 + sheen * 0.05).toFixed(3)
+      : (0.1 + sheen * 0.18).toFixed(3);
+    const bottomTint = useDark
+      ? (0.01 + sheen * 0.02).toFixed(3)
+      : (0.04 + sheen * 0.08).toFixed(3);
+
+    // Maintain a safe contrast floor so text never blends into busy wallpapers
+    const darkAlpha = Math.max(0.22, alpha);
+    const lightAlpha = Math.max(0.42, alpha);
+    const bgColor = useDark
+      ? `rgba(10, 16, 14, ${darkAlpha})`
+      : `rgba(255, 255, 255, ${lightAlpha})`;
+
+    const sheenGradient = `linear-gradient(135deg, rgba(255, 255, 255, ${topHighlight}) 0%, rgba(255, 255, 255, ${midHighlight}) 42%, rgba(255, 255, 255, ${bottomTint}) 100%)`;
+
+    const resolvedBorderColor = useDark
+      ? `rgba(255, 255, 255, ${borderAlpha})`
+      : `rgba(255, 255, 255, ${Math.min(0.95, borderAlpha + 0.3)})`;
+
+    const borderProps: React.CSSProperties =
+      borderSides === 'none'
+        ? {}
+        : borderSides === 'bottom'
+        ? {
+            borderBottomWidth: '1px',
+            borderBottomStyle: 'solid',
+            borderBottomColor: resolvedBorderColor,
+          }
+        : {
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: resolvedBorderColor,
+          };
+
+    const innerRimTop = useDark
+      ? `inset 0 1px 1px rgba(255, 255, 255, ${(0.12 + sheen * 0.28).toFixed(2)})`
+      : `inset 0 1px 1px rgba(255, 255, 255, ${(0.6 + sheen * 0.35).toFixed(2)})`;
+
+    const innerRimEdge = useDark
+      ? `inset 1px 0 0 rgba(255, 255, 255, ${(0.04 + sheen * 0.12).toFixed(2)})`
+      : `inset 1px 0 0 rgba(255, 255, 255, ${(0.3 + sheen * 0.3).toFixed(2)})`;
+
+    const baseDrop = useDark
+      ? '0 18px 44px -12px rgba(0, 0, 0, 0.52)'
+      : '0 14px 36px -10px rgba(18, 59, 50, 0.14)';
+
+    const accentGlow =
+      glowAlpha > 0
+        ? `, 0 0 ${Math.round(14 + glowAlpha * 32)}px rgba(${currentAccentRgb}, ${(glowAlpha * 0.38).toFixed(2)})`
+        : '';
+
+    const saturation = Math.round(145 + sheen * 60);
+    const filterValue =
+      blurPixels > 0
+        ? `blur(${blurPixels}px) saturate(${saturation}%) contrast(104%)`
+        : `saturate(${saturation}%)`;
+
+    return {
+      backgroundColor: bgColor,
+      backgroundImage: sheen > 0.02 ? sheenGradient : 'none',
+      ...borderProps,
+      boxShadow: `${baseDrop}, ${innerRimTop}, ${innerRimEdge}${accentGlow}`,
+      backdropFilter: filterValue,
+      WebkitBackdropFilter: filterValue,
+    };
+  };
+
   const getGlassyCardStyle = (forceDark?: boolean): React.CSSProperties => {
     const useDark = forceDark ?? isDarkGlass;
 
     if (!settings.isGlassyEnabled) {
       return {
         backgroundColor: useDark ? '#102420' : '#FFFFFF',
+        backgroundImage: 'none',
         borderWidth: '1px',
         borderStyle: 'solid',
-        borderColor: useDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(217, 194, 154, 0.5)',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+        borderColor: useDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(18, 59, 50, 0.14)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
       };
     }
 
-    const alpha = settings.cardTranslucency;
-    const borderAlpha = settings.borderOpacity;
-    const glowAlpha = settings.glowStrength;
+    return buildGlassOpticalSurface(useDark, 'all');
+  };
 
-    const innerRim = useDark
-      ? 'inset 0 1px 0 rgba(255, 255, 255, 0.16)'
-      : 'inset 0 1px 0 rgba(255, 255, 255, 0.7)';
-
-    const baseDrop = useDark
-      ? '0 16px 40px -12px rgba(0, 0, 0, 0.45)'
-      : '0 8px 30px -8px rgba(18, 59, 50, 0.08)';
-
-    const accentGlow =
-      glowAlpha > 0
-        ? `, 0 0 ${Math.round(12 + glowAlpha * 28)}px rgba(${currentAccentRgb}, ${(glowAlpha * 0.35).toFixed(2)})`
+  const getGlassyIconStyle = (
+    options: { forceDark?: boolean } = {}
+  ): React.CSSProperties => {
+    const useDark = options.forceDark ?? isDarkGlass;
+    const glowPx = Math.round(8 + settings.glowStrength * 18);
+    const glowShadow =
+      settings.glowStrength > 0
+        ? `, 0 0 ${glowPx}px rgba(${currentAccentRgb}, ${(0.25 + settings.glowStrength * 0.35).toFixed(2)})`
         : '';
 
+    if (settings.iconThemeStyle === 'solid') {
+      return {
+        backgroundColor: currentAccentHex,
+        backgroundImage:
+          'linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 60%)',
+        color: '#0D2620',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderColor: 'rgba(255, 255, 255, 0.35)',
+        boxShadow: `0 4px 12px rgba(0, 0, 0, 0.16)${glowShadow}`,
+      };
+    }
+
+    if (settings.iconThemeStyle === 'glow_outline') {
+      return {
+        backgroundColor: useDark
+          ? `rgba(${currentAccentRgb}, 0.16)`
+          : `rgba(${currentAccentRgb}, 0.14)`,
+        backgroundImage: 'none',
+        color: useDark ? currentAccentHex : '#0B2D24',
+        borderWidth: '1.5px',
+        borderStyle: 'solid',
+        borderColor: currentAccentHex,
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.28)${glowShadow}`,
+      };
+    }
+
+    // Default: 'frosted'
     return {
       backgroundColor: useDark
-        ? `rgba(18, 22, 21, ${alpha})`
-        : `rgba(255, 255, 255, ${Math.max(0.35, alpha)})`,
+        ? 'rgba(255, 255, 255, 0.12)'
+        : 'rgba(255, 255, 255, 0.78)',
+      backgroundImage: useDark
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 100%)'
+        : 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.45) 100%)',
+      color: useDark ? currentAccentHex : '#0D2F27',
       borderWidth: '1px',
       borderStyle: 'solid',
-      borderColor: useDark
-        ? `rgba(255, 255, 255, ${borderAlpha})`
-        : `rgba(217, 194, 154, ${borderAlpha})`,
-      boxShadow: `${baseDrop}, ${innerRim}${accentGlow}`,
-      backdropFilter: `blur(${blurPixels}px) saturate(155%)`,
-      WebkitBackdropFilter: `blur(${blurPixels}px) saturate(155%)`,
+      borderColor: `rgba(${currentAccentRgb}, ${useDark ? 0.55 : 0.65})`,
+      backdropFilter: 'blur(12px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(12px) saturate(160%)',
+      boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.45)${glowShadow}`,
     };
   };
 
@@ -463,10 +767,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const active = isVisitorTargetGlassy(target);
 
     if (!active) {
-      // Harmonious Solid Surface when glass is turned off on Admin or specific visitor section
       const solidBorder = useDark
-        ? 'rgba(255, 255, 255, 0.14)'
-        : 'rgba(217, 194, 154, 0.45)';
+        ? 'rgba(255, 255, 255, 0.16)'
+        : 'rgba(18, 59, 50, 0.14)';
       const borderProps: React.CSSProperties =
         borderSides === 'none'
           ? {}
@@ -484,62 +787,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       return {
         backgroundColor: useDark ? '#102420' : '#FFFFFF',
+        backgroundImage: 'none',
         ...borderProps,
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
       };
     }
 
-    // Inherit exact unified Glassy V4 controls from Admin ThemeSettings
-    const alpha = settings.cardTranslucency;
-    const borderAlpha = settings.borderOpacity;
-    const glowAlpha = settings.glowStrength;
-
-    const bgColor = useDark
-      ? `rgba(18, 22, 21, ${alpha})`
-      : `rgba(255, 255, 255, ${Math.max(0.35, alpha)})`;
-
-    const resolvedBorderColor = useDark
-      ? `rgba(255, 255, 255, ${borderAlpha})`
-      : `rgba(217, 194, 154, ${Math.min(0.9, borderAlpha + 0.15)})`;
-
-    const borderProps: React.CSSProperties =
-      borderSides === 'none'
-        ? {}
-        : borderSides === 'bottom'
-        ? {
-            borderBottomWidth: '1px',
-            borderBottomStyle: 'solid',
-            borderBottomColor: resolvedBorderColor,
-          }
-        : {
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            borderColor: resolvedBorderColor,
-          };
-
-    const accentGlow =
-      glowAlpha > 0
-        ? `, 0 0 ${Math.round(12 + glowAlpha * 28)}px rgba(${currentAccentRgb}, ${(glowAlpha * 0.32).toFixed(2)})`
-        : '';
-
-    return {
-      backgroundColor: bgColor,
-      backdropFilter: `blur(${blurPixels}px) saturate(155%)`,
-      WebkitBackdropFilter: `blur(${blurPixels}px) saturate(155%)`,
-      ...borderProps,
-      boxShadow: useDark
-        ? `0 16px 40px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.16)${accentGlow}`
-        : `0 8px 30px -8px rgba(18, 59, 50, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7)${accentGlow}`,
-    };
+    return buildGlassOpticalSurface(useDark, borderSides);
   };
 
   const getDashboardBgStyle = (): React.CSSProperties => {
-    const useDarkScrim = settings.glassSurfaceTone === 'dark';
+    const useDarkScrim = isDarkGlass;
 
     if (settings.backgroundPreset === 'custom' && settings.customBgUrl) {
       const overlay = useDarkScrim
-        ? 'linear-gradient(135deg, rgba(12, 16, 15, 0.54), rgba(16, 28, 24, 0.64))'
-        : 'linear-gradient(rgba(246, 244, 239, 0.78), rgba(246, 244, 239, 0.85))';
+        ? 'linear-gradient(135deg, rgba(10, 14, 13, 0.34), rgba(14, 24, 20, 0.44))'
+        : 'linear-gradient(rgba(246, 244, 239, 0.48), rgba(246, 244, 239, 0.6))';
       return {
         backgroundColor: useDarkScrim ? '#0D1714' : '#F6F4EF',
         backgroundImage: `${overlay}, url(${settings.customBgUrl})`,
@@ -553,8 +816,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const preset = BACKGROUND_PRESETS.find((p) => p.id === settings.backgroundPreset);
     if (preset?.imageUrl) {
       const overlay = useDarkScrim
-        ? 'linear-gradient(135deg, rgba(12, 16, 15, 0.48) 0%, rgba(16, 24, 21, 0.62) 100%)'
-        : 'linear-gradient(rgba(246, 244, 239, 0.72), rgba(246, 244, 239, 0.82))';
+        ? 'linear-gradient(135deg, rgba(10, 14, 13, 0.24) 0%, rgba(14, 22, 19, 0.38) 100%)'
+        : 'linear-gradient(rgba(246, 244, 239, 0.46), rgba(246, 244, 239, 0.58))';
       return {
         backgroundColor: preset.baseColor,
         backgroundImage: `${overlay}, url(${preset.imageUrl})`,
@@ -600,6 +863,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         blurTailwindClass,
         blurPixels,
         getGlassyCardStyle,
+        getGlassyIconStyle,
         getVisitorGlassyStyle,
         isVisitorTargetGlassy,
         getDashboardBgStyle,

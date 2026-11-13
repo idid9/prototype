@@ -28,19 +28,28 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
   const currencyLabel = businessSettings?.currency || 'SAR';
   const brandTitle = businessSettings?.businessName || 'TourFlow';
 
+  const sheen = settings.glassSheen ?? 0.72;
   const footerStyle: React.CSSProperties = settings.isGlassyEnabled
     ? {
         backgroundColor: isDarkGlass
-          ? `rgba(10, 16, 14, ${Math.max(0.55, settings.cardTranslucency)})`
-          : `rgba(16, 46, 41, ${Math.max(0.84, settings.cardTranslucency)})`,
-        backdropFilter: `blur(${blurPixels}px) saturate(155%)`,
-        WebkitBackdropFilter: `blur(${blurPixels}px) saturate(155%)`,
+          ? `rgba(10, 16, 14, ${Math.max(0.28, settings.cardTranslucency + 0.08)})`
+          : `rgba(16, 46, 41, ${Math.max(0.48, settings.cardTranslucency + 0.24)})`,
+        backgroundImage: `linear-gradient(180deg, rgba(255, 255, 255, ${(0.03 + sheen * 0.1).toFixed(3)}) 0%, rgba(255, 255, 255, 0.01) 100%)`,
+        backdropFilter:
+          blurPixels > 0
+            ? `blur(${blurPixels}px) saturate(${Math.round(145 + sheen * 60)}%)`
+            : `saturate(${Math.round(145 + sheen * 60)}%)`,
+        WebkitBackdropFilter:
+          blurPixels > 0
+            ? `blur(${blurPixels}px) saturate(${Math.round(145 + sheen * 60)}%)`
+            : `saturate(${Math.round(145 + sheen * 60)}%)`,
         borderTopWidth: '1px',
         borderTopStyle: 'solid',
         borderTopColor: `rgba(255, 255, 255, ${settings.borderOpacity})`,
       }
     : {
         backgroundColor: isDarkGlass ? '#0B1613' : '#102E29',
+        backgroundImage: 'none',
         borderTopWidth: '1px',
         borderTopStyle: 'solid',
         borderTopColor: 'rgba(255, 255, 255, 0.14)',

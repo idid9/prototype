@@ -20,7 +20,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   delay = 0,
 }) => {
-  const { currentAccentHex, isDarkGlass } = useTheme();
+  const { getGlassyIconStyle } = useTheme();
 
   return (
     <GlassContainer
@@ -29,28 +29,31 @@ export const StatCard: React.FC<StatCardProps> = ({
       className="p-5 flex flex-col justify-between"
     >
       <div className="flex items-center justify-between gap-3 mb-3">
-        <span className="text-xs font-semibold text-[var(--tf-muted)] tracking-wide">
+        <span
+          className="text-xs font-semibold text-[var(--tf-muted)] tracking-wide"
+          style={{ textShadow: 'var(--tf-text-shadow)' }}
+        >
           {label}
         </span>
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors"
-          style={{
-            backgroundColor: isDarkGlass
-              ? 'rgba(255, 255, 255, 0.08)'
-              : 'rgba(255, 255, 255, 0.72)',
-            border: `1px solid ${currentAccentHex}45`,
-            color: currentAccentHex,
-          }}
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all"
+          style={getGlassyIconStyle()}
         >
           {icon}
         </div>
       </div>
 
       <div>
-        <div className="font-mono text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] tabular-nums tracking-tight">
+        <div
+          className="font-mono text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] tabular-nums tracking-tight"
+          style={{ textShadow: 'var(--tf-text-shadow)' }}
+        >
           {value}
         </div>
-        <div className="text-xs text-[var(--tf-muted)] mt-1 font-medium">
+        <div
+          className="text-xs text-[var(--tf-muted)] mt-1 font-medium"
+          style={{ textShadow: 'var(--tf-text-shadow)' }}
+        >
           {sub}
         </div>
       </div>

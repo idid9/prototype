@@ -16,7 +16,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 }) => {
   const { language, setLanguage, isRtl } = useLanguage();
   const { adminUser } = useAuth();
-  const { settings, isDarkGlass, blurPixels, currentAccentHex } = useTheme();
+  const { settings, isDarkGlass, blurPixels, currentAccentHex, getGlassyIconStyle } = useTheme();
 
   const isArabic = language === 'ar';
 
@@ -52,21 +52,32 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     setLanguage(language === 'en' ? 'ar' : 'en');
   };
 
+  const sheen = settings.glassSheen ?? 0.72;
   const headerStyle: React.CSSProperties = settings.isGlassyEnabled
     ? {
         backgroundColor: isDarkGlass
-          ? `rgba(14, 20, 18, ${Math.min(0.75, settings.cardTranslucency + 0.15)})`
-          : `rgba(255, 255, 255, ${Math.max(0.55, settings.cardTranslucency)})`,
-        backdropFilter: `blur(${blurPixels}px) saturate(150%)`,
-        WebkitBackdropFilter: `blur(${blurPixels}px) saturate(150%)`,
+          ? `rgba(14, 20, 18, ${Math.min(0.68, Math.max(0.18, settings.cardTranslucency + 0.08))})`
+          : `rgba(255, 255, 255, ${Math.min(0.78, Math.max(0.28, settings.cardTranslucency + 0.16))})`,
+        backgroundImage: isDarkGlass
+          ? `linear-gradient(90deg, rgba(255, 255, 255, ${(0.03 + sheen * 0.12).toFixed(3)}) 0%, rgba(255, 255, 255, 0.01) 100%)`
+          : `linear-gradient(90deg, rgba(255, 255, 255, ${(0.25 + sheen * 0.35).toFixed(3)}) 0%, rgba(255, 255, 255, 0.08) 100%)`,
+        backdropFilter:
+          blurPixels > 0
+            ? `blur(${blurPixels}px) saturate(${Math.round(145 + sheen * 60)}%)`
+            : `saturate(${Math.round(145 + sheen * 60)}%)`,
+        WebkitBackdropFilter:
+          blurPixels > 0
+            ? `blur(${blurPixels}px) saturate(${Math.round(145 + sheen * 60)}%)`
+            : `saturate(${Math.round(145 + sheen * 60)}%)`,
         borderBottomWidth: '1px',
         borderBottomStyle: 'solid',
         borderBottomColor: isDarkGlass
           ? `rgba(255, 255, 255, ${settings.borderOpacity})`
-          : `rgba(217, 194, 154, ${settings.borderOpacity})`,
+          : `rgba(255, 255, 255, ${Math.min(0.9, settings.borderOpacity + 0.25)})`,
       }
     : {
         backgroundColor: isDarkGlass ? '#102420' : '#FFFFFF',
+        backgroundImage: 'none',
         borderBottomWidth: '1px',
         borderBottomStyle: 'solid',
         borderBottomColor: 'var(--tf-border)',
@@ -91,7 +102,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         <span className="text-xs text-[var(--tf-muted)] whitespace-nowrap">
           {isArabic ? 'إدارة تورفلو /' : 'TourFlow Admin /'}
         </span>
-        <h1 className="text-sm sm:text-base font-bold text-[var(--tf-heading)] truncate">
+        <h1
+          className="text-sm sm:text-base font-bold text-[var(--tf-heading)] truncate"
+          style={{ textShadow: 'var(--tf-text-shadow)' }}
+        >
           {isArabic
             ? tabTitlesAr[currentTab] || 'الإدارة'
             : tabTitles[currentTab] || 'Management'}
@@ -112,11 +126,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         {/* User Profile */}
         <div className="flex items-center gap-2 pl-3 rtl:pl-0 rtl:pr-3 border-l rtl:border-l-0 rtl:border-r border-[var(--tf-border)]">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm"
-            style={{
-              backgroundColor: currentAccentHex,
-              color: '#102E29',
-            }}
+            className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all"
+            style={getGlassyIconStyle()}
           >
             <User className="w-4 h-4" />
           </div>

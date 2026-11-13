@@ -33,6 +33,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
   const {
     getVisitorGlassyStyle,
     getGlassyCardStyle,
+    getGlassyIconStyle,
     currentAccentHex,
   } = useTheme();
   const isArabic = language === 'ar';
@@ -69,28 +70,28 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
 
   const reasons = [
     {
-      icon: <Users className="w-5 h-5" style={{ color: '#102E29' }} />,
+      icon: <Users className="w-5 h-5" />,
       title: 'Direct Operator Empowerment',
       titleAr: 'تمكين مباشر للمشغلين المحليين',
       desc: '100% of our experiences are hosted by Saudi registered SMEs, Bedouin guides, and independent cultural custodians.',
       descAr: 'جميع تجاربنا يقودها مشغلون سعوديون مرخصون ورواة محليون للحفاظ على الهوية الأصيلة.',
     },
     {
-      icon: <Award className="w-5 h-5" style={{ color: '#102E29' }} />,
+      icon: <Award className="w-5 h-5" />,
       title: 'Certified Saudi Rawis (Storytellers)',
       titleAr: 'رواة ومرشدون سياحيون معتمدون',
       desc: 'Every narrative is authenticated by certified local guides recognized by the Ministry of Tourism and the Royal Commissions.',
       descAr: 'سرد تاريخي موثق بإشراف مرشدين مؤهلين ومعتمدين من وزارة السياحة والهيئات الملكية.',
     },
     {
-      icon: <Shield className="w-5 h-5" style={{ color: '#102E29' }} />,
+      icon: <Shield className="w-5 h-5" />,
       title: 'Transparent SAR Direct Rates',
       titleAr: 'أسعار مباشرة بالريال السعودي',
       desc: 'No middleman markups or opaque commissions. Inquire directly and coordinate custom itineraries with local operators.',
       descAr: 'بدون رسوم وساطة خفية، تواصل مباشر مع المشغلين لتنسيق باقات وتفاصيل الرحلة.',
     },
     {
-      icon: <HeartHandshake className="w-5 h-5" style={{ color: '#102E29' }} />,
+      icon: <HeartHandshake className="w-5 h-5" />,
       title: 'Regenerative Cultural Stewardship',
       titleAr: 'استدامة التراث وحماية البيئة',
       desc: 'Supporting the Saudi Green Initiative and community tourism that directly funds heritage preservation.',
@@ -239,15 +240,21 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                   className="p-6 rounded-2xl transition-all duration-300 hover:-translate-y-0.5"
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 shadow-sm"
-                    style={{ backgroundColor: currentAccentHex }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-all"
+                    style={getGlassyIconStyle()}
                   >
                     {r.icon}
                   </div>
-                  <h3 className="font-serif text-base font-bold text-[var(--tf-heading)] mb-2">
+                  <h3
+                    className="font-serif text-base font-bold text-[var(--tf-heading)] mb-2"
+                    style={{ textShadow: 'var(--tf-text-shadow)' }}
+                  >
                     {isArabic ? r.titleAr : r.title}
                   </h3>
-                  <p className="text-xs text-[var(--tf-muted)] leading-relaxed">
+                  <p
+                    className="text-xs text-[var(--tf-muted)] leading-relaxed"
+                    style={{ textShadow: 'var(--tf-text-shadow)' }}
+                  >
                     {isArabic ? r.descAr : r.desc}
                   </p>
                 </motion.div>
@@ -327,13 +334,19 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                         <span className="tabular-nums">{fb.rating}</span>
                       </div>
                     </div>
-                    <p className="text-xs sm:text-sm text-[var(--tf-text)] leading-relaxed">
+                    <p
+                      className="text-xs sm:text-sm text-[var(--tf-text)] leading-relaxed"
+                      style={{ textShadow: 'var(--tf-text-shadow)' }}
+                    >
                       "{isArabic ? fb.quoteAr : fb.quote}"
                     </p>
                   </div>
 
                   <div className="pt-3 border-t border-[var(--tf-border)]">
-                    <div className="text-xs font-bold text-[var(--tf-heading)]">
+                    <div
+                      className="text-xs font-bold text-[var(--tf-heading)]"
+                      style={{ textShadow: 'var(--tf-text-shadow)' }}
+                    >
                       {isArabic ? fb.guestAr : fb.guest}
                     </div>
                     <div className="text-[11px] text-[var(--tf-muted)] truncate mt-0.5">
@@ -363,11 +376,17 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
               <span>{t('about.tagline')}</span>
             </div>
 
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
+            <h2
+              className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight"
+              style={{ textShadow: 'var(--tf-text-shadow)' }}
+            >
               {isArabic ? content.aboutHeadlineAr || content.aboutHeadline : content.aboutHeadline}
             </h2>
 
-            <p className="text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed">
+            <p
+              className="text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed"
+              style={{ textShadow: 'var(--tf-text-shadow)' }}
+            >
               {isArabic ? content.aboutTextAr || content.aboutText : content.aboutText}
             </p>
 

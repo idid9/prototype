@@ -12,32 +12,44 @@
     --color-dark: #102E29;
 
     /* Glassy Dashboard V4 dynamic CSS variables */
-    --glass-blur: 20px;
-    --glass-bg-opacity: 0.45;
-    --glass-border-opacity: 0.22;
-    --glass-glow-strength: 0.35;
+    --glass-blur: 24px;
+    --glass-bg-opacity: 0.28;
+    --glass-border-opacity: 0.30;
+    --glass-glow-strength: 0.45;
     --tourflow-accent: #C6A46B;
 
-    /* Semantic Light Surface Tokens */
-    --tf-heading: #123B32;
-    --tf-text: #202923;
-    --tf-muted: #646B63;
-    --tf-surface-subtle: rgba(250, 248, 245, 0.72);
-    --tf-surface-hover: rgba(217, 194, 154, 0.16);
-    --tf-border: rgba(217, 194, 154, 0.42);
-    --tf-input-bg: rgba(255, 255, 255, 0.78);
-    --tf-table-head: rgba(250, 248, 245, 0.82);
+    /* Semantic Light Surface Tokens (High-Contrast Ink) */
+    --tf-heading: #0A241E;
+    --tf-text: #162420;
+    --tf-muted: #3A4D47;
+    --tf-text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+    --tf-surface-subtle: rgba(255, 255, 255, 0.72);
+    --tf-surface-hover: rgba(255, 255, 255, 0.88);
+    --tf-border: rgba(18, 59, 50, 0.16);
+    --tf-input-bg: rgba(255, 255, 255, 0.86);
+    --tf-table-head: rgba(255, 255, 255, 0.65);
   }
 
   [data-glass-tone="dark"] {
     --tf-heading: #FFFFFF;
-    --tf-text: rgba(255, 255, 255, 0.92);
-    --tf-muted: rgba(255, 255, 255, 0.65);
-    --tf-surface-subtle: rgba(255, 255, 255, 0.08);
-    --tf-surface-hover: rgba(255, 255, 255, 0.12);
-    --tf-border: rgba(255, 255, 255, 0.18);
-    --tf-input-bg: rgba(14, 22, 20, 0.62);
-    --tf-table-head: rgba(255, 255, 255, 0.06);
+    --tf-text: rgba(247, 250, 248, 0.96);
+    --tf-muted: rgba(220, 232, 226, 0.84);
+    --tf-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48);
+    --tf-surface-subtle: rgba(12, 20, 18, 0.48);
+    --tf-surface-hover: rgba(20, 32, 28, 0.68);
+    --tf-border: rgba(255, 255, 255, 0.22);
+    --tf-input-bg: rgba(10, 18, 16, 0.72);
+    --tf-table-head: rgba(10, 18, 16, 0.55);
+  }
+
+  [data-glass-tone="dark"] select option {
+    background-color: #102420;
+    color: #FFFFFF;
+  }
+
+  [data-glass-tone="light"] select option {
+    background-color: #FFFFFF;
+    color: #0A241E;
   }
 
   body {

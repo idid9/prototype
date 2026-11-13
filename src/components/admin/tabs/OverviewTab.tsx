@@ -54,7 +54,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, isDarkGlass } = useTheme();
 
   // Metrics computation from live real-time collections
   const totalInquiries = inquiries.length;
@@ -234,15 +234,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </thead>
               <tbody className="divide-y divide-[var(--tf-border)]">
                 {recentInquiries.map((inq) => {
-                  let statusClass = 'bg-sky-500/15 text-sky-400 border-sky-400/30';
+                  let statusClass = isDarkGlass
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-400/35'
+                    : 'bg-sky-500/15 text-sky-800 border-sky-600/35';
                   if (inq.status === 'NEW')
-                    statusClass = 'bg-amber-500/15 text-amber-400 border-amber-400/30 font-bold';
+                    statusClass = isDarkGlass
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/35 font-bold'
+                      : 'bg-amber-500/15 text-amber-800 border-amber-600/35 font-bold';
                   else if (inq.status === 'CONFIRMED')
-                    statusClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-400/30 font-bold';
+                    statusClass = isDarkGlass
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35 font-bold'
+                      : 'bg-emerald-500/15 text-emerald-800 border-emerald-600/35 font-bold';
                   else if (inq.status === 'COMPLETED')
-                    statusClass = 'bg-neutral-500/15 text-[var(--tf-muted)] border-[var(--tf-border)]';
+                    statusClass =
+                      'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)]';
                   else if (inq.status === 'CANCELLED')
-                    statusClass = 'bg-rose-500/15 text-rose-400 border-rose-400/30';
+                    statusClass = isDarkGlass
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
+                      : 'bg-rose-500/15 text-rose-800 border-rose-600/35';
 
                   return (
                     <tr
