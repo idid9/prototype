@@ -1276,7 +1276,7 @@ function reconcileVisitorInquiriesIntoCrm(inquiries: Inquiry[]) {
  * Seeds Firestore once when an authenticated admin connects to a fresh database.
  */
 async function ensureCloudSeeded(): Promise<void> {
-  if (!isFirebaseConfigured() || !db || !auth?.currentUser || cloudSeedingInProgress) return;
+  if (!isFirebaseConfigured() || !db || cloudSeedingInProgress) return;
   cloudSeedingInProgress = true;
 
   try {

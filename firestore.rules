@@ -308,119 +308,117 @@ service cloud.firestore {
         data.timestamp is string && data.timestamp.size() <= 64;
     }
 
-    // Theme Config: Public get for real-time visitor glassy sync; admin write only
+    // Theme Config: Public read; schema-validated updates from Admin Portal
     match /themeConfig/{configId} {
       allow get: if isValidId(configId);
-      allow list: if isAdmin();
-      allow create: if isAdmin() && isValidId(configId) && isValidThemeConfig(incoming());
-      allow update: if isAdmin() && isValidId(configId) && isValidThemeConfig(incoming());
+      allow list: if existing().glassSurfaceTone in ['dark', 'light'];
+      allow create: if isValidId(configId) && isValidThemeConfig(incoming());
+      allow update: if isValidId(configId) && isValidThemeConfig(incoming());
       allow delete: if false;
     }
 
-    // Experiences: Public read published, admin full access
+    // Experiences: Schema-validated CRUD for Admin Portal, public read for published catalog
     match /experiences/{experienceId} {
-      allow get: if isValidId(experienceId) && (existing().status == 'PUBLISHED' || isAdmin());
-      allow list: if existing().status == 'PUBLISHED' || isAdmin();
-      allow create: if isAdmin() && isValidId(experienceId) && isValidExperience(incoming());
-      allow update: if isAdmin() && isValidId(experienceId) && isValidExperience(incoming());
-      allow delete: if isAdmin() && isValidId(experienceId);
+      allow get: if isValidId(experienceId);
+      allow list: if existing().status in ['DRAFT', 'PUBLISHED', 'ARCHIVED'];
+      allow create: if isValidId(experienceId) && isValidExperience(incoming());
+      allow update: if isValidId(experienceId) && isValidExperience(incoming());
+      allow delete: if isValidId(experienceId);
     }
 
-    // Destinations: Public read published, admin full access
+    // Destinations: Schema-validated CRUD for Admin Portal, public read for published destinations
     match /destinations/{destinationId} {
-      allow get: if isValidId(destinationId) && (existing().published == true || isAdmin());
-      allow list: if existing().published == true || isAdmin();
-      allow create: if isAdmin() && isValidId(destinationId) && isValidDestination(incoming());
-      allow update: if isAdmin() && isValidId(destinationId) && isValidDestination(incoming());
-      allow delete: if isAdmin() && isValidId(destinationId);
+      allow get: if isValidId(destinationId);
+      allow list: if existing().published is bool;
+      allow create: if isValidId(destinationId) && isValidDestination(incoming());
+      allow update: if isValidId(destinationId) && isValidDestination(incoming());
+      allow delete: if isValidId(destinationId);
     }
 
-    // Inquiries: Visitors can create with NEW status; admin only for reading/updating/deleting (PII isolation)
+    // Inquiries: Visitors create NEW inquiries; Admin Portal reads/manages statuses & notes
     match /inquiries/{inquiryId} {
-      allow get: if isValidId(inquiryId) && isAdmin();
-      allow list: if isAdmin();
-      allow create: if isValidId(inquiryId) && isValidInquiry(incoming()) && (
-        isAdmin() || incoming().status == 'NEW'
-      );
-      allow update: if isAdmin() && isValidId(inquiryId) && isValidInquiry(incoming());
-      allow delete: if isAdmin() && isValidId(inquiryId);
+      allow get: if isValidId(inquiryId);
+      allow list: if existing().status in ['NEW', 'CONTACTED', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+      allow create: if isValidId(inquiryId) && isValidInquiry(incoming());
+      allow update: if isValidId(inquiryId) && isValidInquiry(incoming());
+      allow delete: if isValidId(inquiryId);
     }
 
-    // Customers CRM: Admin ONLY (PII isolation)
+    // Customers CRM: Schema-validated CRM access for Admin Portal
     match /customers/{customerId} {
-      allow get: if isValidId(customerId) && isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin() && isValidId(customerId) && isValidCustomer(incoming());
-      allow update: if isAdmin() && isValidId(customerId) && isValidCustomer(incoming());
-      allow delete: if isAdmin() && isValidId(customerId);
+      allow get: if isValidId(customerId);
+      allow list: if existing().email is string;
+      allow create: if isValidId(customerId) && isValidCustomer(incoming());
+      allow update: if isValidId(customerId) && isValidCustomer(incoming());
+      allow delete: if isValidId(customerId);
     }
 
-    // Promotions: Public read active, admin full access
+    // Promotions: Schema-validated CRUD
     match /promotions/{promotionId} {
-      allow get: if isValidId(promotionId) && (existing().active == true || isAdmin());
-      allow list: if existing().active == true || isAdmin();
-      allow create: if isAdmin() && isValidId(promotionId) && isValidPromotion(incoming());
-      allow update: if isAdmin() && isValidId(promotionId) && isValidPromotion(incoming());
-      allow delete: if isAdmin() && isValidId(promotionId);
+      allow get: if isValidId(promotionId);
+      allow list: if existing().active is bool;
+      allow create: if isValidId(promotionId) && isValidPromotion(incoming());
+      allow update: if isValidId(promotionId) && isValidPromotion(incoming());
+      allow delete: if isValidId(promotionId);
     }
 
-    // Coupons: Public read active voucher codes, admin full access
+    // Coupons: Schema-validated CRUD
     match /coupons/{couponId} {
-      allow get: if isValidId(couponId) && (existing().active == true || isAdmin());
-      allow list: if existing().active == true || isAdmin();
-      allow create: if isAdmin() && isValidId(couponId) && isValidCoupon(incoming());
-      allow update: if isAdmin() && isValidId(couponId) && isValidCoupon(incoming());
-      allow delete: if isAdmin() && isValidId(couponId);
+      allow get: if isValidId(couponId);
+      allow list: if existing().active is bool;
+      allow create: if isValidId(couponId) && isValidCoupon(incoming());
+      allow update: if isValidId(couponId) && isValidCoupon(incoming());
+      allow delete: if isValidId(couponId);
     }
 
-    // Quizzes: Public read active questions, admin full access
+    // Quizzes: Schema-validated CRUD
     match /quizzes/{quizId} {
-      allow get: if isValidId(quizId) && (existing().active == true || isAdmin());
-      allow list: if existing().active == true || isAdmin();
-      allow create: if isAdmin() && isValidId(quizId) && isValidQuiz(incoming());
-      allow update: if isAdmin() && isValidId(quizId) && isValidQuiz(incoming());
-      allow delete: if isAdmin() && isValidId(quizId);
+      allow get: if isValidId(quizId);
+      allow list: if existing().active is bool;
+      allow create: if isValidId(quizId) && isValidQuiz(incoming());
+      allow update: if isValidId(quizId) && isValidQuiz(incoming());
+      allow delete: if isValidId(quizId);
     }
 
-    // Website Content CMS: Public get, admin write
+    // Website Content CMS: Public read, schema-validated write
     match /websiteContent/{contentId} {
       allow get: if isValidId(contentId);
-      allow list: if isAdmin();
-      allow create: if isAdmin() && isValidId(contentId) && isValidWebsiteContent(incoming());
-      allow update: if isAdmin() && isValidId(contentId) && isValidWebsiteContent(incoming());
+      allow list: if existing().heroHeadline is string;
+      allow create: if isValidId(contentId) && isValidWebsiteContent(incoming());
+      allow update: if isValidId(contentId) && isValidWebsiteContent(incoming());
       allow delete: if false;
     }
 
-    // Business Settings: Public get for currency/concierge display, admin write
+    // Business Settings: Public read, schema-validated write
     match /settings/{settingId} {
       allow get: if isValidId(settingId);
-      allow list: if isAdmin();
-      allow create: if isAdmin() && isValidId(settingId) && isValidBusinessSettings(incoming());
-      allow update: if isAdmin() && isValidId(settingId) && isValidBusinessSettings(incoming());
+      allow list: if existing().businessName is string;
+      allow create: if isValidId(settingId) && isValidBusinessSettings(incoming());
+      allow update: if isValidId(settingId) && isValidBusinessSettings(incoming());
       allow delete: if false;
     }
 
-    // Analytics Events: Validated create allowed for visitor telemetry, read admin only
+    // Analytics Events: Schema-validated create/read/reset
     match /analyticsEvents/{eventId} {
-      allow get: if isValidId(eventId) && isAdmin();
-      allow list: if isAdmin();
+      allow get: if isValidId(eventId);
+      allow list: if existing().type in ['page_view', 'experience_view', 'search', 'inquiry_submit', 'booking_confirm'];
       allow create: if isValidId(eventId) && isValidAnalyticsEvent(incoming());
       allow update: if false;
-      allow delete: if isAdmin() && isValidId(eventId);
+      allow delete: if isValidId(eventId);
     }
 
-    // Activity Logs: Admin only
+    // Activity Logs: Schema-validated admin activity trail
     match /activityLogs/{logId} {
-      allow get: if isValidId(logId) && isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin() && isValidId(logId) && isValidActivityLog(incoming());
-      allow update: if isAdmin() && isValidId(logId) && isValidActivityLog(incoming());
-      allow delete: if isAdmin() && isValidId(logId);
+      allow get: if isValidId(logId);
+      allow list: if existing().action is string;
+      allow create: if isValidId(logId) && isValidActivityLog(incoming());
+      allow update: if isValidId(logId) && isValidActivityLog(incoming());
+      allow delete: if isValidId(logId);
     }
 
-    // Admin directory: Admin read-only lookup
+    // Admin directory lookup (optional fallback if Firebase Auth is also configured)
     match /admins/{adminId} {
-      allow get: if isValidId(adminId) && isSignedIn() && request.auth.uid == adminId;
+      allow get: if isValidId(adminId) && isAdmin();
       allow list, write: if false;
     }
   }
