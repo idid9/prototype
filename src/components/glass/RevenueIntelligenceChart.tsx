@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
+import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Inquiry, AnalyticsEvent, Experience } from '../../types';
+import { localizeCategory, localizeCurrency } from '../../utils/localization';
 import { GlassContainer } from './GlassContainer';
 import { TrendingUp, BarChart3, Activity } from 'lucide-react';
 
@@ -26,15 +28,18 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
   analyticsEvents,
   currency = 'SAR',
 }) => {
+  const { language, isRtl } = useLanguage();
   const { currentAccentHex, isDarkGlass } = useTheme();
+  const isArabic = language === 'ar';
+  const localizedCurrency = localizeCurrency(currency, language);
 
   const pipelineData = useMemo(() => {
     const stages = [
-      { key: 'NEW', label: 'New Leads', weight: 0.25, color: '#F59E0B' },
-      { key: 'CONTACTED', label: 'Contacted', weight: 0.45, color: '#38BDF8' },
-      { key: 'PENDING', label: 'Proposal Pending', weight: 0.7, color: '#A78BFA' },
-      { key: 'CONFIRMED', label: 'Confirmed', weight: 1.0, color: '#10B981' },
-      { key: 'COMPLETED', label: 'Completed', weight: 1.0, color: currentAccentHex },
+      { key: 'NEW', label: 'New Leads', labelAr: 'طلبات جديدة', weight: 0.25, color: '#F59E0B' },
+      { key: 'CONTACTED', label: 'Contacted', labelAr: 'تم التواصل', weight: 0.45, color: '#38BDF8' },
+      { key: 'PENDING', label: 'Proposal Pending', labelAr: 'عروض قيد الانتظار', weight: 0.7, color: '#A78BFA' },
+      { key: 'CONFIRMED', label: 'Confirmed', labelAr: 'حجوزات مؤكدة', weight: 1.0, color: '#10B981' },
+      { key: 'COMPLETED', label: 'Completed', labelAr: 'رحلات مكتملة', weight: 1.0, color: currentAccentHex },
     ];
 
     return stages.map((st) => {
@@ -88,34 +93,38 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
   const searchEvents = analyticsEvents.filter((e) => e.type === 'search').length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Left: CRM Revenue Intelligence & Pipeline Forecasting */}
       <GlassContainer delay={0.05} className="lg:col-span-7 p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--tf-border)]">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold text-[var(--tf-muted)]">
               <TrendingUp className="w-4 h-4" style={{ color: currentAccentHex }} />
-              <span>CRM Revenue Intelligence</span>
+              <span>{isArabic ? 'ذكاء إيرادات إدارة العملاء' : 'CRM Revenue Intelligence'}</span>
             </div>
             <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--tf-heading)] mt-0.5">
-              Pipeline Forecasting & Stage Velocity
+              {isArabic ? 'توقعات مسار المبيعات وسرعة المراحل' : 'Pipeline Forecasting & Stage Velocity'}
             </h3>
           </div>
 
           <div className="flex items-center gap-5 text-end">
             <div>
-              <span className="text-[11px] text-[var(--tf-muted)] block">Weighted Forecast</span>
+              <span className="text-[11px] text-[var(--tf-muted)] block">
+                {isArabic ? 'التوقع المرجّح' : 'Weighted Forecast'}
+              </span>
               <span className="font-mono text-base sm:text-lg font-bold tabular-nums text-[var(--tf-heading)]">
-                {weightedForecastSar.toLocaleString()} {currency}
+                {weightedForecastSar.toLocaleString()} {localizedCurrency}
               </span>
             </div>
             <div className="pl-5 rtl:pl-0 rtl:pr-5 border-l rtl:border-l-0 rtl:border-r border-[var(--tf-border)]">
-              <span className="text-[11px] text-[var(--tf-muted)] block">Realized Revenue</span>
+              <span className="text-[11px] text-[var(--tf-muted)] block">
+                {isArabic ? 'الإيرادات المحققة' : 'Realized Revenue'}
+              </span>
               <span
                 className="font-mono text-base sm:text-lg font-bold tabular-nums"
                 style={{ color: currentAccentHex }}
               >
-                {confirmedSar.toLocaleString()} {currency}
+                {confirmedSar.toLocaleString()} {localizedCurrency}
               </span>
             </div>
           </div>
@@ -133,13 +142,19 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
                       className="w-2 h-2 rounded-full shrink-0"
                       style={{ backgroundColor: stage.color }}
                     />
-                    <span>{stage.label}</span>
+                    <span>{isArabic ? stage.labelAr : stage.label}</span>
                     <span className="text-[var(--tf-muted)] font-normal">
-                      · {stage.count} {stage.count === 1 ? 'deal' : 'deals'} ({Math.round(stage.weight * 100)}% prob.)
+                      {isArabic
+                        ? `· ${stage.count} ${stage.count === 1 ? 'صفقة' : 'صفقات'} (احتمال ${Math.round(
+                            stage.weight * 100
+                          )}%)`
+                        : `· ${stage.count} ${stage.count === 1 ? 'deal' : 'deals'} (${Math.round(
+                            stage.weight * 100
+                          )}% prob.)`}
                     </span>
                   </div>
                   <div className="font-mono tabular-nums text-[var(--tf-heading)] font-semibold">
-                    {stage.rawValue.toLocaleString()} {currency}
+                    {stage.rawValue.toLocaleString()} {localizedCurrency}
                   </div>
                 </div>
 
@@ -157,7 +172,7 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
                     transition={{ duration: 0.45, delay: 0.08 * idx, ease: [0.16, 1, 0.3, 1] }}
                     style={{
                       width: `${widthPct}%`,
-                      transformOrigin: 'left',
+                      transformOrigin: isRtl ? 'right' : 'left',
                       backgroundColor: stage.color,
                     }}
                     className="h-full rounded-full"
@@ -171,13 +186,13 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
         {/* Total Pipeline Summary Footer */}
         <div className="pt-4 border-t border-[var(--tf-border)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--tf-muted)]">
           <span>
-            Active Gross Pipeline:{' '}
+            {isArabic ? 'إجمالي قيمة الطلبات النشطة: ' : 'Active Gross Pipeline: '}
             <strong className="font-mono text-[var(--tf-heading)] tabular-nums">
-              {totalPipelineSar.toLocaleString()} {currency}
+              {totalPipelineSar.toLocaleString()} {localizedCurrency}
             </strong>
           </span>
           <span>
-            Forecast Confidence:{' '}
+            {isArabic ? 'ثقة التوقع: ' : 'Forecast Confidence: '}
             <strong className="font-mono text-[var(--tf-heading)] tabular-nums">
               {totalPipelineSar > 0
                 ? `${Math.round((weightedForecastSar / totalPipelineSar) * 100)}%`
@@ -192,16 +207,16 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--tf-muted)]">
             <BarChart3 className="w-4 h-4" style={{ color: currentAccentHex }} />
-            <span>Category Mix & Telemetry</span>
+            <span>{isArabic ? 'توزيع الفئات والقياس اللحظي' : 'Category Mix & Telemetry'}</span>
           </div>
           <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--tf-heading)] mt-0.5 mb-5">
-            Demand by Experience Category
+            {isArabic ? 'الطلب حسب فئة التجربة' : 'Demand by Experience Category'}
           </h3>
 
           <div className="space-y-4">
             {categoryPerformance.length === 0 ? (
               <div className="text-xs text-[var(--tf-muted)] py-6 text-center">
-                No active category revenue recorded yet.
+                {isArabic ? 'لم تُسجّل إيرادات نشطة لأي فئة بعد.' : 'No active category revenue recorded yet.'}
               </div>
             ) : (
               categoryPerformance.map((cat, idx) => {
@@ -210,10 +225,10 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
                   <div key={cat.name} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-[var(--tf-heading)] truncate max-w-[180px]">
-                        {cat.name}
+                        {localizeCategory(cat.name, language)}
                       </span>
                       <span className="font-mono text-[var(--tf-muted)] tabular-nums">
-                        {cat.bookings}x · {cat.revenue.toLocaleString()} {currency}
+                        {cat.bookings}x · {cat.revenue.toLocaleString()} {localizedCurrency}
                       </span>
                     </div>
                     <div
@@ -230,7 +245,7 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
                         transition={{ duration: 0.4, delay: 0.07 * idx, ease: [0.16, 1, 0.3, 1] }}
                         style={{
                           width: `${pct}%`,
-                          transformOrigin: 'left',
+                          transformOrigin: isRtl ? 'right' : 'left',
                           backgroundColor: currentAccentHex,
                         }}
                         className="h-full rounded-full"
@@ -247,26 +262,32 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
         <div className="pt-5 border-t border-[var(--tf-border)]">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--tf-muted)] mb-3">
             <Activity className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
-            <span>Live Visitor Activity Signals</span>
+            <span>{isArabic ? 'إشارات نشاط الزوار المباشرة' : 'Live Visitor Activity Signals'}</span>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <div className="font-mono text-lg font-bold text-[var(--tf-heading)] tabular-nums">
                 {pageViews}
               </div>
-              <div className="text-[11px] text-[var(--tf-muted)]">Portal Visits</div>
+              <div className="text-[11px] text-[var(--tf-muted)]">
+                {isArabic ? 'زيارات البوابة' : 'Portal Visits'}
+              </div>
             </div>
             <div>
               <div className="font-mono text-lg font-bold text-[var(--tf-heading)] tabular-nums">
                 {experienceViews}
               </div>
-              <div className="text-[11px] text-[var(--tf-muted)]">Package Views</div>
+              <div className="text-[11px] text-[var(--tf-muted)]">
+                {isArabic ? 'مشاهدات الباقات' : 'Package Views'}
+              </div>
             </div>
             <div>
               <div className="font-mono text-lg font-bold text-[var(--tf-heading)] tabular-nums">
                 {searchEvents}
               </div>
-              <div className="text-[11px] text-[var(--tf-muted)]">Filter Searches</div>
+              <div className="text-[11px] text-[var(--tf-muted)]">
+                {isArabic ? 'عمليات البحث' : 'Filter Searches'}
+              </div>
             </div>
           </div>
         </div>

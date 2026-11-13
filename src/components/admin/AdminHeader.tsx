@@ -18,6 +18,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const { adminUser } = useAuth();
   const { settings, isDarkGlass, blurPixels, currentAccentHex } = useTheme();
 
+  const isArabic = language === 'ar';
+
   const tabTitles: Record<AdminTab, string> = {
     overview: 'Platform Performance Overview',
     experiences: 'Experience Catalog Management',
@@ -30,6 +32,20 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     website: 'Visitor Website CMS & Copy',
     appearance: 'Glassy Appearance & Theme Studio',
     settings: 'Platform Configuration & Database',
+  };
+
+  const tabTitlesAr: Record<AdminTab, string> = {
+    overview: 'نظرة عامة على أداء المنصة',
+    experiences: 'إدارة كتالوج التجارب السياحية',
+    destinations: 'مركز الوجهات السعودية',
+    inquiries: 'الحجوزات واستفسارات العملاء',
+    customers: 'إدارة علاقات العملاء (CRM)',
+    promotions: 'الحملات والعروض الترويجية',
+    interactive: 'الاختبارات التفاعلية والاستكشاف',
+    analytics: 'تحليلات السياحة ومسار التحويل',
+    website: 'إدارة محتوى ونصوص موقع الزوار',
+    appearance: 'استوديو المظهر والزجاجي',
+    settings: 'إعدادات المنصة وقاعدة البيانات',
   };
 
   const toggleLanguage = () => {
@@ -51,7 +67,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       }
     : {
         backgroundColor: isDarkGlass ? '#102420' : '#FFFFFF',
-        borderBottom: '1px solid var(--tf-border)',
+        borderBottomWidth: '1px',
+        borderBottomStyle: 'solid',
+        borderBottomColor: 'var(--tf-border)',
       };
 
   return (
@@ -70,9 +88,13 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     >
       {/* Breadcrumb / Title */}
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-xs text-[var(--tf-muted)] whitespace-nowrap">TourFlow Admin /</span>
+        <span className="text-xs text-[var(--tf-muted)] whitespace-nowrap">
+          {isArabic ? 'إدارة تورفلو /' : 'TourFlow Admin /'}
+        </span>
         <h1 className="text-sm sm:text-base font-bold text-[var(--tf-heading)] truncate">
-          {tabTitles[currentTab] || 'Management'}
+          {isArabic
+            ? tabTitlesAr[currentTab] || 'الإدارة'
+            : tabTitles[currentTab] || 'Management'}
         </h1>
       </div>
 
@@ -100,11 +122,17 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           </div>
           <div className="hidden lg:block text-start">
             <div className="text-xs font-bold text-[var(--tf-heading)] leading-tight">
-              {adminUser?.name || 'Administrator'}
+              {isArabic
+                ? adminUser?.nameAr || 'المسؤول'
+                : adminUser?.name || 'Administrator'}
             </div>
             <div className="text-[10px] text-[var(--tf-muted)] flex items-center gap-1">
               <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
-              <span>{adminUser?.role || 'Super Admin'}</span>
+              <span>
+                {isArabic
+                  ? adminUser?.roleAr || 'المسؤول العام'
+                  : adminUser?.role || 'Super Admin'}
+              </span>
             </div>
           </div>
         </div>

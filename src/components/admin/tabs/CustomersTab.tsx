@@ -1,18 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { Customer, Inquiry } from '../../../types';
+import { Customer, Experience, Inquiry } from '../../../types';
 import { DataService } from '../../../services/dataService';
 import { GlassContainer } from '../../glass/GlassContainer';
+import {
+  formatGuestsCount,
+  localizeCountry,
+  localizeExperienceTitle,
+  localizeInquiryStatus,
+} from '../../../utils/localization';
 import { Search, Download, User, X, Check } from 'lucide-react';
 
 interface CustomersTabProps {
   customers: Customer[];
   inquiries: Inquiry[];
+  experiences?: Experience[];
 }
 
-export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries }) => {
-  const { isRtl } = useLanguage();
+export const CustomersTab: React.FC<CustomersTabProps> = ({
+  customers,
+  inquiries,
+  experiences = [],
+}) => {
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const { currentAccentHex } = useTheme();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,10 +104,14 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
-            Customer Relationship Management (CRM)
+            {isArabic
+              ? 'إدارة علاقات العملاء (CRM)'
+              : 'Customer Relationship Management (CRM)'}
           </h2>
           <p className="text-xs text-[var(--tf-muted)]">
-            Private client profiles, inquiry histories, country origins, and concierge notes.
+            {isArabic
+              ? 'ملفات العملاء الخاصة، سجل الطلبات، بلدان الإقامة، وملاحظات الخدمة الشخصية.'
+              : 'Private client profiles, inquiry histories, country origins, and concierge notes.'}
           </p>
         </div>
 
@@ -104,7 +120,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
           className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
         >
           <Download className="w-4 h-4" style={{ color: currentAccentHex }} />
-          <span>Export Customer Directory</span>
+          <span>{isArabic ? 'تصدير دليل العملاء' : 'Export Customer Directory'}</span>
         </button>
       </div>
 
@@ -114,7 +130,11 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
           <Search className="w-4 h-4 text-[var(--tf-muted)] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by customer name, email, country..."
+            placeholder={
+              isArabic
+                ? 'ابحث باسم العميل أو البريد أو الدولة...'
+                : 'Search by customer name, email, country...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
@@ -127,10 +147,14 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
             onChange={(e) => setCountryFilter(e.target.value)}
             className="text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] font-semibold cursor-pointer"
           >
-            <option value="all">All Countries ({customers.length})</option>
+            <option value="all">
+              {isArabic
+                ? `جميع الدول (${customers.length})`
+                : `All Countries (${customers.length})`}
+            </option>
             {countries.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {localizeCountry(c, language)}
               </option>
             ))}
           </select>
@@ -143,20 +167,34 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
           <table className="w-full text-start text-xs">
             <thead>
               <tr className="bg-[var(--tf-table-head)] border-b border-[var(--tf-border)] text-[var(--tf-muted)] uppercase tracking-wider">
-                <th className="py-3 px-4 font-semibold text-start">Customer</th>
-                <th className="py-3 px-4 font-semibold text-start">Country</th>
-                <th className="py-3 px-4 font-semibold text-start">Inquiries</th>
-                <th className="py-3 px-4 font-semibold text-start">Bookings</th>
-                <th className="py-3 px-4 font-semibold text-start">Last Interaction</th>
-                <th className="py-3 px-4 font-semibold text-start">Notes</th>
-                <th className="py-3 px-4 font-semibold text-end">Action</th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'العميل' : 'Customer'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'الدولة' : 'Country'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'الطلبات' : 'Inquiries'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'الحجوزات' : 'Bookings'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'آخر تفاعل' : 'Last Interaction'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'الملاحظات' : 'Notes'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-end">
+                  {isArabic ? 'إجراء' : 'Action'}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--tf-border)]">
               {filteredCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[var(--tf-muted)]">
-                    No customer records found.
+                    {isArabic ? 'لم يتم العثور على سجلات عملاء.' : 'No customer records found.'}
                   </td>
                 </tr>
               ) : (
@@ -167,7 +205,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                       <div className="text-[11px] text-[var(--tf-muted)]">{cust.email}</div>
                     </td>
                     <td className="py-3 px-4 text-[var(--tf-text)] font-medium whitespace-nowrap">
-                      {cust.country || 'International'}
+                      {localizeCountry(cust.country || 'International', language)}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-[var(--tf-heading)] tabular-nums">
                       {cust.totalInquiries}
@@ -175,7 +213,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                     <td className="py-3 px-4 font-mono font-bold text-emerald-400 tabular-nums">
                       {cust.confirmedBookings}
                     </td>
-                    <td className="py-3 px-4 text-[var(--tf-muted)] whitespace-nowrap">
+                    <td className="py-3 px-4 text-[var(--tf-muted)] whitespace-nowrap font-mono">
                       {new Date(cust.lastInteraction).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4 text-[var(--tf-muted)] max-w-xs truncate">
@@ -186,7 +224,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                         onClick={() => handleOpenProfile(cust)}
                         className="py-1 px-3 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
                       >
-                        Profile
+                        {isArabic ? 'الملف الشخصي' : 'Profile'}
                       </button>
                     </td>
                   </tr>
@@ -199,8 +237,11 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
 
       {/* CUSTOMER PROFILE MODAL */}
       {selectedCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
             <div className="flex items-start justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#123B32] text-[#D9C29A] flex items-center justify-center font-bold">
@@ -211,7 +252,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                     {selectedCustomer.name}
                   </h3>
                   <div className="text-xs text-[#777D75]">
-                    {selectedCustomer.email} · {selectedCustomer.phone}
+                    {selectedCustomer.email} · <span dir="ltr">{selectedCustomer.phone}</span>
                   </div>
                 </div>
               </div>
@@ -226,21 +267,27 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 p-4 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl text-center mb-6">
               <div>
-                <span className="text-[11px] text-[#777D75] block">Total Inquiries</span>
+                <span className="text-[11px] text-[#777D75] block">
+                  {isArabic ? 'إجمالي الطلبات' : 'Total Inquiries'}
+                </span>
                 <span className="font-mono text-lg font-bold text-[#123B32]">
                   {selectedCustomer.totalInquiries}
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-[#777D75] block">Confirmed Bookings</span>
+                <span className="text-[11px] text-[#777D75] block">
+                  {isArabic ? 'الحجوزات المؤكدة' : 'Confirmed Bookings'}
+                </span>
                 <span className="font-mono text-lg font-bold text-emerald-700">
                   {selectedCustomer.confirmedBookings}
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-[#777D75] block">Origin</span>
+                <span className="text-[11px] text-[#777D75] block">
+                  {isArabic ? 'الدولة' : 'Origin'}
+                </span>
                 <span className="text-xs font-bold text-[#123B32] mt-1 block">
-                  {selectedCustomer.country}
+                  {localizeCountry(selectedCustomer.country, language)}
                 </span>
               </div>
             </div>
@@ -248,7 +295,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
             {/* Associated Inquiries */}
             <div className="mb-6">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#123B32] mb-3">
-                Inquiry History
+                {isArabic ? 'سجل الطلبات' : 'Inquiry History'}
               </h4>
               <div className="space-y-2">
                 {inquiries
@@ -256,16 +303,25 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                   .map((inq) => (
                     <div
                       key={inq.id}
-                      className="p-3 bg-white border border-[#D9C29A]/50 rounded-xl text-xs flex items-center justify-between"
+                      className="p-3 bg-white border border-[#D9C29A]/50 rounded-xl text-xs flex items-center justify-between gap-2"
                     >
                       <div>
-                        <div className="font-bold text-[#123B32]">{inq.experienceTitle}</div>
+                        <div className="font-bold text-[#123B32]">
+                          {localizeExperienceTitle(
+                            inq.experienceTitle,
+                            language,
+                            experiences,
+                            inq.experienceId
+                          )}
+                        </div>
                         <div className="text-[11px] text-[#777D75]">
-                          Date: {inq.preferredDate} · {inq.guests} guests · Ref: {inq.id}
+                          {isArabic ? 'التاريخ:' : 'Date:'} {inq.preferredDate} ·{' '}
+                          {formatGuestsCount(inq.guests, language)} ·{' '}
+                          {isArabic ? 'المرجع:' : 'Ref:'} {inq.id}
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] border border-[#D9C29A]/50">
-                        {inq.status}
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] border border-[#D9C29A]/50 shrink-0">
+                        {localizeInquiryStatus(inq.status, language)}
                       </span>
                     </div>
                   ))}
@@ -275,20 +331,24 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
             {/* Concierge Notes */}
             <div className="border-t border-[#D9C29A]/40 pt-4">
               <label className="block text-xs font-bold text-[#123B32] mb-1">
-                Concierge Profile Notes:
+                {isArabic ? 'ملاحظات ملف الخدمة الخاصة:' : 'Concierge Profile Notes:'}
               </label>
               <textarea
                 rows={3}
                 value={notesInput}
                 onChange={(e) => setNotesInput(e.target.value)}
-                placeholder="Add private client preferences (e.g. VIP status, dietary restrictions, preferred language)..."
+                placeholder={
+                  isArabic
+                    ? 'أضف تفضيلات العميل الخاصة (مثل حالة VIP، القيود الغذائية، اللغة المفضلة)...'
+                    : 'Add private client preferences (e.g. VIP status, dietary restrictions, preferred language)...'
+                }
                 className="w-full text-xs p-3 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32] mb-3"
               />
               <div className="flex items-center justify-between gap-3">
                 {notesSaved ? (
                   <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" />
-                    Notes saved in real time
+                    {isArabic ? 'تم حفظ الملاحظات مباشرة' : 'Notes saved in real time'}
                   </span>
                 ) : (
                   <span />
@@ -298,7 +358,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({ customers, inquiries
                   onClick={handleSaveNotes}
                   className="py-2 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
                 >
-                  Save Notes
+                  {isArabic ? 'حفظ الملاحظات' : 'Save Notes'}
                 </button>
               </div>
             </div>

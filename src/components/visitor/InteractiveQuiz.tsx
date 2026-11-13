@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { QuizQuestion, Experience } from '../../types';
+import { localizeCurrency, localizeDestinationName } from '../../utils/localization';
 import confetti from 'canvas-confetti';
 import { Sparkles, Trophy, CheckCircle2, XCircle, ArrowRight, RotateCcw, Share2, Check } from 'lucide-react';
 
@@ -150,7 +151,9 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
   };
 
   const handleShareResult = () => {
-    const text = `I just scored ${score}/${activeQuestions.length} on the TourFlow Saudi Tourism Knowledge Discovery Game! Explore Saudi Arabia: https://tourflow.sa`;
+    const text = isArabic
+      ? `حصلت على ${score}/${activeQuestions.length} في تحدي المعرفة السياحية السعودية على منصة تورفلو! استكشف المملكة: https://tourflow.sa`
+      : `I just scored ${score}/${activeQuestions.length} on the TourFlow Saudi Tourism Knowledge Discovery Game! Explore Saudi Arabia: https://tourflow.sa`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text);
       setCopiedShare(true);
@@ -199,7 +202,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   : 'text-[var(--tf-muted)] hover:text-[var(--tf-heading)]'
               }`}
             >
-              Experience Matcher
+              {isArabic ? 'مستكشف التجارب' : 'Experience Matcher'}
             </button>
             <button
               onClick={() => setActiveTab('knowledge')}
@@ -214,7 +217,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   : 'text-[var(--tf-muted)] hover:text-[var(--tf-heading)]'
               }`}
             >
-              Saudi Knowledge Game
+              {isArabic ? 'تحدي المعرفة السعودية' : 'Saudi Knowledge Game'}
             </button>
           </div>
         </div>
@@ -230,7 +233,9 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                 {/* Step indicator */}
                 <div className="flex items-center justify-between text-xs text-[var(--tf-muted)] mb-6">
                   <span className="font-semibold text-[var(--tf-heading)] tabular-nums">
-                    Step {matchStep + 1} of {matcherSteps.length}
+                    {isArabic
+                      ? `الخطوة ${matchStep + 1} من ${matcherSteps.length}`
+                      : `Step ${matchStep + 1} of ${matcherSteps.length}`}
                   </span>
                   <div className="flex gap-1.5">
                     {matcherSteps.map((_, i) => (
@@ -279,24 +284,33 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   {t('quiz.congrats')}
                 </h3>
                 <p className="text-xs sm:text-sm text-[var(--tf-muted)] max-w-md mx-auto mb-6">
-                  Based on your preferences, our platform recommends this tailor-made Saudi experience:
+                  {isArabic
+                    ? 'بناءً على اختياراتك وتفضيلاتك، توصي منصتنا بهذه التجربة السعودية المصممة لك:'
+                    : 'Based on your preferences, our platform recommends this tailor-made Saudi experience:'}
                 </p>
 
                 {recommendedExperience ? (
                   <div className="max-w-lg mx-auto bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-2xl overflow-hidden shadow-sm text-start mb-6">
                     <img
                       src={recommendedExperience.coverImage}
-                      alt={recommendedExperience.title}
+                      alt={isArabic ? recommendedExperience.titleAr : recommendedExperience.title}
                       className="w-full h-44 object-cover"
                     />
                     <div className="p-5">
                       <div className="flex items-center justify-between text-xs text-[var(--tf-muted)] mb-1">
-                        <span>{recommendedExperience.destinationName}</span>
+                        <span>
+                          {localizeDestinationName(
+                            recommendedExperience.destinationName,
+                            language,
+                            undefined,
+                            recommendedExperience.destinationId
+                          )}
+                        </span>
                         <span
                           className="font-mono font-bold text-sm tabular-nums"
                           style={{ color: currentAccentHex }}
                         >
-                          {recommendedExperience.price} {currency}
+                          {recommendedExperience.price} {localizeCurrency(currency, language)}
                         </span>
                       </div>
                       <h4 className="font-serif text-lg font-bold text-[var(--tf-heading)] mb-2">
@@ -347,7 +361,9 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                     style={{ color: currentAccentHex }}
                   >
                     <Trophy className="w-3.5 h-3.5" />
-                    <span>Score: {score}</span>
+                    <span>
+                      {t('quiz.score')}: {score}
+                    </span>
                   </div>
                 </div>
 
@@ -408,7 +424,9 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                 {/* Explanation feedback */}
                 {isAnswerSubmitted && (
                   <div className="p-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl text-xs sm:text-sm text-[var(--tf-text)] mb-6">
-                    <span className="font-bold text-[var(--tf-heading)]">Historical Fact: </span>
+                    <span className="font-bold text-[var(--tf-heading)]">
+                      {isArabic ? 'حقيقة تاريخية: ' : 'Historical Fact: '}
+                    </span>
                     <span>{isArabic ? currentQuestion.explanationAr : currentQuestion.explanation}</span>
                   </div>
                 )}
@@ -422,7 +440,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                       style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
                       className="py-2.5 px-6 disabled:opacity-45 rounded-xl text-xs font-bold cursor-pointer hover:brightness-105 transition-all"
                     >
-                      Confirm Answer
+                      {isArabic ? 'تأكيد الإجابة' : 'Confirm Answer'}
                     </button>
                   ) : (
                     <button
@@ -430,7 +448,15 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                       style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
                       className="py-2.5 px-6 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:brightness-105 transition-all"
                     >
-                      <span>{gameStep < activeQuestions.length - 1 ? 'Next Question' : 'View Results'}</span>
+                      <span>
+                        {gameStep < activeQuestions.length - 1
+                          ? isArabic
+                            ? 'السؤال التالي'
+                            : 'Next Question'
+                          : isArabic
+                          ? 'عرض النتيجة'
+                          : 'View Results'}
+                      </span>
                       <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                     </button>
                   )}
@@ -445,21 +471,48 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   <Trophy className="w-8 h-8" />
                 </div>
                 <h3 className="font-serif text-2xl font-bold text-[var(--tf-heading)] mb-1">
-                  Knowledge Quest Complete!
+                  {isArabic ? 'اكتملت رحلة المعرفة!' : 'Knowledge Quest Complete!'}
                 </h3>
                 <p className="text-sm text-[var(--tf-muted)] mb-4">
-                  You scored <span className="font-bold text-[var(--tf-heading)] text-base tabular-nums">{score}</span> out of{' '}
-                  <span className="font-bold text-[var(--tf-heading)] text-base tabular-nums">{activeQuestions.length}</span> correct
+                  {isArabic ? (
+                    <>
+                      حصلت على{' '}
+                      <span className="font-bold text-[var(--tf-heading)] text-base tabular-nums">
+                        {score}
+                      </span>{' '}
+                      من أصل{' '}
+                      <span className="font-bold text-[var(--tf-heading)] text-base tabular-nums">
+                        {activeQuestions.length}
+                      </span>{' '}
+                      إجابات صحيحة
+                    </>
+                  ) : (
+                    <>
+                      You scored{' '}
+                      <span className="font-bold text-[var(--tf-heading)] text-base tabular-nums">
+                        {score}
+                      </span>{' '}
+                      out of{' '}
+                      <span className="font-bold text-[var(--tf-heading)] text-base tabular-nums">
+                        {activeQuestions.length}
+                      </span>{' '}
+                      correct
+                    </>
+                  )}
                 </p>
 
                 <div className="max-w-md mx-auto p-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl text-xs text-[var(--tf-text)] mb-6">
                   {score >= 4 ? (
                     <p className="font-medium">
-                      Outstanding! You possess deep appreciation for Saudi Arabia’s Nabataean, Najdi, and Hejazi heritage.
+                      {isArabic
+                        ? 'رائع! لديك معرفة عميقة وتقدير أصيل للتراث النبطي والنجدي والحجازي في المملكة.'
+                        : 'Outstanding! You possess deep appreciation for Saudi Arabia’s Nabataean, Najdi, and Hejazi heritage.'}
                     </p>
                   ) : (
                     <p>
-                      Great exploration! Saudi Arabia holds thousands of years of living history waiting to be discovered firsthand.
+                      {isArabic
+                        ? 'استكشاف موفق! تزخر المملكة العربية السعودية بآلاف السنين من التاريخ الحي الذي ينتظر زيارتك.'
+                        : 'Great exploration! Saudi Arabia holds thousands of years of living history waiting to be discovered firsthand.'}
                     </p>
                   )}
                 </div>
@@ -471,7 +524,13 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                     className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer hover:brightness-105 transition-all"
                   >
                     {copiedShare ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-                    <span>{copiedShare ? 'Copied to Clipboard!' : t('quiz.share')}</span>
+                    <span>
+                      {copiedShare
+                        ? isArabic
+                          ? 'تم النسخ للحافظة!'
+                          : 'Copied to Clipboard!'
+                        : t('quiz.share')}
+                    </span>
                   </button>
                   <button
                     onClick={resetGame}

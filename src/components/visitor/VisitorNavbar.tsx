@@ -70,6 +70,7 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
       })
     : {};
 
+  const isArabic = language === 'ar';
   const isDefaultBrand =
     !businessName ||
     businessName === 'TourFlow' ||
@@ -94,7 +95,7 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
           {/* Zone 1: Brand Wordmark */}
           <button
             onClick={() => handleNavClick('explore')}
-            className="flex items-center gap-2 cursor-pointer group whitespace-nowrap shrink-0 text-left"
+            className="flex items-center gap-2 cursor-pointer group whitespace-nowrap shrink-0 text-start"
           >
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors border"
@@ -116,10 +117,17 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
             </div>
             <div className="flex items-baseline font-bold text-xl tracking-tight">
               {isDefaultBrand ? (
-                <>
-                  <span className={useLightText ? 'text-white' : 'text-[#123B32]'}>Tour</span>
-                  <span style={{ color: currentAccentHex }}>Flow</span>
-                </>
+                isArabic ? (
+                  <>
+                    <span className={useLightText ? 'text-white' : 'text-[#123B32]'}>تور</span>
+                    <span style={{ color: currentAccentHex }}>فلو</span>
+                  </>
+                ) : (
+                  <>
+                    <span className={useLightText ? 'text-white' : 'text-[#123B32]'}>Tour</span>
+                    <span style={{ color: currentAccentHex }}>Flow</span>
+                  </>
+                )
               ) : (
                 <span className={useLightText ? 'text-white' : 'text-[#123B32]'}>{businessName}</span>
               )}
@@ -151,7 +159,7 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
                   ? 'border-white/25 text-white hover:bg-white/10'
                   : 'border-[#D9C29A]/60 text-[#123B32] hover:bg-[#D9C29A]/15'
               }`}
-              title="Switch Language"
+              title={isArabic ? 'تغيير اللغة' : 'Switch Language'}
             >
               <Globe className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
               <span>{language === 'en' ? 'العربية' : 'English'}</span>
@@ -165,7 +173,15 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
                   ? 'text-white/80 hover:text-white hover:bg-white/15'
                   : 'text-[#777D75] hover:text-[#123B32] hover:bg-[#D9C29A]/15'
               }`}
-              title={isAdminAuthenticated ? 'Go to Admin Dashboard' : 'Operator Portal'}
+              title={
+                isAdminAuthenticated
+                  ? isArabic
+                    ? 'الانتقال إلى لوحة التحكم'
+                    : 'Go to Admin Dashboard'
+                  : isArabic
+                  ? 'بوابة المشغلين'
+                  : 'Operator Portal'
+              }
             >
               <Lock className="w-4 h-4" />
             </button>
@@ -184,7 +200,7 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className={`md:hidden p-2 rounded-lg ${useLightText ? 'text-white' : 'text-[#123B32]'}`}
-              aria-label="Open menu"
+              aria-label={isArabic ? 'فتح القائمة' : 'Open menu'}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>

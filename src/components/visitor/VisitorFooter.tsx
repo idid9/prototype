@@ -2,6 +2,7 @@ import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { WebsiteContent, Destination, BusinessSettings } from '../../types';
+import { localizeCurrency } from '../../utils/localization';
 import { Compass, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 
 interface VisitorFooterProps {
@@ -45,6 +46,16 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
         borderTopColor: 'rgba(255, 255, 255, 0.14)',
       };
 
+  const isDefaultBrand =
+    !brandTitle ||
+    brandTitle === 'TourFlow' ||
+    brandTitle === 'TourFlow Digital Tourism Platform';
+  const localizedBrandName = isDefaultBrand
+    ? isArabic
+      ? 'منصة تورفلو السياحية الرقمية'
+      : brandTitle
+    : brandTitle;
+
   return (
     <footer
       style={footerStyle}
@@ -63,10 +74,16 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
                 <Compass className="w-5 h-5" />
               </div>
               <span className="text-xl font-bold tracking-tight">
-                {brandTitle === 'TourFlow Digital Tourism Platform' || brandTitle === 'TourFlow' ? (
-                  <>
-                    Tour<span style={{ color: currentAccentHex }}>Flow</span>
-                  </>
+                {isDefaultBrand ? (
+                  isArabic ? (
+                    <>
+                      تور<span style={{ color: currentAccentHex }}>فلو</span>
+                    </>
+                  ) : (
+                    <>
+                      Tour<span style={{ color: currentAccentHex }}>Flow</span>
+                    </>
+                  )
                 ) : (
                   brandTitle
                 )}
@@ -74,12 +91,18 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
             </div>
 
             <p className="text-xs sm:text-sm text-white/70 max-w-sm leading-relaxed">
-              "Turning Local Experiences Into Digital Growth." Saudi Arabia’s premier digital platform connecting licensed tour operators with global and domestic travelers.
+              {isArabic
+                ? '"تحويل التجارب المحلية إلى نمو رقمي مستدام." المنصة الرقمية الرائدة في المملكة العربية السعودية لربط مشغلي الجولات المرخصين بالمسافرين محلياً وعالمياً.'
+                : '"Turning Local Experiences Into Digital Growth." Saudi Arabia’s premier digital platform connecting licensed tour operators with global and domestic travelers.'}
             </p>
 
             <div className="flex items-center gap-3 text-xs pt-2" style={{ color: currentAccentHex }}>
               <ShieldCheck className="w-4 h-4" />
-              <span>Aligned with Saudi Vision 2030 Tourism Ecosystem</span>
+              <span>
+                {isArabic
+                  ? 'متوافقة مع منظومة السياحة في رؤية السعودية 2030'
+                  : 'Aligned with Saudi Vision 2030 Tourism Ecosystem'}
+              </span>
             </div>
           </div>
 
@@ -89,7 +112,7 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
               className="text-xs font-bold uppercase tracking-widest"
               style={{ color: currentAccentHex }}
             >
-              Explore Destinations
+              {isArabic ? 'استكشف الوجهات' : 'Explore Destinations'}
             </h4>
             <ul className="space-y-2 text-xs text-white/75">
               {publishedDestinations.length > 0 ? (
@@ -126,7 +149,7 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
               className="text-xs font-bold uppercase tracking-widest"
               style={{ color: currentAccentHex }}
             >
-              Platform Concierge
+              {isArabic ? 'خدمة الكونسيرج والتواصل' : 'Platform Concierge'}
             </h4>
             <ul className="space-y-2.5 text-xs text-white/75">
               <li className="flex items-center gap-2">
@@ -137,7 +160,7 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 shrink-0" style={{ color: currentAccentHex }} />
-                <span>{content.contactPhone}</span>
+                <span dir="ltr">{content.contactPhone}</span>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 shrink-0 mt-0.5" style={{ color: currentAccentHex }} />
@@ -149,9 +172,13 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
-          <div>© 2026 {brandTitle}. All rights reserved.</div>
+          <div>
+            {isArabic
+              ? `© 2026 ${localizedBrandName}. جميع الحقوق محفوظة.`
+              : `© 2026 ${brandTitle}. All rights reserved.`}
+          </div>
           <span className="text-[11px]" style={{ color: currentAccentHex }}>
-            Currency: {currencyLabel}
+            {isArabic ? 'العملة:' : 'Currency:'} {localizeCurrency(currencyLabel, language)}
           </span>
         </div>
       </div>

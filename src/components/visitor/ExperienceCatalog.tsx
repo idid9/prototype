@@ -2,6 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Experience, Destination } from '../../types';
+import {
+  localizeCategory,
+  localizeCurrency,
+  localizeDestinationName,
+} from '../../utils/localization';
 import { Clock, Star, ArrowRight, Search, MapPin, Compass } from 'lucide-react';
 
 interface ExperienceCatalogProps {
@@ -135,9 +140,15 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
               style={filterGlassyStyle}
               className="text-xs sm:text-sm py-2 px-3 rounded-xl text-[var(--tf-heading)] font-medium focus:outline-none cursor-pointer transition-all"
             >
-              <option value="featured" className={optionClass}>Featured First</option>
-              <option value="price-asc" className={optionClass}>Price: Low to High</option>
-              <option value="price-desc" className={optionClass}>Price: High to Low</option>
+              <option value="featured" className={optionClass}>
+                {isArabic ? 'الأكثر تميزاً' : 'Featured First'}
+              </option>
+              <option value="price-asc" className={optionClass}>
+                {isArabic ? 'السعر: من الأقل إلى الأعلى' : 'Price: Low to High'}
+              </option>
+              <option value="price-desc" className={optionClass}>
+                {isArabic ? 'السعر: من الأعلى إلى الأقل' : 'Price: High to Low'}
+              </option>
             </select>
           </div>
         </div>
@@ -180,16 +191,19 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
         {/* Active Destination Filter */}
         {selectedDestination !== 'all' && (
           <div className="flex items-center gap-2 mb-6 text-xs text-[var(--tf-muted)]">
-            <span>Filtered by destination:</span>
+            <span>{isArabic ? 'تمت التصفية حسب الوجهة:' : 'Filtered by destination:'}</span>
             <span className="font-bold text-[var(--tf-heading)]">
-              {destinations.find((d) => d.id === selectedDestination)?.name}
+              {(() => {
+                const matched = destinations.find((d) => d.id === selectedDestination);
+                return matched ? (isArabic ? matched.nameAr : matched.name) : selectedDestination;
+              })()}
             </span>
             <button
               onClick={() => onSelectDestination('all')}
               style={{ color: currentAccentHex }}
-              className="hover:underline cursor-pointer ml-2 font-semibold"
+              className="hover:underline cursor-pointer ml-2 rtl:ml-0 rtl:mr-2 font-semibold"
             >
-              Clear filter
+              {isArabic ? 'إزالة التصفية' : 'Clear filter'}
             </button>
           </div>
         )}
@@ -202,10 +216,12 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
           >
             <Compass className="w-10 h-10 mx-auto mb-3" style={{ color: currentAccentHex }} />
             <h3 className="text-base font-bold text-[var(--tf-heading)]">
-              No published experiences match your filter
+              {isArabic ? 'لا توجد تجارب منشورة تطابق بحثك' : 'No published experiences match your filter'}
             </h3>
             <p className="text-xs text-[var(--tf-muted)] mt-1">
-              Try adjusting your category or destination selection.
+              {isArabic
+                ? 'جرّب تعديل التصنيف أو الوجهة المختارة.'
+                : 'Try adjusting your category or destination selection.'}
             </p>
             <button
               onClick={() => {
@@ -216,7 +232,7 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
               style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
               className="mt-4 px-4 py-2 text-xs font-bold rounded-xl cursor-pointer hover:brightness-105 transition-all"
             >
-              Reset All Filters
+              {isArabic ? 'إعادة ضبط جميع الفلاتر' : 'Reset All Filters'}
             </button>
           </div>
         ) : (
@@ -252,7 +268,7 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
 
                     {/* Category Label */}
                     <div className="absolute top-3.5 left-3.5 rtl:left-auto rtl:right-3.5 text-[11px] font-semibold tracking-wide text-white bg-black/55 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/15">
-                      {isArabic ? exp.categoryAr : exp.category}
+                      {localizeCategory(exp.category, language)}
                     </div>
 
                     {/* Rating if available */}
@@ -269,7 +285,9 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
                     {/* Destination Banner */}
                     <div className="absolute bottom-3 left-3.5 rtl:left-auto rtl:right-3.5 flex items-center gap-1 text-xs font-medium text-white/95">
                       <MapPin className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
-                      <span>{exp.destinationName}</span>
+                      <span>
+                        {localizeDestinationName(exp.destinationName, language, destinations, exp.destinationId)}
+                      </span>
                     </div>
                   </div>
 
@@ -300,7 +318,7 @@ export const ExperienceCatalog: React.FC<ExperienceCatalogProps> = ({
                           {exp.price}
                         </span>
                         <span className="text-xs font-semibold" style={{ color: currentAccentHex }}>
-                          {currency || t('section.experiences.sar')}
+                          {localizeCurrency(currency, language)}
                         </span>
                       </div>
                     </div>

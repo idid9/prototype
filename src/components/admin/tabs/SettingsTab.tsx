@@ -11,7 +11,8 @@ interface SettingsTabProps {
 }
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
-  const { isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const { currentAccentHex } = useTheme();
 
   const [businessName, setBusinessName] = useState(settings.businessName);
@@ -70,10 +71,14 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
-            Platform Configuration & Real-Time Sync
+            {isArabic
+              ? 'إعدادات المنصة والمزامنة الفورية'
+              : 'Platform Configuration & Real-Time Sync'}
           </h2>
           <p className="text-xs text-[var(--tf-muted)]">
-            Manage platform identity, currency defaults, and inspect the real-time database engine.
+            {isArabic
+              ? 'إدارة هوية المنصة، والعملة الافتراضية، ومراقبة محرك قاعدة البيانات الفوري.'
+              : 'Manage platform identity, currency defaults, and inspect the real-time database engine.'}
           </p>
         </div>
 
@@ -82,7 +87,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             <Check className="w-4 h-4 text-emerald-400" />
             <span>
               {resetSuccess
-                ? 'Demo database restored & synced across both panels in real time!'
+                ? isArabic
+                  ? 'تمت استعادة البيانات التجريبية ومزامنتها عبر اللوحتين في الوقت الفعلي!'
+                  : 'Demo database restored & synced across both panels in real time!'
+                : isArabic
+                ? 'تم حفظ الإعدادات ومزامنتها عبر اللوحتين!'
                 : 'Settings saved & synced across both panels!'}
             </span>
           </div>
@@ -94,41 +103,51 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
         <div className="flex items-center gap-2 mb-2">
           <Database className="w-5 h-5" style={{ color: currentAccentHex }} />
           <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">
-            Database Architecture: Dual-Mode Real-Time Engine
+            {isArabic
+              ? 'بنية قاعدة البيانات: محرك المزامنة الفورية الثنائي'
+              : 'Database Architecture: Dual-Mode Real-Time Engine'}
           </h3>
         </div>
         <p className="text-xs text-[var(--tf-muted)] mb-4 leading-relaxed">
-          TourFlow uses a unified Firestore data contract. Both the public visitor portal and this admin console synchronize instantaneously through reactive real-time subscriptions (<span className="font-mono text-[var(--tf-heading)]">onSnapshot</span> / reactive event bus). Any product edit, new inquiry, or publication status toggled here appears immediately on the visitor page without refreshing.
+          {isArabic
+            ? 'تستخدم تورفلو بنية بيانات موحدة. تتزامن بوابة الزوار العامة ولوحة الإدارة هذه فورياً عبر اشتراكات تفاعلية مباشرة؛ فأي تعديل للمنتجات أو استفسار جديد أو تغيير في حالة النشر يظهر فوراً في صفحة الزوار دون تحديث.'
+            : 'TourFlow uses a unified Firestore data contract. Both the public visitor portal and this admin console synchronize instantaneously through reactive real-time subscriptions. Any product edit, new inquiry, or publication status toggled here appears immediately on the visitor page without refreshing.'}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="p-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl">
             <div className="flex items-center gap-1.5 text-emerald-400 font-bold mb-1">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              <span>Real-Time Engine Active</span>
+              <span>{isArabic ? 'محرك الوقت الفعلي نشط' : 'Real-Time Engine Active'}</span>
             </div>
             <p className="text-[11px] text-[var(--tf-muted)]">
-              Cross-tab broadcast channel & reactive listeners active. Latency: &lt; 20ms.
+              {isArabic
+                ? 'قناة البث بين النوافذ والمستمعات التفاعلية نشطة. زمن الاستجابة < ٢٠ مللي ثانية.'
+                : 'Cross-tab broadcast channel & reactive listeners active. Latency: < 20ms.'}
             </p>
           </div>
 
           <div className="p-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl">
             <div className="flex items-center gap-1.5 text-[var(--tf-heading)] font-bold mb-1">
               <Server className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
-              <span>Firestore Rules Deployed</span>
+              <span>{isArabic ? 'قواعد الأمان مفعّلة' : 'Firestore Rules Deployed'}</span>
             </div>
             <p className="text-[11px] text-[var(--tf-muted)]">
-              Strict ABAC security rules with PII isolation defined in <span className="font-mono">firestore.rules</span>.
+              {isArabic
+                ? 'قواعد أمان صارمة مع عزل بيانات الهوية الشخصية والوصول المصرح.'
+                : 'Strict ABAC security rules with PII isolation defined in firestore.rules.'}
             </p>
           </div>
 
           <div className="p-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl">
             <div className="flex items-center gap-1.5 text-[var(--tf-heading)] font-bold mb-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Access Control Enforced</span>
+              <span>{isArabic ? 'التحكم بالصلاحيات مفعل' : 'Access Control Enforced'}</span>
             </div>
             <p className="text-[11px] text-[var(--tf-muted)]">
-              Customer CRM and private notes are restricted to verified administrators.
+              {isArabic
+                ? 'بيانات إدارة علاقات العملاء والملاحظات الخاصة مقصورة على المسؤولين المعتمدين.'
+                : 'Customer CRM and private notes are restricted to verified administrators.'}
             </p>
           </div>
         </div>
@@ -138,13 +157,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
       <form onSubmit={handleSave} className="space-y-6">
         <GlassContainer delay={0.05} className="p-6 space-y-4">
           <h3 className="font-serif text-base font-bold text-[var(--tf-heading)] pb-2 border-b border-[var(--tf-border)]">
-            Platform Identity & Concierge
+            {isArabic ? 'هوية المنصة وخدمة العملاء' : 'Platform Identity & Concierge'}
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-                Business Platform Name
+                {isArabic ? 'اسم منصة الأعمال' : 'Business Platform Name'}
               </label>
               <input
                 type="text"
@@ -155,10 +174,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-                Operational Email
+                {isArabic ? 'البريد التشغيلي' : 'Operational Email'}
               </label>
               <input
                 type="email"
+                dir="ltr"
                 value={businessEmail}
                 onChange={(e) => setBusinessEmail(e.target.value)}
                 className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
@@ -169,10 +189,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-                Office Phone
+                {isArabic ? 'هاتف المكتب' : 'Office Phone'}
               </label>
               <input
                 type="text"
+                dir="ltr"
                 value={businessPhone}
                 onChange={(e) => setBusinessPhone(e.target.value)}
                 className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
@@ -180,10 +201,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-                WhatsApp Hotline
+                {isArabic ? 'الخط الساخن للواتساب' : 'WhatsApp Hotline'}
               </label>
               <input
                 type="text"
+                dir="ltr"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value)}
                 className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl font-mono focus:outline-none"
@@ -191,21 +213,23 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-                Operational Currency
+                {isArabic ? 'العملة التشغيلية' : 'Operational Currency'}
               </label>
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as 'SAR')}
                 className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl font-bold cursor-pointer focus:outline-none"
               >
-                <option value="SAR">Saudi Riyal (SAR)</option>
+                <option value="SAR">
+                  {isArabic ? 'ريال سعودي (SAR)' : 'Saudi Riyal (SAR)'}
+                </option>
               </select>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-              Registered Office Address
+              {isArabic ? 'عنوان المكتب المسجل' : 'Registered Office Address'}
             </label>
             <input
               type="text"
@@ -216,7 +240,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
           </div>
 
           <div className="pt-2">
-            <h4 className="text-xs font-bold text-[var(--tf-heading)] mb-2">Notification Routing</h4>
+            <h4 className="text-xs font-bold text-[var(--tf-heading)] mb-2">
+              {isArabic ? 'توجيه الإشعارات' : 'Notification Routing'}
+            </h4>
             <div className="flex flex-col sm:flex-row gap-4">
               <label className="flex items-center gap-2 text-xs text-[var(--tf-text)] cursor-pointer">
                 <input
@@ -226,7 +252,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
                   style={{ accentColor: currentAccentHex }}
                   className="rounded"
                 />
-                <span>Email alerts on new visitor inquiries</span>
+                <span>
+                  {isArabic
+                    ? 'تنبيهات البريد الإلكتروني عند استلام طلبات جديدة'
+                    : 'Email alerts on new visitor inquiries'}
+                </span>
               </label>
               <label className="flex items-center gap-2 text-xs text-[var(--tf-text)] cursor-pointer">
                 <input
@@ -236,7 +266,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
                   style={{ accentColor: currentAccentHex }}
                   className="rounded"
                 />
-                <span>WhatsApp concierge notification forwarding</span>
+                <span>
+                  {isArabic
+                    ? 'إعادة توجيه إشعارات خدمة العملاء عبر واتساب'
+                    : 'WhatsApp concierge notification forwarding'}
+                </span>
               </label>
             </div>
           </div>
@@ -249,7 +283,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-red-400/50 text-red-400 hover:bg-red-500/15 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset Demo Seed Data</span>
+            <span>{isArabic ? 'استعادة البيانات التجريبية' : 'Reset Demo Seed Data'}</span>
           </button>
 
           <button
@@ -257,32 +291,39 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
             className="py-3 px-8 rounded-xl text-xs font-bold shadow-md transition-opacity hover:opacity-90 cursor-pointer"
           >
-            Save Settings
+            {isArabic ? 'حفظ الإعدادات' : 'Save Settings'}
           </button>
         </div>
       </form>
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-[#D9C29A]/50 shadow-xl text-center">
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-[#D9C29A]/50 shadow-xl text-center text-[#202923]">
             <RotateCcw className="w-10 h-10 text-red-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-[#123B32] mb-1">Reset All Demo Data?</h3>
+            <h3 className="text-base font-bold text-[#123B32] mb-1">
+              {isArabic ? 'إعادة تعيين كافة البيانات التجريبية؟' : 'Reset All Demo Data?'}
+            </h3>
             <p className="text-xs text-[#777D75] mb-6">
-              This will restore all default Saudi destinations, published experiences, promotions, sample inquiries, and CMS copy.
+              {isArabic
+                ? 'سيؤدي ذلك إلى استعادة جميع الوجهات السعودية الافتراضية والتجارب المنشورة والعروض والاستفسارات النموذجية ومحتوى الموقع.'
+                : 'This will restore all default Saudi destinations, published experiences, promotions, sample inquiries, and CMS copy.'}
             </p>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowResetConfirm(false)}
                 className="w-1/2 py-2 px-3 text-xs font-semibold text-[#777D75] bg-neutral-100 rounded-xl cursor-pointer"
               >
-                Cancel
+                {isArabic ? 'إلغاء' : 'Cancel'}
               </button>
               <button
                 onClick={handleResetDemoData}
                 className="w-1/2 py-2 px-3 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
               >
-                Confirm Reset
+                {isArabic ? 'تأكيد الاستعادة' : 'Confirm Reset'}
               </button>
             </div>
           </div>

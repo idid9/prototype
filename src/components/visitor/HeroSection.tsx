@@ -2,6 +2,7 @@ import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Destination, ExperienceCategory, WebsiteContent } from '../../types';
+import { formatGuestsCount, localizeCategory } from '../../utils/localization';
 import { Search, MapPin, Calendar, Users, Compass, ChevronDown } from 'lucide-react';
 
 interface HeroSectionProps {
@@ -55,7 +56,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <div className="absolute inset-0 z-0">
         <img
           src={content.heroImage}
-          alt="AlUla Saudi Arabia Desert Landscape"
+          alt={isArabic ? 'مشهد صحراء العلا في المملكة العربية السعودية' : 'AlUla Saudi Arabia Desert Landscape'}
           className="w-full h-full object-cover object-center scale-105 animate-subtle-zoom"
           referrerPolicy="no-referrer"
         />
@@ -64,17 +65,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(16,46,41,0.5)_100%)]" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* Trust metadata with separators */}
         <div
-          className="inline-flex items-center gap-2 mb-6 text-xs sm:text-sm font-medium tracking-widest uppercase"
+          className="inline-flex flex-wrap items-center justify-center gap-2 mb-6 text-xs sm:text-sm font-medium tracking-widest uppercase"
           style={{ color: currentAccentHex }}
         >
-          <span>Kingdom of Saudi Arabia</span>
+          <span>{isArabic ? 'المملكة العربية السعودية' : 'Kingdom of Saudi Arabia'}</span>
           <span aria-hidden="true">·</span>
-          <span>Vision 2030 Tourism Ecosystem</span>
+          <span>{isArabic ? 'منظومة سياحة رؤية 2030' : 'Vision 2030 Tourism Ecosystem'}</span>
           <span aria-hidden="true">·</span>
-          <span>B2B Growth Platform</span>
+          <span>{isArabic ? 'منصة نمو الأعمال السياحية' : 'B2B Growth Platform'}</span>
         </div>
 
         {/* Marquee Headline */}
@@ -140,7 +141,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <option value="all" className={optionClass}>{t('hero.allCategories')}</option>
                   {categories.map((c) => (
                     <option key={c} value={c} className={optionClass}>
-                      {c}
+                      {localizeCategory(c, language)}
                     </option>
                   ))}
                 </select>
@@ -171,7 +172,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </label>
               <div className="flex items-center justify-between mt-0.5">
                 <span className="text-xs sm:text-sm font-semibold text-[var(--tf-heading)] tabular-nums">
-                  {guestsCount} {guestsCount > 1 ? 'Guests' : 'Guest'}
+                  {formatGuestsCount(guestsCount, language)}
                 </span>
                 <div className="flex items-center gap-1">
                   <button

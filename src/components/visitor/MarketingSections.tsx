@@ -101,30 +101,36 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
   const travelerFeedback = [
     {
       guest: 'Elena Vance · London, UK',
+      guestAr: 'إيلينا فانس · لندن، المملكة المتحدة',
       quote:
         'Our local AlUla Rawi timed our Hegra canyon arrival at golden hour and arranged Bedouin cardamom coffee under the stars.',
       quoteAr:
         'رتب الراوي المحلي وصولنا إلى الحجر عند الغروب مع قهوة سعودية أصيلة تحت النجوم.',
       rating: '5.0',
       trip: ratingStats.topPackages[0]?.title || 'AlUla Hegra Heritage & Stargazing',
+      tripAr: ratingStats.topPackages[0]?.titleAr || 'مغامرة وتراث الحجر ورصد النجوم بالعلا',
     },
     {
       guest: 'Faisal Al-Qahtani · Riyadh, KSA',
+      guestAr: 'فيصل القحطاني · الرياض، السعودية',
       quote:
         'Seamless direct SAR coordination with no agency markup. Our family felt genuinely welcomed from pickup to farewell.',
       quoteAr:
         'تنسيق مباشر وشفاف بالريال السعودي بدون أي عمولات إضافية واستقبال عائلي رائع.',
       rating: '4.9',
       trip: ratingStats.topPackages[1]?.title || 'Diriyah At-Turaif Private Walk',
+      tripAr: ratingStats.topPackages[1]?.titleAr || 'جولة خاصة في حي الطريف بالدرعية',
     },
     {
       guest: 'Marcello Rossi · Milan, Italy',
+      guestAr: 'مارسيلو روسي · ميلانو، إيطاليا',
       quote:
         'World-class conservation standards and deeply knowledgeable coastal conservation guides along the Red Sea islands.',
       quoteAr:
         'معايير عالمية في السياحة المستدامة ومرشدون متخصصون في جزر البحر الأحمر.',
       rating: '4.9',
       trip: ratingStats.topPackages[2]?.title || 'Red Sea Coral Island Expedition',
+      tripAr: ratingStats.topPackages[2]?.titleAr || 'رحلة استكشاف جزر الشعاب المرجانية بالبحر الأحمر',
     },
   ];
 
@@ -141,10 +147,12 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
               className="text-xs font-bold uppercase tracking-widest"
               style={{ color: currentAccentHex }}
             >
-              Seasonal Highlights
+              {isArabic ? 'أبرز عروض الموسم' : 'Seasonal Highlights'}
             </span>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] mt-1">
-              Limited Saudi Campaigns & Special Editions
+              {isArabic
+                ? 'حملات سعودية محدودة وإصدارات خاصة'
+                : 'Limited Saudi Campaigns & Special Editions'}
             </h2>
           </div>
 
@@ -207,13 +215,15 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                 className="text-xs font-bold uppercase tracking-widest"
                 style={{ color: currentAccentHex }}
               >
-                The TourFlow Commitment
+                {isArabic ? 'التزام تورفلو' : 'The TourFlow Commitment'}
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight mt-1">
-                Why Choose Local Saudi Operators?
+                {isArabic ? 'لماذا تختار المشغلين السعوديين المحليين؟' : 'Why Choose Local Saudi Operators?'}
               </h2>
               <p className="mt-3 text-sm text-[var(--tf-muted)]">
-                True luxury lies in authentic human connection, living heritage, and genuine desert hospitality.
+                {isArabic
+                  ? 'الفخامة الحقيقية تكمن في التواصل الإنساني الأصيل، والتراث الحي، وكرم الضيافة الصحراوية الصادقة.'
+                  : 'True luxury lies in authentic human connection, living heritage, and genuine desert hospitality.'}
               </p>
             </div>
 
@@ -253,10 +263,12 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                   className="text-xs font-bold uppercase tracking-widest"
                   style={{ color: currentAccentHex }}
                 >
-                  Traveler Ratings & Trust Score
+                  {isArabic ? 'تقييمات المسافرين ومؤشر الثقة' : 'Traveler Ratings & Trust Score'}
                 </span>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] mt-1">
-                  Verified Guest Feedback & Operator Ratings
+                  {isArabic
+                    ? 'آراء الضيوف الموثقة وتقييمات المشغلين'
+                    : 'Verified Guest Feedback & Operator Ratings'}
                 </h3>
               </div>
 
@@ -270,19 +282,25 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                     />
                     <span>{ratingStats.avgRating}</span>
                   </div>
-                  <span className="text-[11px] text-[var(--tf-muted)]">Average Experience Score</span>
+                  <span className="text-[11px] text-[var(--tf-muted)]">
+                    {isArabic ? 'متوسط تقييم التجارب' : 'Average Experience Score'}
+                  </span>
                 </div>
                 <div className="pl-6 border-l border-[var(--tf-border)] rtl:pl-0 rtl:pr-6 rtl:border-l-0 rtl:border-r">
                   <div className="font-mono text-xl font-bold text-[var(--tf-heading)] tabular-nums">
                     {ratingStats.totalReviews > 0 ? `${ratingStats.totalReviews}+` : '480+'}
                   </div>
-                  <span className="text-[11px] text-[var(--tf-muted)]">Verified Reviews</span>
+                  <span className="text-[11px] text-[var(--tf-muted)]">
+                    {isArabic ? 'تقييمات موثقة' : 'Verified Reviews'}
+                  </span>
                 </div>
                 <div className="pl-6 border-l border-[var(--tf-border)] rtl:pl-0 rtl:pr-6 rtl:border-l-0 rtl:border-r">
                   <div className="font-mono text-xl font-bold text-[var(--tf-heading)] tabular-nums">
                     {content.stats.satisfactionRate}%
                   </div>
-                  <span className="text-[11px] text-[var(--tf-muted)]">Guest Satisfaction</span>
+                  <span className="text-[11px] text-[var(--tf-muted)]">
+                    {isArabic ? 'نسبة رضا الضيوف' : 'Guest Satisfaction'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -315,8 +333,12 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                   </div>
 
                   <div className="pt-3 border-t border-[var(--tf-border)]">
-                    <div className="text-xs font-bold text-[var(--tf-heading)]">{fb.guest}</div>
-                    <div className="text-[11px] text-[var(--tf-muted)] truncate mt-0.5">{fb.trip}</div>
+                    <div className="text-xs font-bold text-[var(--tf-heading)]">
+                      {isArabic ? fb.guestAr : fb.guest}
+                    </div>
+                    <div className="text-[11px] text-[var(--tf-muted)] truncate mt-0.5">
+                      {isArabic ? fb.tripAr : fb.trip}
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -388,13 +410,15 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                   className="text-xs font-bold uppercase tracking-widest mb-2 block"
                   style={{ color: currentAccentHex }}
                 >
-                  Stay Connected
+                  {isArabic ? 'ابقَ على تواصل' : 'Stay Connected'}
                 </span>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold mb-3 text-white">
-                  Join the Saudi Tourism Movement
+                  {isArabic ? 'انضم إلى مسيرة السياحة السعودية' : 'Join the Saudi Tourism Movement'}
                 </h3>
                 <p className="text-xs sm:text-sm text-white/80 leading-relaxed mb-6">
-                  Subscribe to receive seasonal itineraries, cultural dispatches from AlUla and Diriyah, and exclusive operator rates.
+                  {isArabic
+                    ? 'اشترك لتصلك البرامج الموسمية، والرسائل الثقافية من العلا والدرعية، والأسعار الحصرية مباشرة من المشغلين.'
+                    : 'Subscribe to receive seasonal itineraries, cultural dispatches from AlUla and Diriyah, and exclusive operator rates.'}
                 </p>
 
                 {newsletterSubscribed ? (
@@ -403,7 +427,11 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                     style={{ color: currentAccentHex }}
                   >
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>Thank you for subscribing! Seasonal Saudi updates will arrive in your inbox.</span>
+                    <span>
+                      {isArabic
+                        ? 'شكراً لاشتراكك! ستصلك أحدث الوجهات والعروض الموسمية السعودية في بريدك.'
+                        : 'Thank you for subscribing! Seasonal Saudi updates will arrive in your inbox.'}
+                    </span>
                   </div>
                 ) : (
                   <form onSubmit={handleNewsletter} className="flex flex-col sm:flex-row gap-3">
@@ -412,7 +440,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                       <input
                         type="email"
                         required
-                        placeholder="Enter your email address"
+                        placeholder={isArabic ? 'أدخل بريدك الإلكتروني' : 'Enter your email address'}
                         value={newsletterEmail}
                         onChange={(e) => setNewsletterEmail(e.target.value)}
                         className="w-full text-xs py-3 pl-9 pr-4 rtl:pl-4 rtl:pr-9 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none"
@@ -423,7 +451,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                       style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
                       className="py-3 px-6 font-bold text-xs rounded-xl shadow-md hover:brightness-105 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      Subscribe
+                      {isArabic ? 'اشترك الآن' : 'Subscribe'}
                     </button>
                   </form>
                 )}

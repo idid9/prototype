@@ -9,10 +9,10 @@ import {
   getBlurPixels,
 } from '../../../context/ThemeContext';
 import { GlassContainer } from '../../glass/GlassContainer';
+import { ImageUploadField } from '../../common/ImageUploadField';
 import {
   Layers,
   Palette,
-  Image,
   SunMedium,
   Check,
   RotateCcw,
@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 
 export const AppearanceSettingsTab: React.FC = () => {
-  const { isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const {
     settings,
     isDarkGlass,
@@ -38,46 +39,63 @@ export const AppearanceSettingsTab: React.FC = () => {
   } = useTheme();
 
   const [customHexInput, setCustomHexInput] = useState(settings.customAccentHex);
-  const [customWallpaperInput, setCustomWallpaperInput] = useState(settings.customBgUrl);
 
-  const blurOptions: { id: BlurIntensity; label: string; pxLabel: string }[] = [
-    { id: 'sm', label: 'SM', pxLabel: '6px' },
-    { id: 'md', label: 'MD', pxLabel: '12px' },
-    { id: 'lg', label: 'LG', pxLabel: '20px' },
-    { id: 'xl', label: 'XL', pxLabel: '28px' },
-    { id: '2xl', label: '2XL', pxLabel: '40px' },
+  const blurOptions: { id: BlurIntensity; label: string; labelAr: string; pxLabel: string }[] = [
+    { id: 'sm', label: 'SM', labelAr: 'خفيف', pxLabel: '6px' },
+    { id: 'md', label: 'MD', labelAr: 'متوسط', pxLabel: '12px' },
+    { id: 'lg', label: 'LG', labelAr: 'كبير', pxLabel: '20px' },
+    { id: 'xl', label: 'XL', labelAr: 'فائق', pxLabel: '28px' },
+    { id: '2xl', label: '2XL', labelAr: 'أقصى', pxLabel: '40px' },
   ];
 
-  const visitorTargetOptions: { key: VisitorGlassyTarget; label: string; desc: string }[] = [
+  const visitorTargetOptions: {
+    key: VisitorGlassyTarget;
+    label: string;
+    labelAr: string;
+    desc: string;
+    descAr: string;
+  }[] = [
     {
       key: 'navbarGlassy',
       label: 'Header Navigation Bar',
+      labelAr: 'شريط التنقل العلوي',
       desc: 'Floating top visitor navbar & mobile drawer',
+      descAr: 'شريط التنقل العائم وقائمة الجوال للزوار',
     },
     {
       key: 'filterBarGlassy',
       label: 'Experience Filter Bar',
+      labelAr: 'شريط تصفية التجارب',
       desc: 'Category tabs, search input & sort controls',
+      descAr: 'أزرار الفئات وحقل البحث وخيارات الترتيب',
     },
     {
       key: 'experienceCardsGlassy',
       label: 'Experience Catalog Cards',
+      labelAr: 'بطاقات كتالوج التجارب',
       desc: 'All experience card bodies & itinerary tiles',
+      descAr: 'جميع بطاقات التجارب والبرامج السياحية',
     },
     {
       key: 'quizGlassy',
       label: 'Interactive Quiz & Matcher',
+      labelAr: 'الاختبار التفاعلي ومطابق الرحلات',
       desc: 'Experience Matcher & Knowledge Game boxes',
+      descAr: 'صناديق مطابق التجارب ولعبة المعرفة التراثية',
     },
     {
       key: 'reasonsCardsGlassy',
       label: 'Why Local & Ratings Cards',
+      labelAr: 'بطاقات الالتزام والتقييمات',
       desc: 'Value proposition & guest feedback glass cards',
+      descAr: 'بطاقات القيمة المضافة وآراء وتقييمات المسافرين',
     },
     {
       key: 'aboutSectionGlassy',
       label: 'About & Metrics Container',
+      labelAr: 'حاوية من نحن والإحصائيات',
       desc: 'About TourFlow editorial glass container',
+      descAr: 'الحاوية الزجاجية لقسم التعريف بمنصة تورفلو',
     },
   ];
 
@@ -88,15 +106,6 @@ export const AppearanceSettingsTab: React.FC = () => {
       updateSettings({
         accentPreset: 'custom',
         customAccentHex: val,
-      });
-    }
-  };
-
-  const handleApplyCustomWallpaper = () => {
-    if (customWallpaperInput.trim()) {
-      updateSettings({
-        backgroundPreset: 'custom',
-        customBgUrl: customWallpaperInput.trim(),
       });
     }
   };
@@ -126,13 +135,21 @@ export const AppearanceSettingsTab: React.FC = () => {
             style={{ color: currentAccentHex }}
           >
             <Palette className="w-4 h-4" />
-            <span>Unified Admin & Visitor Theme Studio</span>
+            <span>
+              {isArabic
+                ? 'استوديو المظهر الموحد للإدارة والزوار'
+                : 'Unified Admin & Visitor Theme Studio'}
+            </span>
           </div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
-            Glassy V4 Intensity, Backdrop & Dual-Panel Sync
+            {isArabic
+              ? 'كثافة الزجاج V4، الخلفيات، والمزامنة الثنائية'
+              : 'Glassy V4 Intensity, Backdrop & Dual-Panel Sync'}
           </h2>
           <p className="text-xs text-[var(--tf-muted)]">
-            Every visual adjustment here—blur, transparency, surface tone, backdrop, and accent color—is applied seamlessly to both the Admin Console and Public Visitor Portal.
+            {isArabic
+              ? 'كل تعديل بصري هنا — الضبابية، الشفافية، نبرة السطح، الخلفية، واللون المميز — يُطبق فوراً على لوحة الإدارة وبوابة الزوار معاً.'
+              : 'Every visual adjustment here—blur, transparency, surface tone, backdrop, and accent color—is applied seamlessly to both the Admin Console and Public Visitor Portal.'}
           </p>
         </div>
 
@@ -142,7 +159,7 @@ export const AppearanceSettingsTab: React.FC = () => {
           className="py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] transition-colors cursor-pointer self-start sm:self-auto"
         >
           <RotateCcw className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
-          <span>Reset Glassy V4 Preset</span>
+          <span>{isArabic ? 'استعادة النمط الزجاجي V4' : 'Reset Glassy V4 Preset'}</span>
         </button>
       </div>
 
@@ -152,13 +169,33 @@ export const AppearanceSettingsTab: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--tf-heading)]">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentAccentHex }} />
-              <span>Unified Admin & Visitor Specimen</span>
+              <span>
+                {isArabic
+                  ? 'نموذج المعاينة الموحد للإدارة والزوار'
+                  : 'Unified Admin & Visitor Specimen'}
+              </span>
             </div>
             <h3 className="font-serif text-lg font-bold text-[var(--tf-heading)]">
-              {isDarkGlass ? 'Smoked Obsidian Frosted Glass' : 'Crystal Daylight Frosted Glass'}
+              {isArabic
+                ? isDarkGlass
+                  ? 'زجاج مصنفر داكن (Obsidian)'
+                  : 'زجاج كريستال نهاري'
+                : isDarkGlass
+                ? 'Smoked Obsidian Frosted Glass'
+                : 'Crystal Daylight Frosted Glass'}
             </h3>
             <p className="text-xs text-[var(--tf-muted)] max-w-xl font-mono tabular-nums">
-              Blur: {getBlurPixels(settings.blurIntensity)}px ({settings.blurIntensity.toUpperCase()}) · Opacity: {Math.round(settings.cardTranslucency * 100)}% · Border: {Math.round(settings.borderOpacity * 100)}% · Glow: {Math.round(settings.glowStrength * 100)}%
+              {isArabic
+                ? `الضبابية: ${getBlurPixels(settings.blurIntensity)}px · الشفافية: ${Math.round(
+                    settings.cardTranslucency * 100
+                  )}% · الحدود: ${Math.round(settings.borderOpacity * 100)}% · التوهج: ${Math.round(
+                    settings.glowStrength * 100
+                  )}%`
+                : `Blur: ${getBlurPixels(settings.blurIntensity)}px (${settings.blurIntensity.toUpperCase()}) · Opacity: ${Math.round(
+                    settings.cardTranslucency * 100
+                  )}% · Border: ${Math.round(settings.borderOpacity * 100)}% · Glow: ${Math.round(
+                    settings.glowStrength * 100
+                  )}%`}
             </p>
           </div>
 
@@ -178,8 +215,10 @@ export const AppearanceSettingsTab: React.FC = () => {
                 <Compass className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-[11px] text-[var(--tf-muted)] font-semibold">Shared Accent</div>
-                <div className="text-xs font-bold font-mono text-[var(--tf-heading)]">
+                <div className="text-[11px] text-[var(--tf-muted)] font-semibold">
+                  {isArabic ? 'اللون المميز المشترك' : 'Shared Accent'}
+                </div>
+                <div className="text-xs font-bold font-mono text-[var(--tf-heading)]" dir="ltr">
                   {currentAccentHex}
                 </div>
               </div>
@@ -200,9 +239,11 @@ export const AppearanceSettingsTab: React.FC = () => {
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-[11px] text-[var(--tf-muted)] font-semibold">Sync Status</div>
+                <div className="text-[11px] text-[var(--tf-muted)] font-semibold">
+                  {isArabic ? 'حالة المزامنة' : 'Sync Status'}
+                </div>
                 <div className="text-xs font-bold font-mono tabular-nums text-[var(--tf-heading)]">
-                  Admin + Visitor
+                  {isArabic ? 'الإدارة + الزوار' : 'Admin + Visitor'}
                 </div>
               </div>
             </div>
@@ -222,10 +263,14 @@ export const AppearanceSettingsTab: React.FC = () => {
             </div>
             <div>
               <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">
-                1. Global Blur & Glass Intensity Controller
+                {isArabic
+                  ? '١. وحدة التحكم العامة بالضبابية وكثافة الزجاج'
+                  : '1. Global Blur & Glass Intensity Controller'}
               </h3>
               <p className="text-xs text-[var(--tf-muted)]">
-                Controls <span className="font-mono">--glass-blur</span>, <span className="font-mono">--glass-bg-opacity</span>, and <span className="font-mono">--glass-border-opacity</span> simultaneously for Admin & Visitor views.
+                {isArabic
+                  ? 'تتحكم في الضبابية وشفافية الخلفية وسطوع الحدود بشكل متزامن لوجهتي الإدارة والزوار.'
+                  : 'Controls blur, background opacity, and border opacity simultaneously for Admin & Visitor views.'}
               </p>
             </div>
           </div>
@@ -248,7 +293,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                 }
               >
                 <Moon className="w-3.5 h-3.5" />
-                <span>Smoked Dark</span>
+                <span>{isArabic ? 'داكن مدخّن' : 'Smoked Dark'}</span>
               </button>
               <button
                 type="button"
@@ -265,7 +310,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                 }
               >
                 <Sun className="w-3.5 h-3.5" />
-                <span>Crystal Light</span>
+                <span>{isArabic ? 'نهاري كريستالي' : 'Crystal Light'}</span>
               </button>
             </div>
 
@@ -273,11 +318,17 @@ export const AppearanceSettingsTab: React.FC = () => {
             <button
               type="button"
               onClick={() => updateSettings({ isGlassyEnabled: !settings.isGlassyEnabled })}
-              aria-label="Toggle Glassmorphism"
+              aria-label={isArabic ? 'تبديل الوضع الزجاجي' : 'Toggle Glassmorphism'}
               className="flex items-center gap-2 cursor-pointer"
             >
               <span className="text-xs font-semibold text-[var(--tf-heading)]">
-                {settings.isGlassyEnabled ? 'Glass On' : 'Solid'}
+                {settings.isGlassyEnabled
+                  ? isArabic
+                    ? 'الزجاج مفعّل'
+                    : 'Glass On'
+                  : isArabic
+                  ? 'صلب'
+                  : 'Solid'}
               </span>
               <div
                 className="w-11 h-6 flex items-center rounded-full p-1 transition-colors"
@@ -301,7 +352,9 @@ export const AppearanceSettingsTab: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-[var(--tf-heading)]">Background Opacity</span>
+              <span className="text-[var(--tf-heading)]">
+                {isArabic ? 'شفافية الخلفية' : 'Background Opacity'}
+              </span>
               <span className="font-mono tabular-nums" style={{ color: currentAccentHex }}>
                 {Math.round(settings.cardTranslucency * 100)}%
               </span>
@@ -318,15 +371,17 @@ export const AppearanceSettingsTab: React.FC = () => {
               className="w-full cursor-pointer disabled:opacity-40"
             />
             <div className="flex justify-between text-[10px] text-[var(--tf-muted)]">
-              <span>10% (Sheer)</span>
-              <span>46% (V4 Ideal)</span>
-              <span>92% (Dense)</span>
+              <span>{isArabic ? '١٠٪ (شفاف)' : '10% (Sheer)'}</span>
+              <span>{isArabic ? '٤٦٪ (مثالي V4)' : '46% (V4 Ideal)'}</span>
+              <span>{isArabic ? '٩٢٪ (كثيف)' : '92% (Dense)'}</span>
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-[var(--tf-heading)]">Border Rim Opacity</span>
+              <span className="text-[var(--tf-heading)]">
+                {isArabic ? 'سطوع حواف الحدود' : 'Border Rim Opacity'}
+              </span>
               <span className="font-mono tabular-nums" style={{ color: currentAccentHex }}>
                 {Math.round(settings.borderOpacity * 100)}%
               </span>
@@ -343,15 +398,17 @@ export const AppearanceSettingsTab: React.FC = () => {
               className="w-full cursor-pointer disabled:opacity-40"
             />
             <div className="flex justify-between text-[10px] text-[var(--tf-muted)]">
-              <span>8% (Hairline)</span>
-              <span>22% (V4 Frost)</span>
-              <span>75% (Framed)</span>
+              <span>{isArabic ? '٨٪ (دقيق)' : '8% (Hairline)'}</span>
+              <span>{isArabic ? '٢٢٪ (مصنفر)' : '22% (V4 Frost)'}</span>
+              <span>{isArabic ? '٧٥٪ (مؤطّر)' : '75% (Framed)'}</span>
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-[var(--tf-heading)]">Accent Glow Aura</span>
+              <span className="text-[var(--tf-heading)]">
+                {isArabic ? 'هالة التوهج المميزة' : 'Accent Glow Aura'}
+              </span>
               <span className="font-mono tabular-nums" style={{ color: currentAccentHex }}>
                 {Math.round(settings.glowStrength * 100)}%
               </span>
@@ -368,9 +425,9 @@ export const AppearanceSettingsTab: React.FC = () => {
               className="w-full cursor-pointer disabled:opacity-40"
             />
             <div className="flex justify-between text-[10px] text-[var(--tf-muted)]">
-              <span>0% (Clean)</span>
-              <span>40% (Ambient)</span>
-              <span>100% (Luminous)</span>
+              <span>{isArabic ? '٠٪ (صافي)' : '0% (Clean)'}</span>
+              <span>{isArabic ? '٤٠٪ (محيطي)' : '40% (Ambient)'}</span>
+              <span>{isArabic ? '١٠٠٪ (مضيء)' : '100% (Luminous)'}</span>
             </div>
           </div>
         </div>
@@ -378,7 +435,9 @@ export const AppearanceSettingsTab: React.FC = () => {
         {/* 5-Step Backdrop Blur Level */}
         <div className="space-y-2 pt-2">
           <label className="block text-xs font-bold text-[var(--tf-heading)]">
-            Backdrop Blur Intensity (sm to 2xl):
+            {isArabic
+              ? 'كثافة ضبابية الخلفية (من خفيف إلى أقصى):'
+              : 'Backdrop Blur Intensity (sm to 2xl):'}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
             {blurOptions.map((b) => {
@@ -398,9 +457,11 @@ export const AppearanceSettingsTab: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-[var(--tf-heading)]">
-                      backdrop-blur-{b.id}
+                      {isArabic ? `تغبيش ${b.labelAr}` : `backdrop-blur-${b.id}`}
                     </span>
-                    <span className="text-[10px] font-mono text-[var(--tf-muted)]">{b.pxLabel}</span>
+                    <span className="text-[10px] font-mono text-[var(--tf-muted)]" dir="ltr">
+                      {b.pxLabel}
+                    </span>
                   </div>
                 </button>
               );
@@ -420,10 +481,14 @@ export const AppearanceSettingsTab: React.FC = () => {
           </div>
           <div>
             <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">
-              2. Shared Interior & Ambient Backdrop Switcher
+              {isArabic
+                ? '٢. مبدّل الخلفية الداخلية والمحيطة المشتركة'
+                : '2. Shared Interior & Ambient Backdrop Switcher'}
             </h3>
             <p className="text-xs text-[var(--tf-muted)]">
-              Applied as the living backdrop canvas behind both Admin panels and Visitor Portal sections.
+              {isArabic
+                ? 'تُطبق كلوحة خلفية حية خلف لوحات الإدارة وأقسام بوابة الزوار.'
+                : 'Applied as the living backdrop canvas behind both Admin panels and Visitor Portal sections.'}
             </p>
           </div>
         </div>
@@ -446,9 +511,12 @@ export const AppearanceSettingsTab: React.FC = () => {
                 }`}
                 style={{
                   borderColor: isSelected ? currentAccentHex : undefined,
-                  background: preset.imageUrl
-                    ? `linear-gradient(to top, rgba(12,16,15,0.78), rgba(12,16,15,0.2)), url(${preset.imageUrl}) center/cover`
-                    : preset.previewBg,
+                  backgroundColor: preset.baseColor,
+                  backgroundImage: preset.imageUrl
+                    ? `linear-gradient(to top, rgba(12,16,15,0.78), rgba(12,16,15,0.2)), url(${preset.imageUrl})`
+                    : preset.gradientImage || 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                 }}
               >
                 <div className="flex items-center justify-between gap-1">
@@ -459,7 +527,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                         : 'bg-white/85 text-[#123B32]'
                     }`}
                   >
-                    {isRtl ? preset.nameAr : preset.name}
+                    {isArabic ? preset.nameAr : preset.name}
                   </span>
                   {isSelected && (
                     <div
@@ -475,37 +543,46 @@ export const AppearanceSettingsTab: React.FC = () => {
                     preset.recommendedTone === 'dark' ? 'text-white/85' : 'text-[#202923]/80'
                   }`}
                 >
-                  {preset.description}
+                  {isArabic ? preset.descriptionAr : preset.description}
                 </span>
               </button>
             );
           })}
         </div>
 
-        <div className="p-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl space-y-3">
-          <div className="flex items-center gap-2">
-            <Image className="w-4 h-4" style={{ color: currentAccentHex }} />
-            <span className="text-xs font-bold text-[var(--tf-heading)]">
-              Custom Backdrop Wallpaper URL
-            </span>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="url"
-              placeholder="https://images.unsplash.com/..."
-              value={customWallpaperInput}
-              onChange={(e) => setCustomWallpaperInput(e.target.value)}
-              className="flex-1 text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={handleApplyCustomWallpaper}
-              style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
-              className="py-2.5 px-5 rounded-xl text-xs font-bold cursor-pointer whitespace-nowrap transition-opacity hover:opacity-90"
-            >
-              Apply Wallpaper
-            </button>
-          </div>
+        <div className="p-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl">
+          <ImageUploadField
+            label={
+              isArabic
+                ? 'خلفية مخصصة (رفع من الجهاز)'
+                : 'Custom Backdrop Wallpaper (Upload from Device)'
+            }
+            value={settings.backgroundPreset === 'custom' ? settings.customBgUrl : ''}
+            onChange={(dataUrl) =>
+              updateSettings({
+                backgroundPreset: 'custom',
+                customBgUrl: dataUrl,
+              })
+            }
+            onClear={() =>
+              updateSettings({
+                backgroundPreset: 'lounge_interior',
+                customBgUrl: '',
+              })
+            }
+            previewHeightClass="h-40"
+            maxDimension={1600}
+            emptyPlaceholder={
+              isArabic
+                ? 'انقر أو اسحب وأفلت صورة خلفية من جهازك'
+                : 'Click or drag & drop a wallpaper photo from your device'
+            }
+            helperText={
+              isArabic
+                ? 'تُطبق الخلفية المرفوعة فوراً كخلفية ضبابية لكل من لوحة الإدارة وبوابة الزوار.'
+                : 'Uploaded wallpaper applies simultaneously as the frosted backdrop for both Admin and Visitor portals.'
+            }
+          />
         </div>
       </GlassContainer>
 
@@ -520,10 +597,14 @@ export const AppearanceSettingsTab: React.FC = () => {
           </div>
           <div>
             <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">
-              3. Shared Accent Color Swatches (Admin & Visitor)
+              {isArabic
+                ? '٣. ألوان التمييز المشتركة (الإدارة والزوار)'
+                : '3. Shared Accent Color Swatches (Admin & Visitor)'}
             </h3>
             <p className="text-xs text-[var(--tf-muted)]">
-              Updates icons, active filter buttons, CTA highlights, prices, and glass glows across both panels immediately.
+              {isArabic
+                ? 'تُحدّث الأيقونات وأزرار التصفية النشطة والأسعار وتوهج الزجاج في اللوحتين فوراً.'
+                : 'Updates icons, active filter buttons, CTA highlights, prices, and glass glows across both panels immediately.'}
             </p>
           </div>
         </div>
@@ -551,9 +632,9 @@ export const AppearanceSettingsTab: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-[var(--tf-heading)]">
-                    {isRtl ? swatch.nameAr : swatch.name}
+                    {isArabic ? swatch.nameAr : swatch.name}
                   </div>
-                  <div className="text-[10px] font-mono text-[var(--tf-muted)] mt-0.5">
+                  <div className="text-[10px] font-mono text-[var(--tf-muted)] mt-0.5" dir="ltr">
                     {swatch.hex}
                   </div>
                 </div>
@@ -578,12 +659,15 @@ export const AppearanceSettingsTab: React.FC = () => {
               value={customHexInput}
               onChange={handleCustomHexChange}
               className="w-8 h-8 rounded-full border-0 cursor-pointer p-0 bg-transparent"
-              title="Pick Custom Color"
+              title={isArabic ? 'اختيار لون مخصص' : 'Pick Custom Color'}
             />
             <div className="w-full">
-              <div className="text-xs font-bold text-[var(--tf-heading)]">Custom Hex</div>
+              <div className="text-xs font-bold text-[var(--tf-heading)]">
+                {isArabic ? 'لون مخصص' : 'Custom Hex'}
+              </div>
               <input
                 type="text"
+                dir="ltr"
                 value={customHexInput}
                 onChange={handleCustomHexChange}
                 placeholder="#HEX"
@@ -606,10 +690,14 @@ export const AppearanceSettingsTab: React.FC = () => {
             </div>
             <div>
               <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">
-                4. Visitor Portal Glass Section Mapping
+                {isArabic
+                  ? '٤. تعيين الأقسام الزجاجية لبوابة الزوار'
+                  : '4. Visitor Portal Glass Section Mapping'}
               </h3>
               <p className="text-xs text-[var(--tf-muted)]">
-                Choose which public sections inherit your active Glassy V4 blur, opacity, tone, and accent settings.
+                {isArabic
+                  ? 'اختر الأقسام العامة التي ترث إعدادات الضبابية والشفافية ونبرة السطح واللون المميز للزجاج V4.'
+                  : 'Choose which public sections inherit your active Glassy V4 blur, opacity, tone, and accent settings.'}
               </p>
             </div>
           </div>
@@ -621,7 +709,13 @@ export const AppearanceSettingsTab: React.FC = () => {
             className="flex items-center gap-2 cursor-pointer disabled:opacity-40"
           >
             <span className="text-xs font-semibold text-[var(--tf-heading)]">
-              {vg.enabled && settings.isGlassyEnabled ? 'Visitor Glass Active' : 'Visitor Solid'}
+              {vg.enabled && settings.isGlassyEnabled
+                ? isArabic
+                  ? 'زجاج الزوار مفعّل'
+                  : 'Visitor Glass Active'
+                : isArabic
+                ? 'وضع صلب للزوار'
+                : 'Visitor Solid'}
             </span>
             <div
               className="w-11 h-6 flex items-center rounded-full p-1 transition-colors"
@@ -651,18 +745,25 @@ export const AppearanceSettingsTab: React.FC = () => {
           >
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--tf-heading)]">
-                Public Visitor Card Sync Preview ({isDarkGlass ? 'Smoked Dark' : 'Crystal Light'})
+                {isArabic
+                  ? `معاينة تزامن بطاقة الزوار (${isDarkGlass ? 'داكن مدخّن' : 'نهاري كريستالي'})`
+                  : `Public Visitor Card Sync Preview (${isDarkGlass ? 'Smoked Dark' : 'Crystal Light'})`}
               </div>
               <div className="text-xs text-[var(--tf-muted)] mt-0.5 font-mono tabular-nums">
-                Opacity: {Math.round(settings.cardTranslucency * 100)}% · Blur:{' '}
-                {getBlurPixels(settings.blurIntensity)}px ({settings.blurIntensity.toUpperCase()}) · Accent: {currentAccentHex}
+                {isArabic
+                  ? `الشفافية: ${Math.round(settings.cardTranslucency * 100)}% · الضبابية: ${getBlurPixels(
+                      settings.blurIntensity
+                    )}px · اللون المميز: ${currentAccentHex}`
+                  : `Opacity: ${Math.round(settings.cardTranslucency * 100)}% · Blur: ${getBlurPixels(
+                      settings.blurIntensity
+                    )}px (${settings.blurIntensity.toUpperCase()}) · Accent: ${currentAccentHex}`}
               </div>
             </div>
             <span
               className="text-[11px] font-bold px-3 py-1 rounded-lg text-[#102E29] shrink-0"
               style={{ backgroundColor: currentAccentHex }}
             >
-              Harmonized Live
+              {isArabic ? 'متناغم ومباشر' : 'Harmonized Live'}
             </span>
           </div>
         </div>
@@ -671,7 +772,9 @@ export const AppearanceSettingsTab: React.FC = () => {
         <div className="space-y-3 pt-1">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-[var(--tf-heading)]">
-              Public Visitor Sections Using Glassy Surface:
+              {isArabic
+                ? 'أقسام بوابة الزوار التي تستخدم السطح الزجاجي:'
+                : 'Public Visitor Sections Using Glassy Surface:'}
             </label>
             <button
               type="button"
@@ -680,7 +783,13 @@ export const AppearanceSettingsTab: React.FC = () => {
               className="text-xs font-semibold hover:underline cursor-pointer disabled:opacity-40"
               style={{ color: currentAccentHex }}
             >
-              {allVisitorTargetsActive ? 'Disable All Sections' : 'Enable All Sections'}
+              {allVisitorTargetsActive
+                ? isArabic
+                  ? 'تعطيل كل الأقسام'
+                  : 'Disable All Sections'
+                : isArabic
+                ? 'تفعيل كل الأقسام'
+                : 'Enable All Sections'}
             </button>
           </div>
 
@@ -702,9 +811,11 @@ export const AppearanceSettingsTab: React.FC = () => {
                   style={checked && isEnabled ? { borderColor: currentAccentHex } : undefined}
                 >
                   <div>
-                    <div className="text-xs font-bold text-[var(--tf-heading)]">{opt.label}</div>
+                    <div className="text-xs font-bold text-[var(--tf-heading)]">
+                      {isArabic ? opt.labelAr : opt.label}
+                    </div>
                     <div className="text-[11px] text-[var(--tf-muted)] mt-0.5 leading-snug">
-                      {opt.desc}
+                      {isArabic ? opt.descAr : opt.desc}
                     </div>
                   </div>
                   <div

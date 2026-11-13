@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { Inquiry, InquiryStatus } from '../../../types';
+import { Experience, Inquiry, InquiryStatus } from '../../../types';
 import { DataService } from '../../../services/dataService';
 import { GlassContainer } from '../../glass/GlassContainer';
+import {
+  formatGuestsCount,
+  localizeCountry,
+  localizeCurrency,
+  localizeExperienceTitle,
+  localizeInquiryStatus,
+} from '../../../utils/localization';
 import {
   Search,
   Download,
@@ -13,10 +20,12 @@ import {
 
 interface InquiriesTabProps {
   inquiries: Inquiry[];
+  experiences?: Experience[];
 }
 
-export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
-  const { isRtl } = useLanguage();
+export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experiences = [] }) => {
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const { currentAccentHex } = useTheme();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -114,10 +123,12 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
-            Bookings & Customer Inquiries
+            {isArabic ? 'الحجوزات واستفسارات العملاء' : 'Bookings & Customer Inquiries'}
           </h2>
           <p className="text-xs text-[var(--tf-muted)]">
-            Real-time pipeline of traveler requests, operator coordination, and booking confirmations.
+            {isArabic
+              ? 'متابعة فورية لطلبات المسافرين وتنسيق المشغلين وتأكيد الحجوزات.'
+              : 'Real-time pipeline of traveler requests, operator coordination, and booking confirmations.'}
           </p>
         </div>
 
@@ -126,7 +137,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
           className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
         >
           <Download className="w-4 h-4" style={{ color: currentAccentHex }} />
-          <span>Export CSV Report</span>
+          <span>{isArabic ? 'تصدير تقرير CSV' : 'Export CSV Report'}</span>
         </button>
       </div>
 
@@ -137,7 +148,11 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
           <Search className="w-4 h-4 text-[var(--tf-muted)] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by customer name, email, ID, or country..."
+            placeholder={
+              isArabic
+                ? 'ابحث باسم العميل أو البريد أو الرقم أو الدولة...'
+                : 'Search by customer name, email, ID, or country...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
@@ -159,7 +174,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                 : undefined
             }
           >
-            All ({inquiries.length})
+            {isArabic ? `الكل (${inquiries.length})` : `All (${inquiries.length})`}
           </button>
           {statusOptions.map((st) => {
             const count = inquiries.filter((i) => i.status === st).length;
@@ -179,7 +194,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                     : undefined
                 }
               >
-                {st} ({count})
+                {localizeInquiryStatus(st, language)} ({count})
               </button>
             );
           })}
@@ -192,20 +207,36 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
           <table className="w-full text-start text-xs">
             <thead>
               <tr className="bg-[var(--tf-table-head)] border-b border-[var(--tf-border)] text-[var(--tf-muted)] uppercase tracking-wider">
-                <th className="py-3 px-4 font-semibold text-start">Inquiry ID</th>
-                <th className="py-3 px-4 font-semibold text-start">Customer Details</th>
-                <th className="py-3 px-4 font-semibold text-start">Selected Experience</th>
-                <th className="py-3 px-4 font-semibold text-start">Travel Date</th>
-                <th className="py-3 px-4 font-semibold text-start">Est. Value</th>
-                <th className="py-3 px-4 font-semibold text-start">Status (Real-Time)</th>
-                <th className="py-3 px-4 font-semibold text-end">Actions</th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'رقم الطلب' : 'Inquiry ID'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'بيانات العميل' : 'Customer Details'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'التجربة المختارة' : 'Selected Experience'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'تاريخ السفر' : 'Travel Date'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'القيمة التقديرية' : 'Est. Value'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-start">
+                  {isArabic ? 'الحالة (تحديث فوري)' : 'Status (Real-Time)'}
+                </th>
+                <th className="py-3 px-4 font-semibold text-end">
+                  {isArabic ? 'إجراءات' : 'Actions'}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--tf-border)]">
               {filteredInquiries.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-[var(--tf-muted)]">
-                    No inquiries found matching current filters. New visitor requests appear automatically here.
+                    {isArabic
+                      ? 'لا توجد طلبات مطابقة للتصفية الحالية. تظهر طلبات الزوار الجديدة هنا تلقائياً.'
+                      : 'No inquiries found matching current filters. New visitor requests appear automatically here.'}
                   </td>
                 </tr>
               ) : (
@@ -216,17 +247,30 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                     </td>
                     <td className="py-3 px-4">
                       <div className="font-bold text-[var(--tf-heading)]">{inq.customerName}</div>
-                      <div className="text-[11px] text-[var(--tf-muted)]">{inq.email} · {inq.country}</div>
+                      <div className="text-[11px] text-[var(--tf-muted)]">
+                        {inq.email} · {localizeCountry(inq.country, language)}
+                      </div>
                     </td>
                     <td className="py-3 px-4 max-w-[220px]">
-                      <div className="font-semibold text-[var(--tf-heading)] truncate">{inq.experienceTitle}</div>
-                      <div className="text-[11px] text-[var(--tf-muted)]">{inq.guests} {inq.guests > 1 ? 'Guests' : 'Guest'}</div>
+                      <div className="font-semibold text-[var(--tf-heading)] truncate">
+                        {localizeExperienceTitle(
+                          inq.experienceTitle,
+                          language,
+                          experiences,
+                          inq.experienceId
+                        )}
+                      </div>
+                      <div className="text-[11px] text-[var(--tf-muted)]">
+                        {formatGuestsCount(inq.guests, language)}
+                      </div>
                     </td>
-                    <td className="py-3 px-4 text-[var(--tf-text)] whitespace-nowrap">
+                    <td className="py-3 px-4 text-[var(--tf-text)] whitespace-nowrap font-mono">
                       {inq.preferredDate}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-[var(--tf-heading)] whitespace-nowrap tabular-nums">
-                      {inq.estimatedValue ? `${inq.estimatedValue.toLocaleString()} SAR` : '—'}
+                      {inq.estimatedValue
+                        ? `${inq.estimatedValue.toLocaleString()} ${localizeCurrency('SAR', language)}`
+                        : '—'}
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       <select
@@ -238,7 +282,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                       >
                         {statusOptions.map((st) => (
                           <option key={st} value={st}>
-                            {st}
+                            {localizeInquiryStatus(st, language)}
                           </option>
                         ))}
                       </select>
@@ -248,7 +292,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                         onClick={() => setActiveInquiryId(inq.id)}
                         className="py-1 px-2.5 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
                       >
-                        Details & Notes
+                        {isArabic ? 'التفاصيل والملاحظات' : 'Details & Notes'}
                       </button>
                     </td>
                   </tr>
@@ -261,8 +305,11 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
 
       {/* INQUIRY DETAIL & NOTES MODAL */}
       {activeInquiryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
             {/* Header */}
             <div className="flex items-start justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
               <div>
@@ -271,11 +318,12 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                     {activeInquiryModal.id}
                   </span>
                   <span className={`text-[10px] px-2 py-0.5 rounded border ${getStatusBadge(activeInquiryModal.status)}`}>
-                    {activeInquiryModal.status}
+                    {localizeInquiryStatus(activeInquiryModal.status, language)}
                   </span>
                 </div>
                 <h3 className="font-serif text-xl font-bold text-[#123B32] mt-1">
-                  Inquiry: {activeInquiryModal.customerName}
+                  {isArabic ? 'طلب حجز: ' : 'Inquiry: '}
+                  {activeInquiryModal.customerName}
                 </h3>
               </div>
               <button
@@ -289,31 +337,54 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
             {/* Customer Details Box */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl text-xs mb-6">
               <div>
-                <span className="text-[#777D75] block">Customer Name:</span>
+                <span className="text-[#777D75] block">
+                  {isArabic ? 'اسم العميل:' : 'Customer Name:'}
+                </span>
                 <span className="font-bold text-[#202923] text-sm">{activeInquiryModal.customerName}</span>
               </div>
               <div>
-                <span className="text-[#777D75] block">Email:</span>
+                <span className="text-[#777D75] block">
+                  {isArabic ? 'البريد الإلكتروني:' : 'Email:'}
+                </span>
                 <a href={`mailto:${activeInquiryModal.email}`} className="font-semibold text-[#123B32] hover:underline">
                   {activeInquiryModal.email}
                 </a>
               </div>
               <div>
-                <span className="text-[#777D75] block">Phone:</span>
-                <span className="font-mono font-semibold text-[#202923]">{activeInquiryModal.phone}</span>
+                <span className="text-[#777D75] block">
+                  {isArabic ? 'رقم الهاتف:' : 'Phone:'}
+                </span>
+                <span className="font-mono font-semibold text-[#202923]" dir="ltr">
+                  {activeInquiryModal.phone}
+                </span>
               </div>
               <div>
-                <span className="text-[#777D75] block">Origin Country:</span>
-                <span className="font-semibold text-[#202923]">{activeInquiryModal.country}</span>
-              </div>
-              <div>
-                <span className="text-[#777D75] block">Selected Tour:</span>
-                <span className="font-bold text-[#123B32]">{activeInquiryModal.experienceTitle}</span>
-              </div>
-              <div>
-                <span className="text-[#777D75] block">Date & Guests:</span>
+                <span className="text-[#777D75] block">
+                  {isArabic ? 'دولة الإقامة / الجنسية:' : 'Origin Country:'}
+                </span>
                 <span className="font-semibold text-[#202923]">
-                  {activeInquiryModal.preferredDate} ({activeInquiryModal.guests} guests)
+                  {localizeCountry(activeInquiryModal.country, language)}
+                </span>
+              </div>
+              <div>
+                <span className="text-[#777D75] block">
+                  {isArabic ? 'الجولة المختارة:' : 'Selected Tour:'}
+                </span>
+                <span className="font-bold text-[#123B32]">
+                  {localizeExperienceTitle(
+                    activeInquiryModal.experienceTitle,
+                    language,
+                    experiences,
+                    activeInquiryModal.experienceId
+                  )}
+                </span>
+              </div>
+              <div>
+                <span className="text-[#777D75] block">
+                  {isArabic ? 'التاريخ وعدد الضيوف:' : 'Date & Guests:'}
+                </span>
+                <span className="font-semibold text-[#202923]">
+                  {activeInquiryModal.preferredDate} ({formatGuestsCount(activeInquiryModal.guests, language)})
                 </span>
               </div>
             </div>
@@ -322,7 +393,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
             {activeInquiryModal.message && (
               <div className="mb-6">
                 <span className="text-xs font-bold text-[#123B32] uppercase tracking-wider block mb-1.5">
-                  Traveler Message / Special Requests:
+                  {isArabic ? 'رسالة المسافر / الطلبات الخاصة:' : 'Traveler Message / Special Requests:'}
                 </span>
                 <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-[#202923] italic">
                   "{activeInquiryModal.message}"
@@ -333,7 +404,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
             {/* Status Change Selector */}
             <div className="mb-6 p-4 bg-white border border-[#D9C29A]/50 rounded-xl">
               <label className="block text-xs font-bold text-[#123B32] mb-1.5">
-                Update Status (Saves to Firestore Immediately):
+                {isArabic ? 'تحديث الحالة (يُحفظ فورياً):' : 'Update Status (Saves Immediately):'}
               </label>
               <div className="flex flex-wrap items-center gap-2">
                 {statusOptions.map((st) => (
@@ -346,7 +417,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                         : 'bg-[#FAF8F5] text-[#777D75] border-[#D9C29A]/40 hover:bg-[#D9C29A]/20'
                     }`}
                   >
-                    {st}
+                    {localizeInquiryStatus(st, language)}
                   </button>
                 ))}
               </div>
@@ -355,7 +426,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
             {/* Internal Admin Notes (Private from visitors §6.D) */}
             <div className="border-t border-[#D9C29A]/40 pt-4">
               <span className="text-xs font-bold text-[#123B32] uppercase tracking-wider block mb-2">
-                Internal Operator Notes (Private):
+                {isArabic ? 'ملاحظات المشغل الداخلية (خاصة):' : 'Internal Operator Notes (Private):'}
               </span>
 
               <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
@@ -366,14 +437,20 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                     </div>
                   ))
                 ) : (
-                  <div className="text-xs text-[#777D75] italic">No internal notes yet.</div>
+                  <div className="text-xs text-[#777D75] italic">
+                    {isArabic ? 'لا توجد ملاحظات داخلية بعد.' : 'No internal notes yet.'}
+                  </div>
                 )}
               </div>
 
               <form onSubmit={handleAddNote} className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Add private note (e.g. VIP driver assigned, spoke on WhatsApp)..."
+                  placeholder={
+                    isArabic
+                      ? 'أضف ملاحظة خاصة (مثلاً: تم تعيين سائق VIP، تم التواصل عبر واتساب)...'
+                      : 'Add private note (e.g. VIP driver assigned, spoke on WhatsApp)...'
+                  }
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
                   className="flex-1 text-xs py-2 px-3 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
@@ -384,7 +461,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries }) => {
                   className="py-2 px-4 bg-[#123B32] hover:bg-[#1D5546] disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Add Note</span>
+                  <span>{isArabic ? 'إضافة ملاحظة' : 'Add Note'}</span>
                 </button>
               </form>
             </div>

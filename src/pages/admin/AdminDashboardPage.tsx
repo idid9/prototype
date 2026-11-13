@@ -41,7 +41,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onPreviewExperienceOnSite,
 }) => {
   const { isAdminAuthenticated, logout, openLoginModal } = useAuth();
-  const { isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const { getDashboardBgStyle, isDarkGlass } = useTheme();
 
   const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
@@ -92,29 +93,34 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // Protected Admin Route Check (§8)
   if (!isAdminAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#F6F4EF] flex items-center justify-center p-4 text-[#202923]">
+      <div
+        dir={isRtl ? 'rtl' : 'ltr'}
+        className="min-h-screen bg-[#F6F4EF] flex items-center justify-center p-4 text-[#202923]"
+      >
         <div className="max-w-md w-full bg-white border border-[#D9C29A]/60 rounded-2xl p-8 text-center shadow-xl">
           <div className="w-14 h-14 rounded-2xl bg-[#123B32] text-[#D9C29A] flex items-center justify-center mx-auto mb-4">
             <Lock className="w-7 h-7" />
           </div>
           <h2 className="font-serif text-2xl font-bold text-[#123B32] mb-2">
-            Restricted Operator Access
+            {isArabic ? 'دخول مقيد للمشغلين' : 'Restricted Operator Access'}
           </h2>
           <p className="text-xs text-[#777D75] mb-6 leading-relaxed">
-            The TourFlow Admin Workspace requires authorized authentication. Please enter your administrator credentials to proceed.
+            {isArabic
+              ? 'تتطلب مساحة عمل إدارة تورفلو مصادقة مصرح بها. يرجى إدخال بيانات اعتماد المسؤول للمتابعة.'
+              : 'The TourFlow Admin Workspace requires authorized authentication. Please enter your administrator credentials to proceed.'}
           </p>
           <div className="flex flex-col gap-3">
             <button
               onClick={openLoginModal}
               className="w-full py-2.5 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm"
             >
-              Enter Password (Demo: 12341234)
+              {isArabic ? 'إدخال كلمة المرور (تجريبي: 12341234)' : 'Enter Password (Demo: 12341234)'}
             </button>
             <button
               onClick={onGoToVisitorSite}
               className="w-full py-2.5 px-4 bg-[#FAF8F5] border border-[#D9C29A]/50 text-[#123B32] rounded-xl text-xs font-semibold cursor-pointer"
             >
-              Return to Public Visitor Website
+              {isArabic ? 'العودة إلى موقع الزوار العام' : 'Return to Public Visitor Website'}
             </button>
           </div>
         </div>
@@ -186,11 +192,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           )}
 
           {currentTab === 'inquiries' && (
-            <InquiriesTab inquiries={inquiries} />
+            <InquiriesTab inquiries={inquiries} experiences={experiences} />
           )}
 
           {currentTab === 'customers' && (
-            <CustomersTab customers={customers} inquiries={inquiries} />
+            <CustomersTab customers={customers} inquiries={inquiries} experiences={experiences} />
           )}
 
           {currentTab === 'promotions' && (

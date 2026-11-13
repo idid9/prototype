@@ -4,6 +4,12 @@ import { useTheme } from '../../context/ThemeContext';
 import { Experience, WebsiteContent, Coupon } from '../../types';
 import { DataService } from '../../services/dataService';
 import {
+  formatGuestsCount,
+  localizeCategory,
+  localizeCurrency,
+  localizeDestinationName,
+} from '../../utils/localization';
+import {
   Clock,
   MapPin,
   Check,
@@ -91,6 +97,8 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
     : 0;
   const finalEstimatedValue = Math.max(0, baseTotal - discountValue);
 
+  const localizedCurrency = localizeCurrency(currency, language);
+
   const handleApplyPromo = () => {
     const code = promoCodeInput.trim().toUpperCase();
     if (!code) {
@@ -101,16 +109,22 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
     const found = coupons.find((c) => c.code.toUpperCase() === code && c.active);
     if (!found) {
       setAppliedCouponCode(null);
-      setPromoFeedback('Invalid or inactive promo code.');
+      setPromoFeedback(isArabic ? 'كود الخصم غير صالح أو غير مفعّل.' : 'Invalid or inactive promo code.');
       return;
     }
     setAppliedCouponCode(found.code.toUpperCase());
     setPromoFeedback(
-      `Applied ${found.code}: ${
-        found.discountType === 'percentage'
-          ? `${found.discountAmount}% off`
-          : `${found.discountAmount} ${currency} off`
-      }`
+      isArabic
+        ? `تم تطبيق الكود ${found.code}: خصم ${
+            found.discountType === 'percentage'
+              ? `${found.discountAmount}%`
+              : `${found.discountAmount} ${localizedCurrency}`
+          }`
+        : `Applied ${found.code}: ${
+            found.discountType === 'percentage'
+              ? `${found.discountAmount}% off`
+              : `${found.discountAmount} ${localizedCurrency} off`
+          }`
     );
   };
 
@@ -119,7 +133,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
     setFormError('');
 
     if (!fullName.trim() || !email.trim() || !phone.trim() || !preferredDate) {
-      setFormError('Please complete all required fields.');
+      setFormError(isArabic ? 'يرجى إكمال جميع الحقول المطلوبة.' : 'Please complete all required fields.');
       return;
     }
 
@@ -147,7 +161,9 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
       }
     } catch {
       setIsSubmitting(false);
-      setFormError('Failed to record inquiry. Please try again.');
+      setFormError(
+        isArabic ? 'تعذر تسجيل طلب الحجز. يرجى المحاولة مرة أخرى.' : 'Failed to record inquiry. Please try again.'
+      );
     }
   };
 
@@ -161,7 +177,9 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
 
   const cleanWhatsappNumber = (websiteContent.whatsappNumber || '+966508887766').replace(/[^0-9]/g, '');
   const whatsappUrl = `https://wa.me/${cleanWhatsappNumber}?text=${encodeURIComponent(
-    `Hello TourFlow, I am inquiring about reference ${submittedInquiryId || experience.title}.`
+    isArabic
+      ? `مرحباً تورفلو، أستفسر بخصوص المرجع ${submittedInquiryId || experience.titleAr || experience.title}.`
+      : `Hello TourFlow, I am inquiring about reference ${submittedInquiryId || experience.title}.`
   )}`;
 
   return (
@@ -174,7 +192,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--tf-heading)] hover:opacity-80 transition-opacity cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 rtl:rotate-180" style={{ color: currentAccentHex }} />
-            <span>Back to Experiences</span>
+            <span>{isArabic ? 'العودة إلى التجارب' : 'Back to Experiences'}</span>
           </button>
 
           <button
@@ -187,7 +205,9 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
             ) : (
               <Share2 className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
             )}
-            <span>{copiedShare ? 'Link Copied' : 'Share'}</span>
+            <span>
+              {copiedShare ? (isArabic ? 'تم نسخ الرابط' : 'Link Copied') : isArabic ? 'مشاركة' : 'Share'}
+            </span>
           </button>
         </div>
 
@@ -195,10 +215,10 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
         <div className="mb-8">
           <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--tf-muted)] mb-2 font-medium">
             <span className="font-bold" style={{ color: currentAccentHex }}>
-              {experience.destinationName}
+              {localizeDestinationName(experience.destinationName, language, undefined, experience.destinationId)}
             </span>
             <span aria-hidden="true">/</span>
-            <span>{isArabic ? experience.categoryAr : experience.category}</span>
+            <span>{localizeCategory(experience.category, language)}</span>
             <span aria-hidden="true">/</span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" style={{ color: currentAccentHex }} />
@@ -326,7 +346,11 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
               <p className="text-xs sm:text-sm text-[var(--tf-muted)] mb-2">{meetingPoint}</p>
               <div className="inline-flex items-center gap-2 text-xs text-[var(--tf-heading)] font-semibold">
                 <ShieldCheck className="w-4 h-4" style={{ color: currentAccentHex }} />
-                <span>Verified Saudi Ministry of Tourism Operator</span>
+                <span>
+                  {isArabic
+                    ? 'مشغل سياحي مرخص ومعتمد من وزارة السياحة السعودية'
+                    : 'Verified Saudi Ministry of Tourism Operator'}
+                </span>
               </div>
             </div>
           </div>
@@ -338,16 +362,18 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
               <div className="flex items-baseline justify-between pb-4 border-b border-[var(--tf-border)] mb-6">
                 <div>
                   <div className="text-[11px] font-semibold text-[var(--tf-muted)] uppercase tracking-wider">
-                    Official Rate
+                    {isArabic ? 'السعر الرسمي' : 'Official Rate'}
                   </div>
                   <div className="flex items-baseline gap-1 mt-0.5">
                     <span className="font-mono text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] tabular-nums">
                       {experience.price}
                     </span>
                     <span className="text-sm font-bold" style={{ color: currentAccentHex }}>
-                      {currency}
+                      {localizedCurrency}
                     </span>
-                    <span className="text-xs text-[var(--tf-muted)]">/ guest</span>
+                    <span className="text-xs text-[var(--tf-muted)]">
+                      {isArabic ? '/ للضيف' : '/ guest'}
+                    </span>
                   </div>
                 </div>
 
@@ -356,7 +382,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                     className="text-xs font-semibold"
                     style={{ color: currentAccentHex }}
                   >
-                    Instant Operator Direct
+                    {isArabic ? 'مباشرة مع المشغل' : 'Instant Operator Direct'}
                   </span>
                 </div>
               </div>
@@ -430,7 +456,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Faisal Al-Harbi"
+                      placeholder={isArabic ? 'مثال: فيصل الحربي' : 'e.g. Faisal Al-Harbi'}
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] focus:outline-none"
@@ -493,7 +519,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                       >
                         {[1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map((num) => (
                           <option key={num} value={num} className={optionClass}>
-                            {num} {num === 1 ? 'Guest' : 'Guests'}
+                            {formatGuestsCount(num, language)}
                           </option>
                         ))}
                       </select>
@@ -507,7 +533,11 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="Any anniversary celebration, private driver preference, or dietary requirements?"
+                      placeholder={
+                        isArabic
+                          ? 'هل لديك مناسبة خاصة، أو طلب سائق خاص، أو ملاحظات غذائية؟'
+                          : 'Any anniversary celebration, private driver preference, or dietary requirements?'
+                      }
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] focus:outline-none"
@@ -517,7 +547,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                   {/* Promo Code (Live Synced with Admin Promotions) */}
                   <div>
                     <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-                      Promo Voucher Code (Optional)
+                      {isArabic ? 'كود قسيمة الخصم (اختياري)' : 'Promo Voucher Code (Optional)'}
                     </label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
@@ -527,7 +557,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                         />
                         <input
                           type="text"
-                          placeholder="e.g. FOUNDING2026"
+                          placeholder={isArabic ? 'مثال: FOUNDING2026' : 'e.g. FOUNDING2026'}
                           value={promoCodeInput}
                           onChange={(e) => setPromoCodeInput(e.target.value)}
                           className="w-full text-xs py-2 pl-8 pr-3 rtl:pl-3 rtl:pr-8 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] font-mono uppercase focus:outline-none"
@@ -538,7 +568,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                         onClick={handleApplyPromo}
                         className="px-3 py-2 bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] text-[var(--tf-heading)] rounded-xl text-xs font-semibold cursor-pointer transition-colors"
                       >
-                        Apply
+                        {isArabic ? 'تطبيق' : 'Apply'}
                       </button>
                     </div>
                     {promoFeedback && (
@@ -556,17 +586,25 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                   <div className="p-3 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl space-y-1 text-xs">
                     {discountValue > 0 && (
                       <div className="flex items-center justify-between text-[11px] text-emerald-500 font-semibold">
-                        <span>Promo Discount ({appliedCoupon?.code})</span>
-                        <span className="tabular-nums">-{discountValue.toLocaleString()} {currency}</span>
+                        <span>
+                          {isArabic
+                            ? `خصم القسيمة (${appliedCoupon?.code})`
+                            : `Promo Discount (${appliedCoupon?.code})`}
+                        </span>
+                        <span className="tabular-nums">
+                          -{discountValue.toLocaleString()} {localizedCurrency}
+                        </span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="text-[var(--tf-muted)]">Estimated Package Value:</span>
+                      <span className="text-[var(--tf-muted)]">
+                        {isArabic ? 'القيمة التقديرية للباقة:' : 'Estimated Package Value:'}
+                      </span>
                       <span
                         className="font-mono font-bold text-sm tabular-nums"
                         style={{ color: currentAccentHex }}
                       >
-                        {finalEstimatedValue.toLocaleString()} {currency}
+                        {finalEstimatedValue.toLocaleString()} {localizedCurrency}
                       </span>
                     </div>
                   </div>
@@ -585,7 +623,11 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
 
                   <div className="text-[11px] text-center text-[var(--tf-muted)] flex items-center justify-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
-                    <span>Free inquiry · No upfront payment required</span>
+                    <span>
+                      {isArabic
+                        ? 'طلب مجاني · لا يتطلب أي دفع مسبق'
+                        : 'Free inquiry · No upfront payment required'}
+                    </span>
                   </div>
                 </form>
               )}

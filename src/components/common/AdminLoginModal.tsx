@@ -9,7 +9,8 @@ interface AdminLoginModalProps {
 
 export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onSuccessRedirect }) => {
   const { loginModalOpen, closeLoginModal, loginWithPassword } = useAuth();
-  const { t, isRtl } = useLanguage();
+  const { language, t, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
 
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -50,7 +51,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onSuccessRedir
         <button
           onClick={closeLoginModal}
           className="absolute top-4 right-4 rtl:right-auto rtl:left-4 p-2 text-[#777D75] hover:text-[#123B32] transition-colors rounded-lg hover:bg-[#D9C29A]/20"
-          aria-label="Close"
+          aria-label={isArabic ? 'إغلاق' : 'Close'}
         >
           <X className="w-5 h-5" />
         </button>
@@ -61,8 +62,17 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onSuccessRedir
             <Compass className="w-6 h-6 animate-pulse" />
           </div>
           <div className="flex items-center gap-1.5 text-xl font-bold tracking-tight text-[#123B32]">
-            <span>Tour</span>
-            <span className="text-[#C6A46B]">Flow</span>
+            {isArabic ? (
+              <>
+                <span>تور</span>
+                <span className="text-[#C6A46B]">فلو</span>
+              </>
+            ) : (
+              <>
+                <span>Tour</span>
+                <span className="text-[#C6A46B]">Flow</span>
+              </>
+            )}
           </div>
           <h2 className="text-lg font-semibold text-[#123B32] mt-1">{t('auth.title')}</h2>
           <p className="text-xs text-[#777D75] mt-1 max-w-xs">{t('auth.sub')}</p>
@@ -118,7 +128,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onSuccessRedir
               onClick={handleDemoFill}
               className="text-xs font-semibold text-[#123B32] hover:text-[#1D5546] underline cursor-pointer"
             >
-              Fill Demo Code
+              {isArabic ? 'تعبئة الرمز التجريبي' : 'Fill Demo Code'}
             </button>
           </div>
 

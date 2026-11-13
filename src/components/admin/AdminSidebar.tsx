@@ -103,10 +103,18 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-base tracking-tight leading-none whitespace-nowrap">
-                Tour<span style={{ color: currentAccentHex }}>Flow</span>
+                {isArabic ? (
+                  <>
+                    تور<span style={{ color: currentAccentHex }}>فلو</span>
+                  </>
+                ) : (
+                  <>
+                    Tour<span style={{ color: currentAccentHex }}>Flow</span>
+                  </>
+                )}
               </span>
               <span className="text-[10px] text-white/60 tracking-wider uppercase mt-1">
-                Operator SaaS
+                {isArabic ? 'نظام إدارة المشغلين' : 'Operator SaaS'}
               </span>
             </div>
           </div>
@@ -121,7 +129,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <button
           onClick={onToggleCollapse}
           className="hidden md:flex p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          title={
+            collapsed
+              ? isArabic
+                ? 'توسيع القائمة الجانبية'
+                : 'Expand Sidebar'
+              : isArabic
+              ? 'طي القائمة الجانبية'
+              : 'Collapse Sidebar'
+          }
         >
           {collapsed ? (
             isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
@@ -139,12 +155,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 isActive
                   ? 'bg-[#1D5546] text-[#D9C29A] shadow-sm'
                   : 'text-white/80 hover:bg-white/5 hover:text-white'
               } ${collapsed ? 'justify-center px-0' : 'justify-between'}`}
-              title={item.label}
+              title={isArabic ? item.labelAr : item.label}
             >
               <div className="flex items-center gap-3">
                 <span className={isActive ? 'text-[#D9C29A]' : 'text-white/70'}>
@@ -160,7 +176,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               )}
 
               {collapsed && item.badge !== undefined && item.badge > 0 && (
-                <span className="w-2 h-2 rounded-full bg-[#C6A46B] absolute top-2 right-2" />
+                <span className="w-2 h-2 rounded-full bg-[#C6A46B] absolute top-2 right-2 rtl:right-auto rtl:left-2" />
               )}
             </button>
           );
@@ -175,10 +191,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors cursor-pointer ${
             collapsed ? 'justify-center px-0' : ''
           }`}
-          title="Open Visitor Website"
+          title={isArabic ? 'فتح موقع الزوار' : 'Open Visitor Website'}
         >
           <ExternalLink className="w-4 h-4 text-[#D9C29A] shrink-0" />
-          {!collapsed && <span>Visitor Website</span>}
+          {!collapsed && <span>{isArabic ? 'موقع الزوار' : 'Visitor Website'}</span>}
         </button>
 
         {/* Sign Out */}
@@ -187,10 +203,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-colors cursor-pointer ${
             collapsed ? 'justify-center px-0' : ''
           }`}
-          title="Sign Out"
+          title={isArabic ? 'تسجيل الخروج' : 'Sign Out'}
         >
           <LogOut className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
+          {!collapsed && <span>{isArabic ? 'تسجيل الخروج' : 'Sign Out'}</span>}
         </button>
       </div>
     </aside>

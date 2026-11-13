@@ -7,7 +7,7 @@ interface AuthContextType {
   closeLoginModal: () => void;
   loginWithPassword: (password: string) => boolean;
   logout: () => void;
-  adminUser: { name: string; email: string; role: string } | null;
+  adminUser: { name: string; nameAr: string; email: string; role: string; roleAr: string } | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -37,8 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const adminUser = isAdminAuthenticated
     ? {
         name: 'Sari Al-Otaibi',
+        nameAr: 'ساري العتيبي',
         email: 'admin@tourflow.sa',
         role: 'Platform Administrator',
+        roleAr: 'مدير المنصة',
       }
     : null;
 

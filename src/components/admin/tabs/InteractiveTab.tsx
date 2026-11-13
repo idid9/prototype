@@ -4,6 +4,7 @@ import { useTheme } from '../../../context/ThemeContext';
 import { QuizQuestion } from '../../../types';
 import { DataService } from '../../../services/dataService';
 import { GlassContainer } from '../../glass/GlassContainer';
+import { localizeCategory } from '../../../utils/localization';
 import { Edit2, Plus, CheckCircle, X, Trash2 } from 'lucide-react';
 
 interface InteractiveTabProps {
@@ -11,7 +12,8 @@ interface InteractiveTabProps {
 }
 
 export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
-  const { isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const { currentAccentHex } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -124,10 +126,14 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
-            Interactive Quiz & Mini-Game Questions
+            {isArabic
+              ? 'الاختبار التفاعلي وأسئلة اللعبة المصغّرة'
+              : 'Interactive Quiz & Mini-Game Questions'}
           </h2>
           <p className="text-xs text-[var(--tf-muted)]">
-            Manage gamified destination questions and matcher heuristics shown on the visitor portal.
+            {isArabic
+              ? 'إدارة أسئلة الوجهات التفاعلية ومعايير المطابقة المعروضة على بوابة الزوار.'
+              : 'Manage gamified destination questions and matcher heuristics shown on the visitor portal.'}
           </p>
         </div>
 
@@ -137,7 +143,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
           className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Add Quiz Question</span>
+          <span>{isArabic ? 'إضافة سؤال اختبار' : 'Add Quiz Question'}</span>
         </button>
       </div>
 
@@ -151,9 +157,11 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
           >
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-bold text-[var(--tf-heading)]">Q{idx + 1}.</span>
+                <span className="font-bold text-[var(--tf-heading)]">
+                  {isArabic ? `س${idx + 1}.` : `Q${idx + 1}.`}
+                </span>
                 <span className="px-2 py-0.5 rounded bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-muted)] text-[11px]">
-                  {q.category}
+                  {localizeCategory(q.category, language)}
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -162,13 +170,15 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                       : 'bg-neutral-500/15 text-[var(--tf-muted)]'
                   }`}
                 >
-                  {q.active ? 'ACTIVE' : 'INACTIVE'}
+                  {q.active ? (isArabic ? 'نشط' : 'ACTIVE') : isArabic ? 'غير نشط' : 'INACTIVE'}
                 </span>
               </div>
 
-              <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">{q.question}</h3>
-              <p className="text-xs text-[var(--tf-muted)]" dir="rtl">
-                {q.questionAr}
+              <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">
+                {isArabic ? q.questionAr || q.question : q.question}
+              </h3>
+              <p className="text-xs text-[var(--tf-muted)]" dir={isArabic ? 'ltr' : 'rtl'}>
+                {isArabic ? q.question : q.questionAr}
               </p>
 
               {/* Options */}
@@ -182,7 +192,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                         : 'border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-text)]'
                     }`}
                   >
-                    <span>{opt}</span>
+                    <span>{isArabic ? q.optionsAr?.[i] || opt : opt}</span>
                     {i === q.correctIndex && (
                       <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     )}
@@ -192,8 +202,10 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
 
               {/* Explanation */}
               <div className="p-3 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl text-xs text-[var(--tf-text)] mt-2">
-                <span className="font-bold text-[var(--tf-heading)]">Explanation: </span>
-                <span>{q.explanation}</span>
+                <span className="font-bold text-[var(--tf-heading)]">
+                  {isArabic ? 'معلومة تاريخية: ' : 'Explanation: '}
+                </span>
+                <span>{isArabic ? q.explanationAr || q.explanation : q.explanation}</span>
               </div>
             </div>
 
@@ -203,20 +215,26 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                 onClick={() => handleToggleActive(q)}
                 className="py-1.5 px-3 bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-xl text-xs font-semibold text-[var(--tf-heading)] cursor-pointer"
               >
-                {q.active ? 'Deactivate' : 'Activate'}
+                {q.active
+                  ? isArabic
+                    ? 'تعطيل'
+                    : 'Deactivate'
+                  : isArabic
+                  ? 'تفعيل'
+                  : 'Activate'}
               </button>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => handleOpenEdit(q)}
                   className="p-2 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl border border-[var(--tf-border)] cursor-pointer"
-                  title="Edit Question"
+                  title={isArabic ? 'تعديل السؤال' : 'Edit Question'}
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(q.id)}
                   className="p-2 text-red-400 hover:bg-red-500/15 rounded-xl border border-red-400/40 cursor-pointer"
-                  title="Delete Question"
+                  title={isArabic ? 'حذف السؤال' : 'Delete Question'}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -228,11 +246,20 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
 
       {/* CREATE / EDIT MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
             <div className="flex items-center justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
               <h3 className="font-serif text-xl font-bold text-[#123B32]">
-                {editingId ? 'Edit Quiz Question' : 'Create Quiz Question'}
+                {editingId
+                  ? isArabic
+                    ? 'تعديل سؤال الاختبار'
+                    : 'Edit Quiz Question'
+                  : isArabic
+                  ? 'إنشاء سؤال اختبار جديد'
+                  : 'Create Quiz Question'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="p-1 text-[#777D75]">
                 <X className="w-5 h-5" />
@@ -243,13 +270,13 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                    Category
+                    {isArabic ? 'التصنيف' : 'Category'}
                   </label>
                   <input
                     type="text"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    placeholder="e.g. Heritage & History"
+                    placeholder={isArabic ? 'مثال: التراث والتاريخ' : 'e.g. Heritage & History'}
                     className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
                   />
                 </div>
@@ -261,14 +288,16 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                       onChange={(e) => setActive(e.target.checked)}
                       className="rounded text-[#123B32]"
                     />
-                    <span>Active on Visitor Portal Quiz</span>
+                    <span>
+                      {isArabic ? 'نشط في اختبار بوابة الزوار' : 'Active on Visitor Portal Quiz'}
+                    </span>
                   </label>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                  Question (English) *
+                  {isArabic ? 'السؤال (بالإنجليزية) *' : 'Question (English) *'}
                 </label>
                 <input
                   type="text"
@@ -281,7 +310,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
 
               <div>
                 <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                  Question (Arabic)
+                  {isArabic ? 'السؤال (بالعربية)' : 'Question (Arabic)'}
                 </label>
                 <input
                   type="text"
@@ -295,7 +324,9 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
               {/* Options */}
               <div className="space-y-2 pt-2">
                 <label className="block text-xs font-bold text-[#123B32]">
-                  Multiple Choice Options (Select radio for correct answer):
+                  {isArabic
+                    ? 'خيارات الإجابة (اختر الدائرة للإجابة الصحيحة):'
+                    : 'Multiple Choice Options (Select radio for correct answer):'}
                 </label>
                 {[
                   { val: option1, set: setOption1, valAr: option1Ar, setAr: setOption1Ar, idx: 0 },
@@ -315,7 +346,9 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                       <input
                         type="text"
                         required={item.idx < 2}
-                        placeholder={`Option ${item.idx + 1} (EN)`}
+                        placeholder={
+                          isArabic ? `الخيار ${item.idx + 1} (EN)` : `Option ${item.idx + 1} (EN)`
+                        }
                         value={item.val}
                         onChange={(e) => item.set(e.target.value)}
                         className="flex-1 text-xs p-2 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-lg"
@@ -325,7 +358,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                       <input
                         type="text"
                         dir="rtl"
-                        placeholder={`الخيار ${item.idx + 1} (AR)`}
+                        placeholder={`الخيار ${item.idx + 1} (عربي)`}
                         value={item.valAr}
                         onChange={(e) => item.setAr(e.target.value)}
                         className="w-full text-xs p-2 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-lg"
@@ -338,7 +371,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                    Explanation / Historical Fact (EN)
+                    {isArabic ? 'التوضيح / المعلومة التاريخية (EN)' : 'Explanation / Historical Fact (EN)'}
                   </label>
                   <textarea
                     rows={2}
@@ -349,7 +382,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                    Explanation (AR)
+                    {isArabic ? 'التوضيح / المعلومة التاريخية (عربي)' : 'Explanation (AR)'}
                   </label>
                   <textarea
                     rows={2}
@@ -365,15 +398,21 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="py-2 px-4 text-xs font-semibold text-[#777D75]"
+                  className="py-2 px-4 text-xs font-semibold text-[#777D75] cursor-pointer"
                 >
-                  Cancel
+                  {isArabic ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   className="py-2 px-5 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
                 >
-                  {editingId ? 'Save Question' : 'Create Question'}
+                  {editingId
+                    ? isArabic
+                      ? 'حفظ السؤال'
+                      : 'Save Question'
+                    : isArabic
+                    ? 'إنشاء السؤال'
+                    : 'Create Question'}
                 </button>
               </div>
             </form>

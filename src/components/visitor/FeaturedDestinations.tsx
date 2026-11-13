@@ -59,7 +59,9 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
           </div>
           <div className="hidden md:block">
             <span className="text-xs text-[var(--tf-muted)] tabular-nums">
-              {publishedDestinations.length} Key Tourism Hubs
+              {isArabic
+                ? `${publishedDestinations.length} وجهات سياحية رئيسية`
+                : `${publishedDestinations.length} Key Tourism Hubs`}
             </span>
           </div>
         </div>
@@ -129,10 +131,10 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
                             (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
                           ).length
                         : dest.experienceCount}{' '}
-                      Curated Experiences
+                      {isArabic ? 'تجارب مختارة' : 'Curated Experiences'}
                     </span>
                     <span aria-hidden="true">·</span>
-                    <span>Explore Destination</span>
+                    <span>{isArabic ? 'استكشف الوجهة' : 'Explore Destination'}</span>
                   </div>
                 </div>
               </div>

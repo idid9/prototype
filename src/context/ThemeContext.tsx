@@ -70,9 +70,12 @@ export interface BackgroundPresetOption {
   name: string;
   nameAr: string;
   previewBg: string;
+  baseColor: string;
+  gradientImage?: string;
   imageUrl?: string;
   recommendedTone: GlassSurfaceTone;
   description: string;
+  descriptionAr: string;
 }
 
 export const BACKGROUND_PRESETS: BackgroundPresetOption[] = [
@@ -81,41 +84,55 @@ export const BACKGROUND_PRESETS: BackgroundPresetOption[] = [
     name: 'Luxury Lounge Interior',
     nameAr: 'صالة ضيافة فاخرة',
     previewBg: 'linear-gradient(135deg, #2D2118 0%, #59412D 50%, #1F1915 100%)',
+    baseColor: '#1F1915',
     imageUrl: LOUNGE_INTERIOR_IMAGE,
     recommendedTone: 'dark',
     description: 'Warm architectural lounge with walnut slats & golden hour light behind frosted glass',
+    descriptionAr: 'تصميم داخلي دافئ بخشب الجوز وإضاءة ذهبية خلف الزجاج المصنفر',
   },
   {
     id: 'deep_emerald',
     name: 'Dark Oasis Emerald',
     nameAr: 'واحة الزمرد الداكنة',
     previewBg: 'radial-gradient(circle at 15% 20%, #16483D 0%, #091B17 85%)',
+    baseColor: '#091B17',
+    gradientImage: 'radial-gradient(circle at 15% 20%, #16483D 0%, #091B17 85%)',
     recommendedTone: 'dark',
     description: 'Rich obsidian-emerald depth engineered for smoked glass contrast',
+    descriptionAr: 'عمق زمردي داكن مصمم لتباين أنيق مع الزجاج المدخن',
   },
   {
     id: 'ambient',
     name: 'Ambient Warm Sand',
     nameAr: 'توهج رملي دافئ',
     previewBg: 'radial-gradient(at 0% 0%, #FAF6EE 0px, transparent 50%), radial-gradient(at 100% 100%, #E7DCC6 0px, transparent 50%), #F6F4EF',
+    baseColor: '#F6F4EF',
+    gradientImage: 'radial-gradient(at 0% 0%, #FAF6EE 0px, transparent 50%), radial-gradient(at 100% 100%, #E7DCC6 0px, transparent 50%)',
     recommendedTone: 'light',
     description: 'Soft warm desert glow paired with bright crystal frosted cards',
+    descriptionAr: 'توهج صحراوي ناعم مع بطاقات زجاجية كريستالية مشرقة',
   },
   {
     id: 'gradient',
     name: 'Modern Executive Mesh',
     nameAr: 'تدرج تنفيذي حديث',
     previewBg: 'linear-gradient(135deg, #F3EFE6 0%, #E6DDD0 50%, #D9CDB8 100%)',
+    baseColor: '#E6DDD0',
+    gradientImage: 'linear-gradient(135deg, #F3EFE6 0%, #E6DDD0 50%, #D9CDB8 100%)',
     recommendedTone: 'light',
     description: 'Clean executive champagne mesh gradient',
+    descriptionAr: 'تدرج لوني تنفيذي نقي بدرجات الشامبين الدافئة',
   },
   {
     id: 'desert_dawn',
     name: 'AlUla Dawn Horizon',
     nameAr: 'فجر العلا الذهبي',
     previewBg: 'radial-gradient(circle at 80% 10%, #F5E8D0 0%, #EADAC0 45%, #DECBA9 100%)',
+    baseColor: '#EADAC0',
+    gradientImage: 'radial-gradient(circle at 80% 10%, #F5E8D0 0%, #EADAC0 45%, #DECBA9 100%)',
     recommendedTone: 'light',
     description: 'Sunrise sandstone tones for bright editorial clarity',
+    descriptionAr: 'درجات الصخور الرملية عند شروق الشمس لوضوح تحريري مشرق',
   },
 ];
 
@@ -298,7 +315,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persist to localStorage and bind CSS variables dynamically
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(settings));
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(settings));
+      } catch (e) {
+        console.warn('Unable to persist theme settings to localStorage:', e);
+      }
 
       const root = document.documentElement;
       root.style.setProperty('--tourflow-accent', currentAccentHex);
@@ -520,6 +541,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ? 'linear-gradient(135deg, rgba(12, 16, 15, 0.54), rgba(16, 28, 24, 0.64))'
         : 'linear-gradient(rgba(246, 244, 239, 0.78), rgba(246, 244, 239, 0.85))';
       return {
+        backgroundColor: useDarkScrim ? '#0D1714' : '#F6F4EF',
         backgroundImage: `${overlay}, url(${settings.customBgUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -534,6 +556,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ? 'linear-gradient(135deg, rgba(12, 16, 15, 0.48) 0%, rgba(16, 24, 21, 0.62) 100%)'
         : 'linear-gradient(rgba(246, 244, 239, 0.72), rgba(246, 244, 239, 0.82))';
       return {
+        backgroundColor: preset.baseColor,
         backgroundImage: `${overlay}, url(${preset.imageUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -544,13 +567,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (preset) {
       return {
-        background: preset.previewBg,
+        backgroundColor: preset.baseColor,
+        backgroundImage: preset.gradientImage || 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
         minHeight: '100vh',
       };
     }
 
-    return { backgroundColor: useDarkScrim ? '#0D1714' : '#F6F4EF', minHeight: '100vh' };
+    return {
+      backgroundColor: useDarkScrim ? '#0D1714' : '#F6F4EF',
+      backgroundImage: 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+      minHeight: '100vh',
+    };
   };
 
   return (

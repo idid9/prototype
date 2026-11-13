@@ -13,6 +13,14 @@ import { GlassContainer } from '../../glass/GlassContainer';
 import { StatCard } from '../../glass/StatCard';
 import { RevenueIntelligenceChart } from '../../glass/RevenueIntelligenceChart';
 import {
+  localizeActivityAction,
+  localizeActivityDetails,
+  localizeCountry,
+  localizeCurrency,
+  localizeExperienceTitle,
+  localizeInquiryStatus,
+} from '../../../utils/localization';
+import {
   CalendarCheck,
   TrendingUp,
   Compass,
@@ -44,7 +52,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onNavigateTab,
   onOpenCreateExperience,
 }) => {
-  const { isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const { currentAccentHex } = useTheme();
 
   // Metrics computation from live real-time collections
@@ -70,41 +79,49 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   const recentInquiries = inquiries.slice(0, 6);
 
+  const localizedCurrency = localizeCurrency(currency, language);
+
   const kpis = [
     {
-      label: 'Total Inquiries',
+      label: isArabic ? 'إجمالي الطلبات' : 'Total Inquiries',
       value: totalInquiries,
-      sub: `${newInquiries} require initial action`,
+      sub: isArabic
+        ? `${newInquiries} بانتظار الإجراء الأولي`
+        : `${newInquiries} require initial action`,
       icon: <CalendarCheck className="w-4 h-4" />,
     },
     {
-      label: 'New Leads',
+      label: isArabic ? 'العملاء الجدد' : 'New Leads',
       value: newInquiries,
-      sub: 'Awaiting operator triage',
+      sub: isArabic ? 'بانتظار الفرز من المشغل' : 'Awaiting operator triage',
       icon: <Clock className="w-4 h-4" />,
     },
     {
-      label: 'Confirmed Bookings',
+      label: isArabic ? 'الحجوزات المؤكدة' : 'Confirmed Bookings',
       value: confirmedBookings,
-      sub: `${conversionRate}% conversion rate`,
+      sub: isArabic ? `معدل التحويل ${conversionRate}%` : `${conversionRate}% conversion rate`,
       icon: <CheckCircle2 className="w-4 h-4" />,
     },
     {
-      label: 'Estimated Pipeline',
-      value: `${totalEstimatedValue.toLocaleString()} ${currency}`,
-      sub: `${confirmedValue.toLocaleString()} ${currency} confirmed`,
+      label: isArabic ? 'القيمة التقديرية للمبيعات' : 'Estimated Pipeline',
+      value: `${totalEstimatedValue.toLocaleString()} ${localizedCurrency}`,
+      sub: isArabic
+        ? `تم تأكيد ${confirmedValue.toLocaleString()} ${localizedCurrency}`
+        : `${confirmedValue.toLocaleString()} ${localizedCurrency} confirmed`,
       icon: <TrendingUp className="w-4 h-4" />,
     },
     {
-      label: 'Published Packages',
+      label: isArabic ? 'الباقات المنشورة' : 'Published Packages',
       value: publishedExperiences,
-      sub: `Across ${destinations.filter((d) => d.published).length} active destinations`,
+      sub: isArabic
+        ? `عبر ${destinations.filter((d) => d.published).length} وجهات نشطة`
+        : `Across ${destinations.filter((d) => d.published).length} active destinations`,
       icon: <Compass className="w-4 h-4" />,
     },
     {
-      label: 'Audience Page Views',
+      label: isArabic ? 'مشاهدات صفحات الزوار' : 'Audience Page Views',
       value: pageViews,
-      sub: 'Live portal impressions',
+      sub: isArabic ? 'انطباعات البوابة المباشرة' : 'Live portal impressions',
       icon: <Eye className="w-4 h-4" />,
     },
   ];
@@ -121,13 +138,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             className="text-xs font-bold uppercase tracking-widest mb-1"
             style={{ color: currentAccentHex }}
           >
-            TourFlow Executive Operations
+            {isArabic ? 'عمليات تورفلو التنفيذية' : 'TourFlow Executive Operations'}
           </div>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
-            Saudi Arabia Tourism Digital Growth Engine
+            {isArabic
+              ? 'محرك النمو الرقمي للسياحة السعودية'
+              : 'Saudi Arabia Tourism Digital Growth Engine'}
           </h2>
           <p className="text-xs sm:text-sm text-white/75 mt-1.5 max-w-xl leading-relaxed">
-            Real-time CRM intelligence, pipeline forecasting, and visitor portal controls unified in a single workspace.
+            {isArabic
+              ? 'ذكاء إدارة علاقات العملاء الفوري، وتوقعات المبيعات، وأدوات التحكم في بوابة الزوار موحدة في مساحة عمل واحدة.'
+              : 'Real-time CRM intelligence, pipeline forecasting, and visitor portal controls unified in a single workspace.'}
           </p>
         </div>
 
@@ -137,7 +158,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           style={{ backgroundColor: currentAccentHex }}
         >
           <PlusCircle className="w-4 h-4" />
-          <span>New Experience</span>
+          <span>{isArabic ? 'تجربة جديدة' : 'New Experience'}</span>
         </button>
       </GlassContainer>
 
@@ -170,10 +191,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="font-serif text-lg font-bold text-[var(--tf-heading)]">
-                Recent Inquiries & Requests
+                {isArabic ? 'أحدث الطلبات والاستفسارات' : 'Recent Inquiries & Requests'}
               </h3>
               <p className="text-xs text-[var(--tf-muted)]">
-                Direct booking requests synchronized in real-time
+                {isArabic
+                  ? 'طلبات الحجز المباشرة متزامنة في الوقت الفعلي'
+                  : 'Direct booking requests synchronized in real-time'}
               </p>
             </div>
             <button
@@ -181,8 +204,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               className="text-xs font-semibold text-[var(--tf-heading)] hover:opacity-80 flex items-center gap-1 cursor-pointer whitespace-nowrap"
               style={{ color: currentAccentHex }}
             >
-              <span>View All ({inquiries.length})</span>
-              <ArrowUpRight className="w-3.5 h-3.5 rtl:rotate-90" />
+              <span>
+                {isArabic ? `عرض الكل (${inquiries.length})` : `View All (${inquiries.length})`}
+              </span>
+              <ArrowUpRight className="w-3.5 h-3.5 rtl:-scale-x-100" />
             </button>
           </div>
 
@@ -190,11 +215,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             <table className="w-full text-start text-xs">
               <thead>
                 <tr className="border-b border-[var(--tf-border)] text-[var(--tf-muted)] uppercase tracking-wider">
-                  <th className="py-2.5 px-3 font-semibold text-start">Inquiry ID</th>
-                  <th className="py-2.5 px-3 font-semibold text-start">Customer</th>
-                  <th className="py-2.5 px-3 font-semibold text-start">Experience</th>
-                  <th className="py-2.5 px-3 font-semibold text-start">Date</th>
-                  <th className="py-2.5 px-3 font-semibold text-start">Status</th>
+                  <th className="py-2.5 px-3 font-semibold text-start">
+                    {isArabic ? 'رقم الطلب' : 'Inquiry ID'}
+                  </th>
+                  <th className="py-2.5 px-3 font-semibold text-start">
+                    {isArabic ? 'العميل' : 'Customer'}
+                  </th>
+                  <th className="py-2.5 px-3 font-semibold text-start">
+                    {isArabic ? 'التجربة' : 'Experience'}
+                  </th>
+                  <th className="py-2.5 px-3 font-semibold text-start">
+                    {isArabic ? 'التاريخ' : 'Date'}
+                  </th>
+                  <th className="py-2.5 px-3 font-semibold text-start">
+                    {isArabic ? 'الحالة' : 'Status'}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--tf-border)]">
@@ -219,17 +254,25 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                       </td>
                       <td className="py-3 px-3">
                         <div className="font-semibold text-[var(--tf-heading)]">{inq.customerName}</div>
-                        <div className="text-[11px] text-[var(--tf-muted)]">{inq.country}</div>
+                        <div className="text-[11px] text-[var(--tf-muted)]">
+                          {localizeCountry(inq.country, language)}
+                        </div>
                       </td>
                       <td className="py-3 px-3 max-w-[200px] truncate text-[var(--tf-text)]">
-                        {inq.experienceTitle}
+                        {localizeExperienceTitle(
+                          inq.experienceTitle,
+                          language,
+                          experiences,
+                          inq.experienceId
+                        )}
                       </td>
                       <td className="py-3 px-3 text-[var(--tf-muted)] whitespace-nowrap font-mono tabular-nums">
-                        {inq.preferredDate} ({inq.guests}p)
+                        {inq.preferredDate} ({inq.guests}
+                        {isArabic ? ' ض' : 'p'})
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded text-[10px] border ${statusClass}`}>
-                          {inq.status}
+                          {localizeInquiryStatus(inq.status, language)}
                         </span>
                       </td>
                     </tr>
@@ -243,7 +286,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         {/* System & Operator Activity Feed */}
         <GlassContainer delay={0.18} className="lg:col-span-4 p-6">
           <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--tf-heading)] mb-4">
-            System & Operator Activity
+            {isArabic ? 'سجل نشاط النظام والمشغل' : 'System & Operator Activity'}
           </h4>
           <div className="space-y-4 text-xs">
             {activityLogs.slice(0, 6).map((log) => (
@@ -252,7 +295,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 className="pb-3 border-b border-[var(--tf-border)] last:border-b-0 last:pb-0"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-[var(--tf-heading)]">{log.action}</span>
+                  <span className="font-semibold text-[var(--tf-heading)]">
+                    {localizeActivityAction(log.action, language)}
+                  </span>
                   <span className="font-mono text-[10px] text-[var(--tf-muted)] tabular-nums shrink-0">
                     {new Date(log.timestamp).toLocaleTimeString([], {
                       hour: '2-digit',
@@ -261,7 +306,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   </span>
                 </div>
                 <div className="text-[var(--tf-muted)] text-[11px] leading-snug mt-0.5">
-                  {log.details}
+                  {localizeActivityDetails(log.details, language)}
                 </div>
               </div>
             ))}

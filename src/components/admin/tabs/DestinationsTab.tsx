@@ -4,6 +4,7 @@ import { useTheme } from '../../../context/ThemeContext';
 import { Destination, Experience } from '../../../types';
 import { DataService, IMAGES } from '../../../services/dataService';
 import { GlassContainer } from '../../glass/GlassContainer';
+import { ImageUploadField } from '../../common/ImageUploadField';
 import { Plus, Edit2, Eye, EyeOff, X } from 'lucide-react';
 
 interface DestinationsTabProps {
@@ -15,7 +16,8 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
   destinations,
   experiences = [],
 }) => {
-  const { isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
+  const isArabic = language === 'ar';
   const { currentAccentHex } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -101,10 +103,12 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-[var(--tf-heading)]">
-            Saudi Tourism Destinations
+            {isArabic ? 'الوجهات السياحية السعودية' : 'Saudi Tourism Destinations'}
           </h2>
           <p className="text-xs text-[var(--tf-muted)]">
-            Manage featured Saudi regions, photography, editorial summaries, and public discoverability.
+            {isArabic
+              ? 'إدارة المناطق السعودية المميزة، والصور، والملخصات التحريرية، والظهور للزوار.'
+              : 'Manage featured Saudi regions, photography, editorial summaries, and public discoverability.'}
           </p>
         </div>
 
@@ -114,7 +118,7 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
           className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Add New Destination</span>
+          <span>{isArabic ? 'إضافة وجهة جديدة' : 'Add New Destination'}</span>
         </button>
       </div>
 
@@ -131,22 +135,26 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
               <div className="relative h-44 overflow-hidden bg-neutral-900">
                 <img
                   src={dest.coverImage}
-                  alt={dest.name}
+                  alt={isArabic ? dest.nameAr : dest.name}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
                 <div className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-white text-[11px]">
-                  {dest.region}
+                  {isArabic ? dest.regionAr : dest.region}
                 </div>
                 <div className="absolute bottom-3 left-3 rtl:left-auto rtl:right-3 text-white">
-                  <h3 className="font-serif text-xl font-bold">{dest.name}</h3>
-                  <span className="text-xs text-white/80">{dest.nameAr}</span>
+                  <h3 className="font-serif text-xl font-bold">
+                    {isArabic ? dest.nameAr : dest.name}
+                  </h3>
+                  <span className="text-xs text-white/80">
+                    {isArabic ? dest.name : dest.nameAr}
+                  </span>
                 </div>
               </div>
 
               <div className="p-5">
                 <p className="text-xs text-[var(--tf-muted)] line-clamp-2 leading-relaxed mb-4">
-                  {dest.description}
+                  {isArabic ? dest.descriptionAr : dest.description}
                 </p>
 
                 <div className="flex items-center justify-between text-xs text-[var(--tf-text)] pt-2 border-t border-[var(--tf-border)]">
@@ -156,7 +164,7 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                           (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
                         ).length
                       : dest.experienceCount}{' '}
-                    Published Experiences
+                    {isArabic ? 'تجارب منشورة' : 'Published Experiences'}
                   </span>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
@@ -165,7 +173,13 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                         : 'bg-neutral-500/15 text-[var(--tf-muted)] border-[var(--tf-border)]'
                     }`}
                   >
-                    {dest.published ? 'PUBLISHED' : 'HIDDEN'}
+                    {dest.published
+                      ? isArabic
+                        ? 'منشورة'
+                        : 'PUBLISHED'
+                      : isArabic
+                      ? 'مخفية'
+                      : 'HIDDEN'}
                   </span>
                 </div>
               </div>
@@ -178,13 +192,21 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                 className="text-xs font-semibold text-[var(--tf-heading)] hover:underline flex items-center gap-1.5 cursor-pointer"
               >
                 {dest.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                <span>{dest.published ? 'Unpublish' : 'Publish'}</span>
+                <span>
+                  {dest.published
+                    ? isArabic
+                      ? 'إلغاء النشر'
+                      : 'Unpublish'
+                    : isArabic
+                    ? 'نشر'
+                    : 'Publish'}
+                </span>
               </button>
 
               <button
                 onClick={() => handleOpenEdit(dest)}
                 className="p-1.5 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-lg transition-colors cursor-pointer"
-                title="Edit Destination"
+                title={isArabic ? 'تعديل الوجهة' : 'Edit Destination'}
               >
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
@@ -195,11 +217,20 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
 
       {/* CREATE / EDIT DESTINATION MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8">
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8 text-[#202923]">
             <div className="flex items-center justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
               <h3 className="font-serif text-xl font-bold text-[#123B32]">
-                {editingDestId ? 'Edit Destination' : 'Add New Destination'}
+                {editingDestId
+                  ? isArabic
+                    ? 'تعديل الوجهة'
+                    : 'Edit Destination'
+                  : isArabic
+                  ? 'إضافة وجهة جديدة'
+                  : 'Add New Destination'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -213,7 +244,7 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                    Name (English) *
+                    {isArabic ? 'الاسم (بالإنجليزية) *' : 'Name (English) *'}
                   </label>
                   <input
                     type="text"
@@ -225,7 +256,7 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                    Name (Arabic)
+                    {isArabic ? 'الاسم (بالعربية)' : 'Name (Arabic)'}
                   </label>
                   <input
                     type="text"
@@ -237,40 +268,65 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                  Region Province
-                </label>
-                <input
-                  type="text"
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                    {isArabic ? 'المنطقة (بالإنجليزية)' : 'Region Province (English)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                    {isArabic ? 'المنطقة (بالعربية)' : 'Region Province (Arabic)'}
+                  </label>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    value={regionAr}
+                    onChange={(e) => setRegionAr(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                  Cover Image URL
-                </label>
-                <input
-                  type="text"
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
-                />
-              </div>
+              <ImageUploadField
+                label={isArabic ? 'صورة الغلاف (رفع من الجهاز)' : 'Cover Image (Upload from Device)'}
+                value={coverImage}
+                onChange={setCoverImage}
+                variant="modal-light"
+                previewHeightClass="h-36"
+                maxDimension={1440}
+              />
 
-              <div>
-                <label className="block text-xs font-semibold text-[#123B32] mb-1">
-                  Editorial Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                    {isArabic ? 'الوصف التحريري (بالإنجليزية)' : 'Editorial Description (English)'}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                    {isArabic ? 'الوصف التحريري (بالعربية)' : 'Editorial Description (Arabic)'}
+                  </label>
+                  <textarea
+                    rows={3}
+                    dir="rtl"
+                    value={descriptionAr}
+                    onChange={(e) => setDescriptionAr(e.target.value)}
+                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-4 pt-2">
@@ -281,7 +337,7 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                     onChange={(e) => setPublished(e.target.checked)}
                     className="w-4 h-4 rounded text-[#123B32]"
                   />
-                  <span>Published on Website</span>
+                  <span>{isArabic ? 'منشورة على الموقع' : 'Published on Website'}</span>
                 </label>
               </div>
 
@@ -289,15 +345,15 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="py-2 px-4 text-xs font-semibold text-[#777D75]"
+                  className="py-2 px-4 text-xs font-semibold text-[#777D75] cursor-pointer"
                 >
-                  Cancel
+                  {isArabic ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="py-2 px-5 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold"
+                  className="py-2 px-5 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
                 >
-                  Save Destination
+                  {isArabic ? 'حفظ الوجهة' : 'Save Destination'}
                 </button>
               </div>
             </form>
