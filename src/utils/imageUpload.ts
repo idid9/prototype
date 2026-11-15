@@ -14,10 +14,11 @@ function encodeCanvasToBestFit(
   img: HTMLImageElement,
   startWidth: number,
   startHeight: number,
-  initialQuality: number
+  initialQuality: number,
+  maxLength: number
 ): { dataUrl: string; width: number; height: number } {
-  const qualitySteps = [initialQuality, 0.72, 0.58, 0.45, 0.34];
-  const scaleSteps = [1, 0.8, 0.65, 0.5];
+  const qualitySteps = [initialQuality, 0.72, 0.58, 0.45, 0.34, 0.25];
+  const scaleSteps = [1, 0.8, 0.65, 0.5, 0.35, 0.25];
 
   let lastResult = {
     dataUrl: '',
@@ -42,7 +43,7 @@ function encodeCanvasToBestFit(
         dataUrl = canvas.toDataURL('image/jpeg', q);
       }
       lastResult = { dataUrl, width, height };
-      if (dataUrl.length <= MAX_CLOUD_DATA_URL_LENGTH) {
+      if (dataUrl.length <= maxLength) {
         return lastResult;
       }
     }
@@ -53,9 +54,10 @@ function encodeCanvasToBestFit(
 
 export function processImageFile(
   file: File,
-  options: { maxDimension?: number; quality?: number } = {}
+  options: { maxDimension?: number; quality?: number; maxLength?: number } = {}
 ): Promise<ProcessedImageResult> {
-  const { maxDimension = 1440, quality = 0.82 } = options;
+  const { maxDimension = 1440, quality = 0.82, maxLength = 450_000 } = options;
+  const effectiveMaxLength = Math.min(maxLength, MAX_CLOUD_DATA_URL_LENGTH);
 
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
@@ -76,10 +78,10 @@ export function processImageFile(
 
       // Preserve animated GIFs and vector SVGs directly when within cloud size limits
       if (file.type === 'image/svg+xml' || file.type === 'image/gif') {
-        if (rawDataUrl.length > MAX_CLOUD_DATA_URL_LENGTH) {
+        if (rawDataUrl.length > effectiveMaxLength) {
           reject(
             new Error(
-              'Selected GIF or SVG is too large for real-time cloud sync (max ~450KB). Please use a smaller file or PNG/JPG/WEBP.'
+              'Selected GIF or SVG is too large for real-time cloud sync. Please use a smaller file or PNG/JPG/WEBP.'
             )
           );
           return;
@@ -96,7 +98,7 @@ export function processImageFile(
 
       const img = new window.Image();
       img.onerror = () => {
-        if (rawDataUrl.length > MAX_CLOUD_DATA_URL_LENGTH) {
+        if (rawDataUrl.length > effectiveMaxLength) {
           reject(new Error('Could not optimize image to fit cloud storage limits.'));
           return;
         }
@@ -124,9 +126,19 @@ export function processImageFile(
         }
 
         try {
-          const encoded = encodeCanvasToBestFit(img, targetWidth, targetHeight, quality);
+          const encoded = encodeCanvasToBestFit(
+            img,
+            targetWidth,
+            targetHeight,
+            quality,
+            effectiveMaxLength
+          );
 
           if (!encoded.dataUrl) {
+            if (rawDataUrl.length > effectiveMaxLength) {
+              reject(new Error('Image exceeds cloud synchronization size limits.'));
+              return;
+            }
             resolve({
               dataUrl: rawDataUrl,
               width: img.naturalWidth,
@@ -139,12 +151,17 @@ export function processImageFile(
 
           // Keep whichever is smaller when original fits within limits and wasn't resized
           const canUseRaw =
-            rawDataUrl.length <= MAX_CLOUD_DATA_URL_LENGTH &&
+            rawDataUrl.length <= effectiveMaxLength &&
             rawDataUrl.length < encoded.dataUrl.length &&
             encoded.width === img.naturalWidth &&
             encoded.height === img.naturalHeight;
 
           const finalDataUrl = canUseRaw ? rawDataUrl : encoded.dataUrl;
+
+          if (finalDataUrl.length > effectiveMaxLength) {
+            reject(new Error('Image is still too large after optimization for real-time cloud sync.'));
+            return;
+          }
 
           resolve({
             dataUrl: finalDataUrl,
@@ -154,7 +171,7 @@ export function processImageFile(
             sizeKb: Math.round((finalDataUrl.length * 0.75) / 1024),
           });
         } catch {
-          if (rawDataUrl.length > MAX_CLOUD_DATA_URL_LENGTH) {
+          if (rawDataUrl.length > effectiveMaxLength) {
             reject(new Error('Failed to compress image for cloud synchronization.'));
             return;
           }

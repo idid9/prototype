@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../../context/LanguageContext';
 import {
   useTheme,
@@ -51,6 +51,10 @@ export const AppearanceSettingsTab: React.FC = () => {
   } = useTheme();
 
   const [customHexInput, setCustomHexInput] = useState(settings.customAccentHex);
+
+  useEffect(() => {
+    setCustomHexInput(settings.customAccentHex);
+  }, [settings.customAccentHex]);
 
   const visitorTargetOptions: {
     key: VisitorGlassyTarget;

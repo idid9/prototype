@@ -35,14 +35,39 @@ import {
   OperationType,
 } from './firebase/firestore';
 
+import heroAlUlaImg from '../assets/images/hero_alula_desert_1794458486059.jpg';
+import hegraHeritageImg from '../assets/images/hegra_heritage_tomb_1794458485953.jpg';
+import riyadhDiriyahImg from '../assets/images/riyadh_diriyah_dusk_1794458486723.jpg';
+import jeddahAlBaladImg from '../assets/images/jeddah_albalad_heritage_1794458488400.jpg';
+import redSeaCoastalImg from '../assets/images/red_sea_coastal_luxury_1794458487989.jpg';
+
 // High-fidelity image assets generated for TourFlow
 export const IMAGES = {
-  heroAlUla: '/src/assets/images/hero_alula_desert_1794458486059.jpg',
-  hegraHeritage: '/src/assets/images/hegra_heritage_tomb_1794458485953.jpg',
-  riyadhDiriyah: '/src/assets/images/riyadh_diriyah_dusk_1794458486723.jpg',
-  jeddahAlBalad: '/src/assets/images/jeddah_albalad_heritage_1794458488400.jpg',
-  redSeaCoastal: '/src/assets/images/red_sea_coastal_luxury_1794458487989.jpg',
+  heroAlUla: heroAlUlaImg,
+  hegraHeritage: hegraHeritageImg,
+  riyadhDiriyah: riyadhDiriyahImg,
+  jeddahAlBalad: jeddahAlBaladImg,
+  redSeaCoastal: redSeaCoastalImg,
 };
+
+const ASSET_BASENAME_MAP: Array<[string, string]> = [
+  ['hero_alula_desert_1794458486059', heroAlUlaImg],
+  ['hegra_heritage_tomb_1794458485953', hegraHeritageImg],
+  ['riyadh_diriyah_dusk_1794458486723', riyadhDiriyahImg],
+  ['jeddah_albalad_heritage_1794458488400', jeddahAlBaladImg],
+  ['red_sea_coastal_luxury_1794458487989', redSeaCoastalImg],
+];
+
+function normalizeAssetUrl(url: unknown): string {
+  if (typeof url !== 'string' || !url) return '';
+  if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+  for (const [basename, bundledUrl] of ASSET_BASENAME_MAP) {
+    if (url.includes(basename)) {
+      return bundledUrl;
+    }
+  }
+  return url;
+}
 
 // Initial realistic demo seed data
 const INITIAL_DESTINATIONS: Destination[] = [
@@ -914,182 +939,245 @@ let cloudSeedKnown = false;
 let cloudSeedingInProgress = false;
 let firestoreListenersStarted = false;
 let firestoreUnsubs: Unsubscribe[] = [];
-const reconciledInquiryIds = new Set<string>();
+const pendingEmptySnapshots: Record<string, any> = {};
+
+const RECONCILED_INQS_KEY = 'tourflow_reconciled_inqs_v1';
+const reconciledInquiryIds = new Set<string>(
+  (() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(RECONCILED_INQS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })()
+);
+
+function markInquiryReconciled(id: string) {
+  reconciledInquiryIds.add(id);
+  if (typeof window === 'undefined') return;
+  try {
+    const recent = Array.from(reconciledInquiryIds).slice(-250);
+    localStorage.setItem(RECONCILED_INQS_KEY, JSON.stringify(recent));
+  } catch {
+    // Ignore storage quota warnings
+  }
+}
 
 function createUniqueId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
-// Strict payload sanitizers matching firestore.rules hasOnly(...) whitelists
+function clampStr(val: unknown, maxLen: number, fallback = ''): string {
+  const str = typeof val === 'string' ? val : val == null ? fallback : String(val);
+  return str.length > maxLen ? str.slice(0, maxLen) : str;
+}
+
+function finiteNum(val: unknown, fallback = 0): number {
+  const n = Number(val);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+const INITIAL_INQUIRY_IDS = new Set(INITIAL_INQUIRIES.map((i) => i.id));
+
+// Strict payload sanitizers matching firestore.rules hasOnly(...) & length constraints
 function toFirestoreExperience(exp: Experience) {
+  const rawCover = typeof exp.coverImage === 'string' ? exp.coverImage : '';
+  const safeCover = rawCover.length <= 750_000 ? rawCover : IMAGES.heroAlUla;
+  const rawGallery = Array.isArray(exp.gallery) ? exp.gallery.slice(0, 4) : [];
+  // Keep total document size comfortably under Firestore's 1 MiB document limit
+  const MAX_TOTAL_IMAGE_CHARS = 800_000;
+  let remainingBudget = Math.max(0, MAX_TOTAL_IMAGE_CHARS - safeCover.length);
+  const safeGallery: string[] = [];
+  for (const item of rawGallery) {
+    if (typeof item === 'string' && item.length <= remainingBudget && item.length <= 750_000) {
+      safeGallery.push(item);
+      remainingBudget -= item.length;
+    }
+  }
+
   return stripUndefined({
-    id: exp.id,
-    title: exp.title,
-    titleAr: exp.titleAr || '',
-    slug: exp.slug,
-    destinationId: exp.destinationId,
-    destinationName: exp.destinationName || '',
-    category: exp.category,
-    categoryAr: exp.categoryAr || '',
-    price: Number(exp.price) || 0,
-    currency: exp.currency || 'SAR',
-    duration: exp.duration || '',
-    durationAr: exp.durationAr || '',
-    description: exp.description || '',
-    descriptionAr: exp.descriptionAr || '',
-    coverImage: exp.coverImage || '',
-    gallery: Array.isArray(exp.gallery) ? exp.gallery.slice(0, 4) : [],
+    id: clampStr(exp.id, 128),
+    title: clampStr(exp.title, 180, 'Untitled Experience') || 'Untitled Experience',
+    titleAr: clampStr(exp.titleAr, 180),
+    slug: clampStr(exp.slug, 160, exp.id) || clampStr(exp.id, 160),
+    destinationId: clampStr(exp.destinationId, 64),
+    destinationName: clampStr(exp.destinationName, 120),
+    category: clampStr(exp.category, 60) || 'General',
+    categoryAr: clampStr(exp.categoryAr, 60),
+    price: Math.max(0, finiteNum(exp.price, 0)),
+    currency: clampStr(exp.currency || 'SAR', 5) || 'SAR',
+    duration: clampStr(exp.duration, 60),
+    durationAr: clampStr(exp.durationAr, 60),
+    description: clampStr(exp.description, 4000),
+    descriptionAr: clampStr(exp.descriptionAr, 4000),
+    coverImage: safeCover,
+    gallery: safeGallery,
     highlights: Array.isArray(exp.highlights) ? exp.highlights.slice(0, 20) : [],
     highlightsAr: Array.isArray(exp.highlightsAr) ? exp.highlightsAr.slice(0, 20) : [],
     inclusions: Array.isArray(exp.inclusions) ? exp.inclusions.slice(0, 20) : [],
     inclusionsAr: Array.isArray(exp.inclusionsAr) ? exp.inclusionsAr.slice(0, 20) : [],
     exclusions: Array.isArray(exp.exclusions) ? exp.exclusions.slice(0, 20) : [],
     exclusionsAr: Array.isArray(exp.exclusionsAr) ? exp.exclusionsAr.slice(0, 20) : [],
-    meetingPoint: exp.meetingPoint || '',
-    meetingPointAr: exp.meetingPointAr || '',
+    meetingPoint: clampStr(exp.meetingPoint, 240),
+    meetingPointAr: clampStr(exp.meetingPointAr, 240),
     featured: Boolean(exp.featured),
     status: exp.status,
-    rating: Number(exp.rating ?? 4.9),
-    reviewsCount: Number(exp.reviewsCount ?? 0),
-    maxGuests: Number(exp.maxGuests ?? 10),
-    createdAt: exp.createdAt,
-    updatedAt: exp.updatedAt,
+    rating: finiteNum(exp.rating, 4.9),
+    reviewsCount: Math.max(0, finiteNum(exp.reviewsCount, 0)),
+    maxGuests: Math.max(1, finiteNum(exp.maxGuests, 10)),
+    createdAt: clampStr(exp.createdAt, 64),
+    updatedAt: clampStr(exp.updatedAt, 64),
   });
 }
 
 function toFirestoreDestination(dest: Destination) {
+  const rawCover = typeof dest.coverImage === 'string' ? dest.coverImage : '';
   return stripUndefined({
-    id: dest.id,
-    name: dest.name,
-    nameAr: dest.nameAr || '',
-    slug: dest.slug,
-    description: dest.description || '',
-    descriptionAr: dest.descriptionAr || '',
-    coverImage: dest.coverImage || '',
-    region: dest.region || '',
-    regionAr: dest.regionAr || '',
-    experienceCount: Number(dest.experienceCount ?? 0),
+    id: clampStr(dest.id, 128),
+    name: clampStr(dest.name, 120, 'Destination') || 'Destination',
+    nameAr: clampStr(dest.nameAr, 120),
+    slug: clampStr(dest.slug, 120),
+    description: clampStr(dest.description, 2500),
+    descriptionAr: clampStr(dest.descriptionAr, 2500),
+    coverImage: rawCover.length <= 750_000 ? rawCover : IMAGES.heroAlUla,
+    region: clampStr(dest.region, 120),
+    regionAr: clampStr(dest.regionAr, 120),
+    experienceCount: Math.max(0, finiteNum(dest.experienceCount, 0)),
     featured: Boolean(dest.featured),
     published: Boolean(dest.published),
-    createdAt: dest.createdAt,
-    updatedAt: dest.updatedAt,
+    createdAt: clampStr(dest.createdAt, 64),
+    updatedAt: clampStr(dest.updatedAt, 64),
   });
 }
 
 function toFirestoreInquiry(inq: Inquiry) {
+  const safeEmail = clampStr(inq.email, 150);
+  const safePhone = clampStr(inq.phone, 35);
   return stripUndefined({
-    id: inq.id,
-    customerName: inq.customerName,
-    email: inq.email,
-    phone: inq.phone,
-    country: inq.country || 'Saudi Arabia',
-    experienceId: inq.experienceId,
-    experienceTitle: inq.experienceTitle || '',
-    preferredDate: inq.preferredDate,
-    guests: Math.max(1, Math.min(100, Number(inq.guests) || 1)),
-    message: inq.message || '',
+    id: clampStr(inq.id, 128),
+    customerName: clampStr(inq.customerName, 120, 'Guest') || 'Guest',
+    email: safeEmail.length >= 3 ? safeEmail : 'guest@tourflow.sa',
+    phone: safePhone.length >= 3 ? safePhone : '000',
+    country: clampStr(inq.country || 'Saudi Arabia', 80),
+    experienceId: clampStr(inq.experienceId, 128),
+    experienceTitle: clampStr(inq.experienceTitle, 180),
+    preferredDate: clampStr(inq.preferredDate, 40),
+    guests: Math.max(1, Math.min(100, finiteNum(inq.guests, 1))),
+    message: clampStr(inq.message, 2000),
     status: inq.status,
     internalNotes: Array.isArray(inq.internalNotes) ? inq.internalNotes.slice(0, 50) : [],
-    estimatedValue: inq.estimatedValue !== undefined ? Number(inq.estimatedValue) : undefined,
-    createdAt: inq.createdAt,
-    updatedAt: inq.updatedAt,
+    estimatedValue: inq.estimatedValue !== undefined ? finiteNum(inq.estimatedValue, 0) : undefined,
+    createdAt: clampStr(inq.createdAt, 64),
+    updatedAt: clampStr(inq.updatedAt, 64),
   });
 }
 
 function toFirestoreCustomer(cust: Customer) {
   return stripUndefined({
-    id: cust.id,
-    name: cust.name,
-    email: cust.email,
-    phone: cust.phone || '',
-    country: cust.country || '',
-    totalInquiries: Number(cust.totalInquiries ?? 1),
-    confirmedBookings: Number(cust.confirmedBookings ?? 0),
-    lastInteraction: cust.lastInteraction,
-    notes: cust.notes || '',
-    createdAt: cust.createdAt,
+    id: clampStr(cust.id, 128),
+    name: clampStr(cust.name, 120, 'Customer') || 'Customer',
+    email: clampStr(cust.email, 150),
+    phone: clampStr(cust.phone, 35),
+    country: clampStr(cust.country, 80),
+    totalInquiries: Math.max(0, finiteNum(cust.totalInquiries, 1)),
+    confirmedBookings: Math.max(0, finiteNum(cust.confirmedBookings, 0)),
+    lastInteraction: clampStr(cust.lastInteraction, 64),
+    notes: clampStr(cust.notes, 3000),
+    createdAt: clampStr(cust.createdAt, 64),
   });
 }
 
 function toFirestorePromotion(promo: Promotion) {
+  const rawBanner = typeof promo.bannerImage === 'string' ? promo.bannerImage : '';
   return stripUndefined({
-    id: promo.id,
-    title: promo.title,
-    titleAr: promo.titleAr || '',
-    description: promo.description || '',
-    descriptionAr: promo.descriptionAr || '',
-    bannerImage: promo.bannerImage || '',
-    destinationId: promo.destinationId || '',
-    linkedExperienceId: promo.linkedExperienceId || '',
-    ctaText: promo.ctaText || 'Explore',
-    ctaTextAr: promo.ctaTextAr || '',
-    ctaLink: promo.ctaLink || '',
+    id: clampStr(promo.id, 128),
+    title: clampStr(promo.title, 180, 'Promotion') || 'Promotion',
+    titleAr: clampStr(promo.titleAr, 180),
+    description: clampStr(promo.description, 1500),
+    descriptionAr: clampStr(promo.descriptionAr, 1500),
+    bannerImage: rawBanner.length <= 750_000 ? rawBanner : IMAGES.heroAlUla,
+    destinationId: clampStr(promo.destinationId, 128),
+    linkedExperienceId: clampStr(promo.linkedExperienceId, 128),
+    ctaText: clampStr(promo.ctaText || 'Explore', 80),
+    ctaTextAr: clampStr(promo.ctaTextAr, 80),
+    ctaLink: clampStr(promo.ctaLink, 500),
     active: Boolean(promo.active),
-    badge: promo.badge || '',
-    badgeAr: promo.badgeAr || '',
-    createdAt: promo.createdAt,
+    badge: clampStr(promo.badge, 60),
+    badgeAr: clampStr(promo.badgeAr, 60),
+    createdAt: clampStr(promo.createdAt, 64),
   });
 }
 
 function toFirestoreCoupon(cpn: Coupon) {
   return stripUndefined({
-    id: cpn.id,
-    code: cpn.code,
+    id: clampStr(cpn.id, 128),
+    code: clampStr(cpn.code, 40, 'PROMO') || 'PROMO',
     discountType: cpn.discountType,
-    discountAmount: Number(cpn.discountAmount) || 0,
-    expiryDate: cpn.expiryDate || '2026-12-31',
-    usageLimit: Number(cpn.usageLimit ?? 100),
-    usedCount: Number(cpn.usedCount ?? 0),
+    discountAmount: Math.max(0, finiteNum(cpn.discountAmount, 0)),
+    expiryDate: clampStr(cpn.expiryDate || '2026-12-31', 40),
+    usageLimit: Math.max(0, finiteNum(cpn.usageLimit, 100)),
+    usedCount: Math.max(0, finiteNum(cpn.usedCount, 0)),
     active: Boolean(cpn.active),
   });
 }
 
 function toFirestoreQuiz(quiz: QuizQuestion) {
   return stripUndefined({
-    id: quiz.id,
-    question: quiz.question,
-    questionAr: quiz.questionAr || '',
+    id: clampStr(quiz.id, 128),
+    question: clampStr(quiz.question, 500, 'Question') || 'Question',
+    questionAr: clampStr(quiz.questionAr, 500),
     options: Array.isArray(quiz.options) ? quiz.options.slice(0, 10) : [],
     optionsAr: Array.isArray(quiz.optionsAr) ? quiz.optionsAr.slice(0, 10) : [],
-    correctIndex: Number(quiz.correctIndex) || 0,
-    explanation: quiz.explanation || '',
-    explanationAr: quiz.explanationAr || '',
-    category: quiz.category || 'Heritage',
+    correctIndex: Math.max(0, Math.min(9, finiteNum(quiz.correctIndex, 0))),
+    explanation: clampStr(quiz.explanation, 1000),
+    explanationAr: clampStr(quiz.explanationAr, 1000),
+    category: clampStr(quiz.category || 'Heritage', 80),
     active: Boolean(quiz.active),
   });
 }
 
 function toFirestoreWebsiteContent(content: WebsiteContent) {
+  const rawHero = typeof content.heroImage === 'string' ? content.heroImage : '';
   return stripUndefined({
-    heroHeadline: content.heroHeadline,
-    heroHeadlineAr: content.heroHeadlineAr || '',
-    heroDescription: content.heroDescription || '',
-    heroDescriptionAr: content.heroDescriptionAr || '',
-    heroImage: content.heroImage || IMAGES.heroAlUla,
-    aboutHeadline: content.aboutHeadline,
-    aboutHeadlineAr: content.aboutHeadlineAr || '',
-    aboutText: content.aboutText || '',
-    aboutTextAr: content.aboutTextAr || '',
-    stats: content.stats,
-    contactEmail: content.contactEmail || '',
-    contactPhone: content.contactPhone || '',
-    whatsappNumber: content.whatsappNumber || '',
-    officeAddress: content.officeAddress || '',
-    officeAddressAr: content.officeAddressAr || '',
+    heroHeadline: clampStr(content.heroHeadline, 300),
+    heroHeadlineAr: clampStr(content.heroHeadlineAr, 300),
+    heroDescription: clampStr(content.heroDescription, 1500),
+    heroDescriptionAr: clampStr(content.heroDescriptionAr, 1500),
+    heroImage: rawHero.length <= 750_000 ? rawHero : IMAGES.heroAlUla,
+    aboutHeadline: clampStr(content.aboutHeadline, 300),
+    aboutHeadlineAr: clampStr(content.aboutHeadlineAr, 300),
+    aboutText: clampStr(content.aboutText, 3000),
+    aboutTextAr: clampStr(content.aboutTextAr, 3000),
+    stats: {
+      operators: Math.max(0, finiteNum(content.stats?.operators, 140)),
+      experiences: Math.max(0, finiteNum(content.stats?.experiences, 85)),
+      travelersServed: Math.max(0, finiteNum(content.stats?.travelersServed, 4200)),
+      satisfactionRate: Math.max(0, finiteNum(content.stats?.satisfactionRate, 99)),
+    },
+    contactEmail: clampStr(content.contactEmail, 150),
+    contactPhone: clampStr(content.contactPhone, 40),
+    whatsappNumber: clampStr(content.whatsappNumber, 40),
+    officeAddress: clampStr(content.officeAddress, 300),
+    officeAddressAr: clampStr(content.officeAddressAr, 300),
     socialLinks: content.socialLinks || {},
   });
 }
 
 function toFirestoreBusinessSettings(settings: BusinessSettings) {
   return stripUndefined({
-    businessName: settings.businessName,
-    businessEmail: settings.businessEmail || '',
-    businessPhone: settings.businessPhone || '',
-    whatsappNumber: settings.whatsappNumber || '',
-    businessAddress: settings.businessAddress || '',
-    currency: settings.currency || 'SAR',
-    defaultLanguage: settings.defaultLanguage || 'en',
-    supportedLanguages: settings.supportedLanguages || ['en', 'ar'],
+    businessName: clampStr(settings.businessName, 180),
+    businessEmail: clampStr(settings.businessEmail, 150),
+    businessPhone: clampStr(settings.businessPhone, 40),
+    whatsappNumber: clampStr(settings.whatsappNumber, 40),
+    businessAddress: clampStr(settings.businessAddress, 300),
+    currency: clampStr(settings.currency || 'SAR', 5) || 'SAR',
+    defaultLanguage: settings.defaultLanguage === 'ar' ? 'ar' : 'en',
+    supportedLanguages: Array.isArray(settings.supportedLanguages)
+      ? settings.supportedLanguages.slice(0, 5)
+      : ['en', 'ar'],
     socialLinks: settings.socialLinks || {},
     enableEmailNotifications: Boolean(settings.enableEmailNotifications),
     enableWhatsAppNotifications: Boolean(settings.enableWhatsAppNotifications),
@@ -1098,22 +1186,55 @@ function toFirestoreBusinessSettings(settings: BusinessSettings) {
 
 function toFirestoreAnalyticsEvent(event: AnalyticsEvent) {
   return stripUndefined({
-    id: event.id,
+    id: clampStr(event.id, 128),
     type: event.type,
-    path: event.path,
+    path: event.path !== undefined ? clampStr(event.path, 300) : undefined,
     metadata: event.metadata,
-    timestamp: event.timestamp,
+    timestamp: clampStr(event.timestamp, 64),
   });
 }
 
 function toFirestoreActivityLog(log: ActivityLog) {
   return stripUndefined({
-    id: log.id,
-    action: log.action,
-    details: log.details,
-    adminUser: log.adminUser || 'Admin',
-    timestamp: log.timestamp,
+    id: clampStr(log.id, 128),
+    action: clampStr(log.action, 150),
+    details: clampStr(log.details, 500),
+    adminUser: clampStr(log.adminUser || 'Admin', 120),
+    timestamp: clampStr(log.timestamp, 64),
   });
+}
+
+function normalizeCollectionData<T>(key: string, data: T): T {
+  if (!data) return data;
+  if (key === STORAGE_KEYS.EXPERIENCES && Array.isArray(data)) {
+    return data.map((exp: Experience) => ({
+      ...exp,
+      coverImage: normalizeAssetUrl(exp.coverImage) || IMAGES.heroAlUla,
+      gallery: Array.isArray(exp.gallery)
+        ? exp.gallery.map((g) => normalizeAssetUrl(g)).filter(Boolean)
+        : [],
+    })) as unknown as T;
+  }
+  if (key === STORAGE_KEYS.DESTINATIONS && Array.isArray(data)) {
+    return data.map((dest: Destination) => ({
+      ...dest,
+      coverImage: normalizeAssetUrl(dest.coverImage) || IMAGES.heroAlUla,
+    })) as unknown as T;
+  }
+  if (key === STORAGE_KEYS.PROMOTIONS && Array.isArray(data)) {
+    return data.map((promo: Promotion) => ({
+      ...promo,
+      bannerImage: normalizeAssetUrl(promo.bannerImage) || IMAGES.heroAlUla,
+    })) as unknown as T;
+  }
+  if (key === STORAGE_KEYS.WEBSITE_CONTENT && typeof data === 'object' && !Array.isArray(data)) {
+    const wc = data as unknown as WebsiteContent;
+    return {
+      ...wc,
+      heroImage: normalizeAssetUrl(wc.heroImage) || IMAGES.heroAlUla,
+    } as unknown as T;
+  }
+  return data;
 }
 
 function emitLocalListeners(collectionKey: string, data: any) {
@@ -1132,9 +1253,13 @@ function notifyListeners(collectionKey: string, data: any) {
   emitLocalListeners(collectionKey, data);
   if (syncChannel) {
     try {
-      syncChannel.postMessage({ collection: collectionKey, timestamp: Date.now() });
+      syncChannel.postMessage({ collection: collectionKey, data, timestamp: Date.now() });
     } catch {
-      // Ignore broadcast channel errors in restricted contexts
+      try {
+        syncChannel.postMessage({ collection: collectionKey, timestamp: Date.now() });
+      } catch {
+        // Ignore broadcast channel errors in restricted contexts
+      }
     }
   }
 }
@@ -1142,12 +1267,16 @@ function notifyListeners(collectionKey: string, data: any) {
 // Hook up listener for broadcast channel messages
 if (syncChannel) {
   syncChannel.onmessage = (event) => {
-    const { collection: key } = event.data || {};
-    if (key && listeners[key]) {
-      const freshData = loadCollection(key);
-      memoryCache[key] = freshData;
-      emitLocalListeners(key, freshData);
+    const { collection: key, data } = event.data || {};
+    if (!key) return;
+    let freshData = data;
+    if (freshData === undefined) {
+      delete memoryCache[key];
+      freshData = loadCollection(key);
     }
+    const normalized = normalizeCollectionData(key, freshData);
+    memoryCache[key] = normalized;
+    emitLocalListeners(key, normalized);
   };
 }
 
@@ -1157,7 +1286,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
     if (event.key && validKeys.has(event.key) && event.newValue) {
       try {
-        const parsed = JSON.parse(event.newValue);
+        const parsed = normalizeCollectionData(event.key, JSON.parse(event.newValue));
         memoryCache[event.key] = parsed;
         emitLocalListeners(event.key, parsed);
       } catch (e) {
@@ -1176,7 +1305,7 @@ function loadCollection<T>(key: string): T {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return [] as unknown as T;
-    const parsed = JSON.parse(raw);
+    const parsed = normalizeCollectionData(key, JSON.parse(raw));
     memoryCache[key] = parsed;
     return parsed;
   } catch (e) {
@@ -1214,8 +1343,23 @@ function sortByCreatedDesc<T extends { createdAt?: string }>(items: T[]): T[] {
 }
 
 function applyCloudSnapshot<T>(storageKey: string, items: T) {
-  saveCollection(storageKey, items);
-  notifyListeners(storageKey, items);
+  delete pendingEmptySnapshots[storageKey];
+  const normalized = normalizeCollectionData(storageKey, items);
+  saveCollection(storageKey, normalized);
+  notifyListeners(storageKey, normalized);
+}
+
+function markCloudSeedKnown() {
+  if (!cloudSeedKnown) {
+    cloudSeedKnown = true;
+    const keys = Object.keys(pendingEmptySnapshots);
+    for (const key of keys) {
+      const val = pendingEmptySnapshots[key];
+      delete pendingEmptySnapshots[key];
+      saveCollection(key, val);
+      notifyListeners(key, val);
+    }
+  }
 }
 
 /**
@@ -1225,13 +1369,14 @@ function applyCloudSnapshot<T>(storageKey: string, items: T) {
 function reconcileVisitorInquiriesIntoCrm(inquiries: Inquiry[]) {
   if (!adminCloudMode || !isFirebaseConfigured() || !db) return;
 
-  const customers = DataService.getCustomers();
-  const recentThreshold = '2026-11-12T00:00:00.000Z';
+  const customers = [...DataService.getCustomers()];
+  const coupons = [...DataService.getCoupons()];
+  let couponsChanged = false;
 
   for (const inq of inquiries) {
     if (reconciledInquiryIds.has(inq.id)) continue;
-    if ((inq.createdAt || '') < recentThreshold) {
-      reconciledInquiryIds.add(inq.id);
+    if (INITIAL_INQUIRY_IDS.has(inq.id)) {
+      markInquiryReconciled(inq.id);
       continue;
     }
 
@@ -1252,13 +1397,13 @@ function reconcileVisitorInquiriesIntoCrm(inquiries: Inquiry[]) {
         notes: `First inquiry on ${new Date(inq.createdAt).toLocaleDateString()} for ${inq.experienceTitle}`,
         createdAt: inq.createdAt,
       };
-      reconciledInquiryIds.add(inq.id);
+      markInquiryReconciled(inq.id);
       customers.unshift(newCust);
       saveCollection(STORAGE_KEYS.CUSTOMERS, customers);
       notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
       writeCloudDoc('customers', newCust.id, toFirestoreCustomer(newCust));
     } else if ((existing.lastInteraction || '') < (inq.createdAt || '')) {
-      reconciledInquiryIds.add(inq.id);
+      markInquiryReconciled(inq.id);
       existing.totalInquiries += 1;
       existing.lastInteraction = inq.createdAt;
       if (!existing.phone && inq.phone) existing.phone = inq.phone;
@@ -1267,8 +1412,32 @@ function reconcileVisitorInquiriesIntoCrm(inquiries: Inquiry[]) {
       notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
       writeCloudDoc('customers', existing.id, toFirestoreCustomer(existing));
     } else {
-      reconciledInquiryIds.add(inq.id);
+      markInquiryReconciled(inq.id);
+      continue;
     }
+
+    // Also reconcile any promo code applied by visitor on another device
+    const couponNote = (inq.internalNotes || []).find((n) =>
+      n.startsWith('Applied promo code: ')
+    );
+    if (couponNote) {
+      const code = couponNote.replace('Applied promo code: ', '').trim().toUpperCase();
+      const cIdx = coupons.findIndex((c) => c.code.trim().toUpperCase() === code);
+      if (cIdx !== -1) {
+        const updatedCoupon = {
+          ...coupons[cIdx],
+          usedCount: coupons[cIdx].usedCount + 1,
+        };
+        coupons[cIdx] = updatedCoupon;
+        couponsChanged = true;
+        writeCloudDoc('coupons', updatedCoupon.id, toFirestoreCoupon(updatedCoupon));
+      }
+    }
+  }
+
+  if (couponsChanged) {
+    saveCollection(STORAGE_KEYS.COUPONS, coupons);
+    notifyListeners(STORAGE_KEYS.COUPONS, coupons);
   }
 }
 
@@ -1286,7 +1455,7 @@ async function ensureCloudSeeded(): Promise<void> {
     ]);
 
     if (settingsSnap.exists() && contentSnap.exists()) {
-      cloudSeedKnown = true;
+      markCloudSeedKnown();
       return;
     }
 
@@ -1324,7 +1493,7 @@ async function ensureCloudSeeded(): Promise<void> {
     batch.set(doc(db, 'settings', 'main'), toFirestoreBusinessSettings(INITIAL_SETTINGS));
 
     await batch.commit();
-    cloudSeedKnown = true;
+    markCloudSeedKnown();
   } catch (err) {
     console.error('Error seeding Firestore database:', err);
   } finally {
@@ -1356,7 +1525,7 @@ function startFirestoreSubscriptions() {
       doc(db, 'websiteContent', 'main'),
       (snap) => {
         if (snap.exists()) {
-          cloudSeedKnown = true;
+          markCloudSeedKnown();
           applyCloudSnapshot(STORAGE_KEYS.WEBSITE_CONTENT, snap.data() as WebsiteContent);
         }
       },
@@ -1372,7 +1541,7 @@ function startFirestoreSubscriptions() {
       doc(db, 'settings', 'main'),
       (snap) => {
         if (snap.exists()) {
-          cloudSeedKnown = true;
+          markCloudSeedKnown();
           applyCloudSnapshot(STORAGE_KEYS.SETTINGS, snap.data() as BusinessSettings);
         }
       },
@@ -1391,9 +1560,12 @@ function startFirestoreSubscriptions() {
     onSnapshot(
       expQuery,
       (snap) => {
+        if (!snap.empty) markCloudSeedKnown();
         if (!snap.empty || cloudSeedKnown || adminCloudMode) {
           const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Experience));
           applyCloudSnapshot(STORAGE_KEYS.EXPERIENCES, items);
+        } else {
+          pendingEmptySnapshots[STORAGE_KEYS.EXPERIENCES] = [];
         }
       },
       (err) => {
@@ -1411,11 +1583,14 @@ function startFirestoreSubscriptions() {
     onSnapshot(
       destQuery,
       (snap) => {
+        if (!snap.empty) markCloudSeedKnown();
         if (!snap.empty || cloudSeedKnown || adminCloudMode) {
           const items = snap.docs
             .map((d) => d.data() as Destination)
             .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
           applyCloudSnapshot(STORAGE_KEYS.DESTINATIONS, items);
+        } else {
+          pendingEmptySnapshots[STORAGE_KEYS.DESTINATIONS] = [];
         }
       },
       (err) => {
@@ -1433,9 +1608,12 @@ function startFirestoreSubscriptions() {
     onSnapshot(
       promoQuery,
       (snap) => {
+        if (!snap.empty) markCloudSeedKnown();
         if (!snap.empty || cloudSeedKnown || adminCloudMode) {
           const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Promotion));
           applyCloudSnapshot(STORAGE_KEYS.PROMOTIONS, items);
+        } else {
+          pendingEmptySnapshots[STORAGE_KEYS.PROMOTIONS] = [];
         }
       },
       (err) => {
@@ -1453,9 +1631,12 @@ function startFirestoreSubscriptions() {
     onSnapshot(
       couponQuery,
       (snap) => {
+        if (!snap.empty) markCloudSeedKnown();
         if (!snap.empty || cloudSeedKnown || adminCloudMode) {
           const items = snap.docs.map((d) => d.data() as Coupon);
           applyCloudSnapshot(STORAGE_KEYS.COUPONS, items);
+        } else {
+          pendingEmptySnapshots[STORAGE_KEYS.COUPONS] = [];
         }
       },
       (err) => {
@@ -1473,11 +1654,14 @@ function startFirestoreSubscriptions() {
     onSnapshot(
       quizQuery,
       (snap) => {
+        if (!snap.empty) markCloudSeedKnown();
         if (!snap.empty || cloudSeedKnown || adminCloudMode) {
           const items = snap.docs
             .map((d) => d.data() as QuizQuestion)
             .sort((a, b) => a.id.localeCompare(b.id));
           applyCloudSnapshot(STORAGE_KEYS.QUIZZES, items);
+        } else {
+          pendingEmptySnapshots[STORAGE_KEYS.QUIZZES] = [];
         }
       },
       (err) => {
@@ -1486,7 +1670,7 @@ function startFirestoreSubscriptions() {
     )
   );
 
-  // 8-11. Admin-only collections (PII isolation enforced by firestore.rules)
+  // 8-11. Admin-only collections
   if (adminCloudMode) {
     firestoreUnsubs.push(
       onSnapshot(
@@ -1495,6 +1679,8 @@ function startFirestoreSubscriptions() {
           if (!snap.empty || cloudSeedKnown) {
             const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Customer));
             applyCloudSnapshot(STORAGE_KEYS.CUSTOMERS, items);
+          } else {
+            pendingEmptySnapshots[STORAGE_KEYS.CUSTOMERS] = [];
           }
         },
         (err) => {
@@ -1511,6 +1697,8 @@ function startFirestoreSubscriptions() {
             const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as Inquiry));
             applyCloudSnapshot(STORAGE_KEYS.INQUIRIES, items);
             reconcileVisitorInquiriesIntoCrm(items);
+          } else {
+            pendingEmptySnapshots[STORAGE_KEYS.INQUIRIES] = [];
           }
         },
         (err) => {
@@ -1529,6 +1717,8 @@ function startFirestoreSubscriptions() {
               .sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''))
               .slice(-500);
             applyCloudSnapshot(STORAGE_KEYS.ANALYTICS, items);
+          } else {
+            pendingEmptySnapshots[STORAGE_KEYS.ANALYTICS] = [];
           }
         },
         (err) => {
@@ -1547,6 +1737,8 @@ function startFirestoreSubscriptions() {
               .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
               .slice(0, 100);
             applyCloudSnapshot(STORAGE_KEYS.ACTIVITY_LOGS, items);
+          } else {
+            pendingEmptySnapshots[STORAGE_KEYS.ACTIVITY_LOGS] = [];
           }
         },
         (err) => {
@@ -2005,7 +2197,7 @@ export const DataService = {
     saveCollection(STORAGE_KEYS.CUSTOMERS, customers);
     notifyListeners(STORAGE_KEYS.CUSTOMERS, customers);
     if (adminCloudMode) {
-      reconciledInquiryIds.add(inquiry.id);
+      markInquiryReconciled(inquiry.id);
       writeCloudDoc('customers', changedCustomer.id, toFirestoreCustomer(changedCustomer));
     }
   },

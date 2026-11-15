@@ -39,7 +39,7 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
   }, []);
 
   const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'ar' : 'en');
+    setLanguage(language === 'en' ? 'ar' : 'en', { manualVisitorOverride: true });
   };
 
   const navItems = [

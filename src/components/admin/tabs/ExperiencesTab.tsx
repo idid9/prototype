@@ -683,15 +683,30 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                         onChange={async (e) => {
                           const files = e.target.files;
                           if (!files || files.length === 0) return;
+                          setFormError('');
                           const uploaded: string[] = [];
-                          for (const file of Array.from(files)) {
+                          let failedCount = 0;
+                          for (const file of Array.from(files).slice(0, 4)) {
                             try {
-                              const res = await processImageFile(file, { maxDimension: 1280 });
+                              const res = await processImageFile(file, {
+                                maxDimension: 1024,
+                                quality: 0.78,
+                                maxLength: 140_000,
+                              });
                               uploaded.push(res.dataUrl);
-                            } catch {}
+                            } catch {
+                              failedCount += 1;
+                            }
                           }
                           if (uploaded.length > 0) {
-                            setGallery((prev) => Array.from(new Set([...prev, ...uploaded])));
+                            setGallery((prev) => Array.from(new Set([...prev, ...uploaded])).slice(0, 4));
+                          }
+                          if (failedCount > 0) {
+                            setFormError(
+                              isArabic
+                                ? 'تعذر ضغط إحدى صور المعرض لتتناسب مع المزامنة السحابية.'
+                                : 'One or more gallery images exceeded cloud sync size limits and were skipped.'
+                            );
                           }
                           e.target.value = '';
                         }}

@@ -3,6 +3,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { AdminTab } from './AdminSidebar';
+import { DataService } from '../../services/dataService';
 import { Globe, User, ShieldCheck } from 'lucide-react';
 
 interface AdminHeaderProps {
@@ -49,7 +50,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'ar' : 'en');
+    const nextLang = language === 'en' ? 'ar' : 'en';
+    setLanguage(nextLang);
+    DataService.updateSettings({ defaultLanguage: nextLang });
   };
 
   const sheen = settings.glassSheen ?? 0.72;

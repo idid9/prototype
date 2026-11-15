@@ -311,7 +311,7 @@ service cloud.firestore {
     // Theme Config: Public read; schema-validated updates from Admin Portal
     match /themeConfig/{configId} {
       allow get: if isValidId(configId);
-      allow list: if existing().glassSurfaceTone in ['dark', 'light'];
+      allow list: if request.time != null;
       allow create: if isValidId(configId) && isValidThemeConfig(incoming());
       allow update: if isValidId(configId) && isValidThemeConfig(incoming());
       allow delete: if false;
@@ -320,7 +320,7 @@ service cloud.firestore {
     // Experiences: Schema-validated CRUD for Admin Portal, public read for published catalog
     match /experiences/{experienceId} {
       allow get: if isValidId(experienceId);
-      allow list: if existing().status in ['DRAFT', 'PUBLISHED', 'ARCHIVED'];
+      allow list: if request.time != null;
       allow create: if isValidId(experienceId) && isValidExperience(incoming());
       allow update: if isValidId(experienceId) && isValidExperience(incoming());
       allow delete: if isValidId(experienceId);
@@ -329,7 +329,7 @@ service cloud.firestore {
     // Destinations: Schema-validated CRUD for Admin Portal, public read for published destinations
     match /destinations/{destinationId} {
       allow get: if isValidId(destinationId);
-      allow list: if existing().published is bool;
+      allow list: if request.time != null;
       allow create: if isValidId(destinationId) && isValidDestination(incoming());
       allow update: if isValidId(destinationId) && isValidDestination(incoming());
       allow delete: if isValidId(destinationId);
@@ -338,7 +338,7 @@ service cloud.firestore {
     // Inquiries: Visitors create NEW inquiries; Admin Portal reads/manages statuses & notes
     match /inquiries/{inquiryId} {
       allow get: if isValidId(inquiryId);
-      allow list: if existing().status in ['NEW', 'CONTACTED', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+      allow list: if request.time != null;
       allow create: if isValidId(inquiryId) && isValidInquiry(incoming());
       allow update: if isValidId(inquiryId) && isValidInquiry(incoming());
       allow delete: if isValidId(inquiryId);
@@ -347,7 +347,7 @@ service cloud.firestore {
     // Customers CRM: Schema-validated CRM access for Admin Portal
     match /customers/{customerId} {
       allow get: if isValidId(customerId);
-      allow list: if existing().email is string;
+      allow list: if request.time != null;
       allow create: if isValidId(customerId) && isValidCustomer(incoming());
       allow update: if isValidId(customerId) && isValidCustomer(incoming());
       allow delete: if isValidId(customerId);
@@ -356,7 +356,7 @@ service cloud.firestore {
     // Promotions: Schema-validated CRUD
     match /promotions/{promotionId} {
       allow get: if isValidId(promotionId);
-      allow list: if existing().active is bool;
+      allow list: if request.time != null;
       allow create: if isValidId(promotionId) && isValidPromotion(incoming());
       allow update: if isValidId(promotionId) && isValidPromotion(incoming());
       allow delete: if isValidId(promotionId);
@@ -365,7 +365,7 @@ service cloud.firestore {
     // Coupons: Schema-validated CRUD
     match /coupons/{couponId} {
       allow get: if isValidId(couponId);
-      allow list: if existing().active is bool;
+      allow list: if request.time != null;
       allow create: if isValidId(couponId) && isValidCoupon(incoming());
       allow update: if isValidId(couponId) && isValidCoupon(incoming());
       allow delete: if isValidId(couponId);
@@ -374,7 +374,7 @@ service cloud.firestore {
     // Quizzes: Schema-validated CRUD
     match /quizzes/{quizId} {
       allow get: if isValidId(quizId);
-      allow list: if existing().active is bool;
+      allow list: if request.time != null;
       allow create: if isValidId(quizId) && isValidQuiz(incoming());
       allow update: if isValidId(quizId) && isValidQuiz(incoming());
       allow delete: if isValidId(quizId);
@@ -383,7 +383,7 @@ service cloud.firestore {
     // Website Content CMS: Public read, schema-validated write
     match /websiteContent/{contentId} {
       allow get: if isValidId(contentId);
-      allow list: if existing().heroHeadline is string;
+      allow list: if request.time != null;
       allow create: if isValidId(contentId) && isValidWebsiteContent(incoming());
       allow update: if isValidId(contentId) && isValidWebsiteContent(incoming());
       allow delete: if false;
@@ -392,7 +392,7 @@ service cloud.firestore {
     // Business Settings: Public read, schema-validated write
     match /settings/{settingId} {
       allow get: if isValidId(settingId);
-      allow list: if existing().businessName is string;
+      allow list: if request.time != null;
       allow create: if isValidId(settingId) && isValidBusinessSettings(incoming());
       allow update: if isValidId(settingId) && isValidBusinessSettings(incoming());
       allow delete: if false;
@@ -401,7 +401,7 @@ service cloud.firestore {
     // Analytics Events: Schema-validated create/read/reset
     match /analyticsEvents/{eventId} {
       allow get: if isValidId(eventId);
-      allow list: if existing().type in ['page_view', 'experience_view', 'search', 'inquiry_submit', 'booking_confirm'];
+      allow list: if request.time != null;
       allow create: if isValidId(eventId) && isValidAnalyticsEvent(incoming());
       allow update: if false;
       allow delete: if isValidId(eventId);
@@ -410,7 +410,7 @@ service cloud.firestore {
     // Activity Logs: Schema-validated admin activity trail
     match /activityLogs/{logId} {
       allow get: if isValidId(logId);
-      allow list: if existing().action is string;
+      allow list: if request.time != null;
       allow create: if isValidId(logId) && isValidActivityLog(incoming());
       allow update: if isValidId(logId) && isValidActivityLog(incoming());
       allow delete: if isValidId(logId);

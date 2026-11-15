@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Language } from '../types';
+import { DataService } from '../services/dataService';
 
 interface LanguageContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (lang: Language, options?: { manualVisitorOverride?: boolean }) => void;
   t: (key: string) => string;
   isRtl: boolean;
 }
@@ -217,10 +218,15 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [language, setLanguageState] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(LANG_STORAGE_KEY) as Language;
-      return saved === 'ar' || saved === 'en' ? saved : 'en';
+      if (saved === 'ar' || saved === 'en') return saved;
+      const cloudDefault = DataService.getSettings().defaultLanguage;
+      return cloudDefault === 'ar' || cloudDefault === 'en' ? cloudDefault : 'en';
     }
     return 'en';
   });
+
+  const lastCloudDefaultLangRef = useRef<Language | null>(null);
+  const manualVisitorOverrideRef = useRef<boolean>(false);
 
   const isRtl = language === 'ar';
 
@@ -252,13 +258,34 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
     }
 
+    // Real-time cloud default language synchronization across all devices
+    const unsubSettings = DataService.subscribeSettings((settings) => {
+      const nextDefault = settings?.defaultLanguage;
+      if (nextDefault !== 'en' && nextDefault !== 'ar') return;
+      const cloudChanged = lastCloudDefaultLangRef.current !== null && lastCloudDefaultLangRef.current !== nextDefault;
+      const initialCloudFollow = lastCloudDefaultLangRef.current === null && !manualVisitorOverrideRef.current;
+      lastCloudDefaultLangRef.current = nextDefault;
+
+      if (cloudChanged || initialCloudFollow) {
+        manualVisitorOverrideRef.current = false;
+        setLanguageState(nextDefault);
+      }
+    });
+
     return () => {
       window.removeEventListener('storage', handleStorage);
       bc?.close();
+      unsubSettings();
     };
   }, []);
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = (lang: Language, options?: { manualVisitorOverride?: boolean }) => {
+    if (options?.manualVisitorOverride) {
+      manualVisitorOverrideRef.current = true;
+    } else {
+      manualVisitorOverrideRef.current = false;
+      lastCloudDefaultLangRef.current = lang;
+    }
     setLanguageState(lang);
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {

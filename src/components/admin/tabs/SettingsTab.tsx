@@ -11,7 +11,7 @@ interface SettingsTabProps {
 }
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
-  const { language, isRtl } = useLanguage();
+  const { language, setLanguage, isRtl } = useLanguage();
   const isArabic = language === 'ar';
   const { currentAccentHex } = useTheme();
 
@@ -54,6 +54,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
       enableEmailNotifications,
       enableWhatsAppNotifications,
     });
+    setLanguage(defaultLanguage);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
@@ -227,16 +228,31 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
-              {isArabic ? 'عنوان المكتب المسجل' : 'Registered Office Address'}
-            </label>
-            <input
-              type="text"
-              value={businessAddress}
-              onChange={(e) => setBusinessAddress(e.target.value)}
-              className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
+                {isArabic ? 'عنوان المكتب المسجل' : 'Registered Office Address'}
+              </label>
+              <input
+                type="text"
+                value={businessAddress}
+                onChange={(e) => setBusinessAddress(e.target.value)}
+                className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
+                {isArabic ? 'لغة المنصة الافتراضية (متزامنة لجميع الأجهزة)' : 'Platform Default Language (Synced Across Devices)'}
+              </label>
+              <select
+                value={defaultLanguage}
+                onChange={(e) => setDefaultLanguage(e.target.value as 'en' | 'ar')}
+                className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl font-bold cursor-pointer focus:outline-none"
+              >
+                <option value="en">{isArabic ? 'الإنجليزية (English)' : 'English (LTR)'}</option>
+                <option value="ar">{isArabic ? 'العربية (RTL)' : 'Arabic / العربية (RTL)'}</option>
+              </select>
+            </div>
           </div>
 
           <div className="pt-2">

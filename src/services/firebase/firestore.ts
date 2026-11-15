@@ -5,7 +5,13 @@
  */
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  Firestore,
+  doc,
+  getDocFromServer,
+} from 'firebase/firestore';
 import firebaseConfig from '../../../firebase-applet-config.json';
 
 export const ADMIN_EMAILS = ['satriarosie@gmail.com', 'admin@tourflow.sa'];
@@ -47,9 +53,19 @@ try {
   if (firebaseConfig && firebaseConfig.projectId && firebaseConfig.apiKey) {
     app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
     auth = getAuth(app);
-    db = firebaseConfig.firestoreDatabaseId
-      ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-      : getFirestore(app);
+    try {
+      db = firebaseConfig.firestoreDatabaseId
+        ? initializeFirestore(
+            app,
+            { experimentalAutoDetectLongPolling: true },
+            firebaseConfig.firestoreDatabaseId
+          )
+        : initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+    } catch {
+      db = firebaseConfig.firestoreDatabaseId
+        ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+        : getFirestore(app);
+    }
     googleProvider = new GoogleAuthProvider();
     googleProvider.setCustomParameters({ prompt: 'select_account' });
 

@@ -9,6 +9,8 @@ import {
 } from '../services/firebase/firestore';
 import { useAuth } from './AuthContext';
 
+import loungeBackdropImg from '../assets/images/glassy_lounge_backdrop_1794551389317.jpg';
+
 export type BlurIntensity = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type GlassSurfaceTone = 'dark' | 'light';
 export type TextColorMode = 'auto' | 'crisp_white' | 'warm_ivory' | 'obsidian_ink' | 'emerald_ink';
@@ -22,7 +24,7 @@ export type BackgroundPreset =
   | 'custom';
 export type AccentPreset = 'gold' | 'emerald' | 'cyan' | 'violet' | 'rose' | 'custom';
 
-export const LOUNGE_INTERIOR_IMAGE = '/src/assets/images/glassy_lounge_backdrop_1794551389317.jpg';
+export const LOUNGE_INTERIOR_IMAGE = loungeBackdropImg;
 
 export interface TextColorOption {
   id: TextColorMode;
@@ -383,9 +385,17 @@ const mergeThemeSettings = (parsed: Partial<ThemeSettings>): ThemeSettings => {
       ? getBlurPixels(parsed.blurIntensity)
       : DEFAULT_THEME_SETTINGS.blurRadius;
 
+  const rawCustomBgUrl = typeof parsed.customBgUrl === 'string' ? parsed.customBgUrl : '';
+  const normalizedCustomBgUrl =
+    !rawCustomBgUrl.startsWith('data:') &&
+    rawCustomBgUrl.includes('glassy_lounge_backdrop_1794551389317')
+      ? LOUNGE_INTERIOR_IMAGE
+      : rawCustomBgUrl;
+
   return {
     ...DEFAULT_THEME_SETTINGS,
     ...parsed,
+    customBgUrl: normalizedCustomBgUrl,
     blurRadius: mergedBlurRadius,
     blurIntensity: parsed.blurIntensity || closestBlurIntensity(mergedBlurRadius),
     textColorMode: parsed.textColorMode || DEFAULT_THEME_SETTINGS.textColorMode,
@@ -489,8 +499,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const lastLocalEditAtRef = useRef<number>(0);
   const cloudWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingCloudWriteRef = useRef<(() => void) | null>(null);
   const settingsRef = useRef<ThemeSettings>(settings);
   settingsRef.current = settings;
+
+  const flushPendingThemeWrite = useCallback(() => {
+    if (cloudWriteTimerRef.current) {
+      clearTimeout(cloudWriteTimerRef.current);
+      cloudWriteTimerRef.current = null;
+    }
+    if (pendingCloudWriteRef.current) {
+      const fn = pendingCloudWriteRef.current;
+      pendingCloudWriteRef.current = null;
+      fn();
+    }
+  }, []);
 
   const persistThemeToCloud = useCallback(
     (nextSettings: ThemeSettings, immediate = false) => {
@@ -503,6 +526,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
 
       const executeWrite = () => {
+        pendingCloudWriteRef.current = null;
         setDoc(doc(firestoreDb, 'themeConfig', 'global'), toFirestoreThemeConfig(nextSettings)).catch(
           (err) => {
             handleFirestoreError(err, OperationType.WRITE, 'themeConfig/global');
@@ -513,7 +537,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (immediate) {
         executeWrite();
       } else {
-        cloudWriteTimerRef.current = setTimeout(executeWrite, 140);
+        pendingCloudWriteRef.current = executeWrite;
+        cloudWriteTimerRef.current = setTimeout(executeWrite, 60);
       }
     },
     [isCloudAdmin]
@@ -555,7 +580,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!snap.exists()) return;
         // Skip local optimistic echoes and protect active slider drags
         if (snap.metadata.hasPendingWrites) return;
-        if (Date.now() - lastLocalEditAtRef.current < 350) return;
+        if (Date.now() - lastLocalEditAtRef.current < 280) return;
 
         const remoteData = snap.data() as Partial<ThemeSettings>;
         const merged = mergeThemeSettings(remoteData);
@@ -575,12 +600,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (cloudWriteTimerRef.current) {
-        clearTimeout(cloudWriteTimerRef.current);
+    if (typeof window === 'undefined') return;
+    const handleVisibilityOrUnload = () => {
+      if (document.visibilityState === 'hidden') {
+        flushPendingThemeWrite();
       }
     };
-  }, []);
+    window.addEventListener('pagehide', flushPendingThemeWrite);
+    document.addEventListener('visibilitychange', handleVisibilityOrUnload);
+    return () => {
+      window.removeEventListener('pagehide', flushPendingThemeWrite);
+      document.removeEventListener('visibilitychange', handleVisibilityOrUnload);
+      flushPendingThemeWrite();
+    };
+  }, [flushPendingThemeWrite]);
 
   const currentAccent = ACCENT_PRESETS.find((p) => p.id === settings.accentPreset);
   const currentAccentHex =

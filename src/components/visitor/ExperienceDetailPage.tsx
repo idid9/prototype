@@ -137,6 +137,15 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
       return;
     }
 
+    if (email.trim().length < 3 || phone.trim().length < 3) {
+      setFormError(
+        isArabic
+          ? 'يرجى إدخال بريد إلكتروني ورقم هاتف صحيحين (٣ أحرف على الأقل).'
+          : 'Please enter a valid email and phone number (at least 3 characters).'
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
