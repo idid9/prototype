@@ -14,7 +14,7 @@ interface InteractiveTabProps {
 export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, currentAccentBtnTextHex } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -139,7 +139,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
 
         <button
           onClick={handleOpenCreate}
-          style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+          style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
           className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
@@ -164,10 +164,10 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                   {localizeCategory(q.category, language)}
                 </span>
                 <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                     q.active
-                      ? 'bg-emerald-500/15 text-emerald-400'
-                      : 'bg-neutral-500/15 text-[var(--tf-muted)]'
+                      ? 'bg-[var(--tf-success-bg)] text-[var(--tf-success-text)] border-[var(--tf-success-border)]'
+                      : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)]'
                   }`}
                 >
                   {q.active ? (isArabic ? 'نشط' : 'ACTIVE') : isArabic ? 'غير نشط' : 'INACTIVE'}
@@ -188,13 +188,13 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                     key={i}
                     className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
                       i === q.correctIndex
-                        ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-300 font-bold'
+                        ? 'border-[var(--tf-success-border)] bg-[var(--tf-success-bg)] text-[var(--tf-success-text)] font-bold'
                         : 'border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-text)]'
                     }`}
                   >
                     <span>{isArabic ? q.optionsAr?.[i] || opt : opt}</span>
                     {i === q.correctIndex && (
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 text-[var(--tf-success-text)] shrink-0" />
                     )}
                   </div>
                 ))}
@@ -233,7 +233,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                 </button>
                 <button
                   onClick={() => handleDelete(q.id)}
-                  className="p-2 text-red-400 hover:bg-red-500/15 rounded-xl border border-red-400/40 cursor-pointer"
+                  className="p-2 text-[var(--tf-danger-text)] hover:bg-[var(--tf-danger-bg)] rounded-xl border border-[var(--tf-danger-border)] cursor-pointer"
                   title={isArabic ? 'حذف السؤال' : 'Delete Question'}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -250,9 +250,9 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
           dir={isRtl ? 'rtl' : 'ltr'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
-              <h3 className="font-serif text-xl font-bold text-[#123B32]">
+          <div className="bg-[var(--tf-modal-bg)] border border-[var(--tf-border)] rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[var(--tf-text)]">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--tf-border)] mb-6">
+              <h3 className="font-serif text-xl font-bold text-[var(--tf-heading)]">
                 {editingId
                   ? isArabic
                     ? 'تعديل سؤال الاختبار'
@@ -261,7 +261,10 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                   ? 'إنشاء سؤال اختبار جديد'
                   : 'Create Quiz Question'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 text-[#777D75]">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] rounded-lg hover:bg-[var(--tf-surface-hover)] cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -269,7 +272,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'التصنيف' : 'Category'}
                   </label>
                   <input
@@ -277,16 +280,17 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     placeholder={isArabic ? 'مثال: التراث والتاريخ' : 'e.g. Heritage & History'}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div className="flex items-end pb-2">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-[#123B32] cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[var(--tf-heading)] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={active}
                       onChange={(e) => setActive(e.target.checked)}
-                      className="rounded text-[#123B32]"
+                      style={{ accentColor: currentAccentHex }}
+                      className="rounded"
                     />
                     <span>
                       {isArabic ? 'نشط في اختبار بوابة الزوار' : 'Active on Visitor Portal Quiz'}
@@ -296,7 +300,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                   {isArabic ? 'السؤال (بالإنجليزية) *' : 'Question (English) *'}
                 </label>
                 <input
@@ -304,12 +308,12 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                   required
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                   {isArabic ? 'السؤال (بالعربية)' : 'Question (Arabic)'}
                 </label>
                 <input
@@ -317,13 +321,13 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                   dir="rtl"
                   value={questionAr}
                   onChange={(e) => setQuestionAr(e.target.value)}
-                  className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                  className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                 />
               </div>
 
               {/* Options */}
               <div className="space-y-2 pt-2">
-                <label className="block text-xs font-bold text-[#123B32]">
+                <label className="block text-xs font-bold text-[var(--tf-heading)]">
                   {isArabic
                     ? 'خيارات الإجابة (اختر الدائرة للإجابة الصحيحة):'
                     : 'Multiple Choice Options (Select radio for correct answer):'}
@@ -341,7 +345,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                         name="correctIdxRadio"
                         checked={correctIndex === item.idx}
                         onChange={() => setCorrectIndex(item.idx)}
-                        className="text-[#123B32]"
+                        style={{ accentColor: currentAccentHex }}
                       />
                       <input
                         type="text"
@@ -351,7 +355,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                         }
                         value={item.val}
                         onChange={(e) => item.set(e.target.value)}
-                        className="flex-1 text-xs p-2 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-lg"
+                        className="flex-1 text-xs p-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-lg focus:outline-none"
                       />
                     </div>
                     <div className="sm:col-span-6">
@@ -361,7 +365,7 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                         placeholder={`الخيار ${item.idx + 1} (عربي)`}
                         value={item.valAr}
                         onChange={(e) => item.setAr(e.target.value)}
-                        className="w-full text-xs p-2 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-lg"
+                        className="w-full text-xs p-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-lg focus:outline-none"
                       />
                     </div>
                   </div>
@@ -370,18 +374,18 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'التوضيح / المعلومة التاريخية (EN)' : 'Explanation / Historical Fact (EN)'}
                   </label>
                   <textarea
                     rows={2}
                     value={explanation}
                     onChange={(e) => setExplanation(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'التوضيح / المعلومة التاريخية (عربي)' : 'Explanation (AR)'}
                   </label>
                   <textarea
@@ -389,22 +393,23 @@ export const InteractiveTab: React.FC<InteractiveTabProps> = ({ quizzes }) => {
                     dir="rtl"
                     value={explanationAr}
                     onChange={(e) => setExplanationAr(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#D9C29A]/40 flex justify-end gap-3">
+              <div className="pt-4 border-t border-[var(--tf-border)] flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="py-2 px-4 text-xs font-semibold text-[#777D75] cursor-pointer"
+                  className="py-2 px-4 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] hover:bg-[var(--tf-surface-hover)] rounded-xl cursor-pointer"
                 >
                   {isArabic ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="py-2 px-5 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                  className="py-2 px-5 rounded-xl text-xs font-bold cursor-pointer transition-opacity hover:opacity-90"
                 >
                   {editingId
                     ? isArabic

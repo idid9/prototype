@@ -28,7 +28,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   emptyPlaceholder,
 }) => {
   const { language, isRtl } = useLanguage();
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, currentAccentBtnTextHex } = useTheme();
   const isArabic = language === 'ar';
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -38,10 +38,10 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   const [uploadMeta, setUploadMeta] = useState<{ fileName: string; sizeKb: number } | null>(null);
 
   const isModalLight = variant === 'modal-light';
-  const headingClass = isModalLight ? 'text-[#123B32]' : 'text-[var(--tf-heading)]';
-  const mutedClass = isModalLight ? 'text-[#777D75]' : 'text-[var(--tf-muted)]';
+  const headingClass = 'text-[var(--tf-heading)]';
+  const mutedClass = 'text-[var(--tf-muted)]';
   const surfaceClass = isModalLight
-    ? 'bg-[#FAF8F5] border-[#D9C29A]/60 text-[#202923]'
+    ? 'bg-[var(--tf-modal-subtle)] border-[var(--tf-border)] text-[var(--tf-text)]'
     : 'bg-[var(--tf-input-bg)] border-[var(--tf-border)] text-[var(--tf-text)]';
 
   const resolvedEmptyPlaceholder =
@@ -97,7 +97,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           {label}
         </label>
         {value && isUploadedFromDevice && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500">
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--tf-success-text)]">
             <CheckCircle2 className="w-3 h-3" />
             <span>
               {uploadMeta
@@ -142,7 +142,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent flex flex-col justify-between p-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/55 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/55 backdrop-blur-md text-[#FAF0DC] text-[11px] font-semibold border border-[#FAF0DC]/20">
                   <ImageIcon className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
                   <span>
                     {isUploadedFromDevice
@@ -163,7 +163,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
                       setUploadMeta(null);
                       onClear();
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/60 hover:bg-red-600 text-white text-[11px] font-semibold transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/60 hover:bg-red-600 text-[#FAF0DC] text-[11px] font-semibold transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" />
                     <span>{isArabic ? 'إزالة' : 'Remove'}</span>
@@ -172,13 +172,13 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
               </div>
 
               <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] text-white/85">
+                <span className="text-[11px] text-[#FAF0DC]/90">
                   {isArabic
                     ? 'انقر أو أسقط صورة هنا للاستبدال من جهازك'
                     : 'Click or drop a photo here to replace from device'}
                 </span>
                 <span
-                  style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-sm shrink-0"
                 >
                   {isProcessing ? (
@@ -203,7 +203,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           <div className={`w-full ${previewHeightClass} flex flex-col items-center justify-center p-4 text-center gap-2`}>
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-              style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+              style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
             >
               {isProcessing ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -232,7 +232,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
       )}
 
       {errorMsg && (
-        <div className="flex items-center gap-1.5 text-[11px] text-red-500 font-semibold">
+        <div className="flex items-center gap-1.5 text-[11px] text-[var(--tf-danger-text)] font-semibold">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>{errorMsg}</span>
         </div>

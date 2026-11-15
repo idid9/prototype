@@ -37,7 +37,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
   onPreviewExperience,
 }) => {
   const { language, isRtl } = useLanguage();
-  const { currentAccentHex, isDarkGlass } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex, isDarkGlass } = useTheme();
   const isArabic = language === 'ar';
 
   const [searchFilter, setSearchFilter] = useState('');
@@ -243,7 +243,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
 
         <button
           onClick={handleOpenCreate}
-          style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+          style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
           className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
@@ -265,7 +265,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
             }
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
+            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
           />
         </div>
 
@@ -352,7 +352,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                             {isArabic ? exp.titleAr : exp.title}
                           </div>
                           {exp.featured && (
-                            <span className="text-[10px] font-bold" style={{ color: currentAccentHex }}>
+                            <span className="text-[10px] font-bold" style={{ color: currentAccentTextHex }}>
                               ★ {isArabic ? 'باقة مميزة' : 'Featured Package'}
                             </span>
                           )}
@@ -457,12 +457,12 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
           dir={isRtl ? 'rtl' : 'ltr'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-[#D9C29A]/50 shadow-xl text-center">
-            <AlertCircle className="w-10 h-10 text-red-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-[#123B32] mb-1">
+          <div className="bg-[var(--tf-modal-bg)] rounded-2xl p-6 max-w-sm w-full border border-[var(--tf-border)] shadow-xl text-center text-[var(--tf-text)]">
+            <AlertCircle className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            <h3 className="text-base font-bold text-[var(--tf-heading)] mb-1">
               {isArabic ? 'تأكيد الحذف' : 'Confirm Removal'}
             </h3>
-            <p className="text-xs text-[#777D75] mb-6">
+            <p className="text-xs text-[var(--tf-muted)] mb-6">
               {isArabic
                 ? 'هل أنت متأكد من حذف هذه التجربة؟ ستتم إزالتها فوراً من القوائم العامة للزوار.'
                 : 'Are you sure you want to delete this experience? It will be removed immediately from public listings.'}
@@ -470,13 +470,13 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setDeleteConfirmationId(null)}
-                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#777D75] bg-neutral-100 rounded-xl cursor-pointer"
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl cursor-pointer hover:bg-[var(--tf-surface-hover)]"
               >
                 {isArabic ? 'إلغاء' : 'Cancel'}
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirmationId)}
-                className="w-1/2 py-2 px-3 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#FAF0DC] bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
               >
                 {isArabic ? 'حذف' : 'Delete'}
               </button>
@@ -491,10 +491,10 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
           dir={isRtl ? 'rtl' : 'ltr'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
         >
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-3xl w-full my-8 p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
+          <div className="bg-[var(--tf-modal-bg)] border border-[var(--tf-border)] rounded-2xl shadow-2xl max-w-3xl w-full my-8 p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[var(--tf-text)]">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--tf-border)] mb-6">
               <div>
-                <h3 className="font-serif text-xl font-bold text-[#123B32]">
+                <h3 className="font-serif text-xl font-bold text-[var(--tf-heading)]">
                   {editingExperienceId
                     ? isArabic
                       ? 'تعديل التجربة السياحية'
@@ -503,7 +503,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     ? 'إنشاء تجربة سياحية جديدة'
                     : 'Create New Tourism Experience'}
                 </h3>
-                <p className="text-xs text-[#777D75]">
+                <p className="text-xs text-[var(--tf-muted)]">
                   {isArabic
                     ? 'تتزامن التغييرات مباشرة مع موقع الزوار العام.'
                     : 'Changes synchronize live with the public visitor website.'}
@@ -511,14 +511,14 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-[#777D75] hover:text-[#123B32] rounded-lg hover:bg-neutral-100"
+                className="p-1.5 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] rounded-lg hover:bg-[var(--tf-surface-hover)] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl mb-4">
+              <div className="p-3 bg-[var(--tf-danger-bg)] border border-[var(--tf-danger-border)] text-[var(--tf-danger-text)] text-xs rounded-xl mb-4">
                 {formError}
               </div>
             )}
@@ -527,7 +527,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
               {/* Title & Arabic Title */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'العنوان (بالإنجليزية) *' : 'Title (English) *'}
                   </label>
                   <input
@@ -536,11 +536,11 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. AlUla Desert Stargazing"
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'العنوان (بالعربية)' : 'Title (Arabic)'}
                   </label>
                   <input
@@ -549,7 +549,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     value={titleAr}
                     onChange={(e) => setTitleAr(e.target.value)}
                     placeholder="مثال: جولة رصد النجوم بالعلا"
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
@@ -557,13 +557,13 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
               {/* Destination & Category */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'الوجهة *' : 'Destination *'}
                   </label>
                   <select
                     value={destinationId}
                     onChange={(e) => setDestinationId(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32] cursor-pointer"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none cursor-pointer"
                   >
                     {destinations.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -573,13 +573,13 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'الفئة *' : 'Category *'}
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as any)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32] cursor-pointer"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none cursor-pointer"
                   >
                     {categories.map((c) => (
                       <option key={c} value={c}>
@@ -593,7 +593,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
               {/* Price, Duration, Slug */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'السعر (ريال) *' : 'Price (SAR) *'}
                   </label>
                   <input
@@ -602,11 +602,11 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     min={50}
                     value={price}
                     onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'المدة (مثلاً: 4 ساعات)' : 'Duration (e.g. 4 hours)'}
                   </label>
                   <input
@@ -615,11 +615,11 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     onChange={(e) =>
                       isArabic ? setDurationAr(e.target.value) : setDuration(e.target.value)
                     }
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'رابط URL المختصر' : 'URL Slug'}
                   </label>
                   <input
@@ -628,7 +628,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     dir="ltr"
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
@@ -645,34 +645,49 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                 />
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] text-[#777D75]">
+                  <span className="text-[11px] text-[var(--tf-muted)]">
                     {isArabic ? 'صور نموذجية سريعة:' : 'Quick Sample Photos:'}
                   </span>
-                  {imagePresets.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setCoverImage(preset.url)}
-                      className={`text-[11px] px-2.5 py-1 rounded-lg border cursor-pointer ${
-                        coverImage === preset.url
-                          ? 'bg-[#123B32] text-white border-[#123B32]'
-                          : 'bg-[#FAF8F5] text-[#123B32] border-[#D9C29A]/50 hover:bg-[#D9C29A]/20'
-                      }`}
-                    >
-                      {isArabic ? preset.labelAr : preset.label}
-                    </button>
-                  ))}
+                  {imagePresets.map((preset, idx) => {
+                    const selected = coverImage === preset.url;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setCoverImage(preset.url)}
+                        style={
+                          selected
+                            ? {
+                                backgroundColor: currentAccentHex,
+                                borderColor: currentAccentHex,
+                                color: currentAccentBtnTextHex,
+                              }
+                            : undefined
+                        }
+                        className={`text-[11px] px-2.5 py-1 rounded-lg border cursor-pointer transition-colors ${
+                          selected
+                            ? 'font-bold'
+                            : 'bg-[var(--tf-modal-subtle)] text-[var(--tf-text)] border-[var(--tf-border)] hover:bg-[var(--tf-surface-hover)]'
+                        }`}
+                      >
+                        {isArabic ? preset.labelAr : preset.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Additional Gallery Photos from Device */}
-                <div className="p-3 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl space-y-2.5">
+                <div className="p-3 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-[#123B32]">
+                    <span className="text-xs font-semibold text-[var(--tf-heading)]">
                       {isArabic
                         ? `صور معرض التجربة (${gallery.length})`
                         : `Experience Gallery Photos (${gallery.length})`}
                     </span>
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#123B32] hover:bg-[#1D5546] text-white text-[11px] font-semibold cursor-pointer transition-colors">
+                    <label
+                      style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-opacity hover:opacity-90"
+                    >
                       <Upload className="w-3.5 h-3.5" />
                       <span>{isArabic ? 'إضافة صور من الجهاز' : 'Add Photos from Device'}</span>
                       <input
@@ -718,13 +733,13 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                       {gallery.map((imgUrl, idx) => (
                         <div
                           key={idx}
-                          className="relative w-16 h-12 rounded-lg overflow-hidden border border-[#D9C29A]/60 group"
+                          className="relative w-16 h-12 rounded-lg overflow-hidden border border-[var(--tf-border)] group"
                         >
                           <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
                           <button
                             type="button"
                             onClick={() => setGallery((prev) => prev.filter((_, i) => i !== idx))}
-                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 text-[#FAF0DC] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                             title={isArabic ? 'إزالة الصورة' : 'Remove photo'}
                           >
                             <X className="w-2.5 h-2.5" />
@@ -739,18 +754,18 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
               {/* Descriptions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'الوصف (بالإنجليزية)' : 'Description (English)'}
                   </label>
                   <textarea
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'الوصف (بالعربية)' : 'Description (Arabic)'}
                   </label>
                   <textarea
@@ -758,7 +773,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     dir="rtl"
                     value={descriptionAr}
                     onChange={(e) => setDescriptionAr(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
@@ -766,25 +781,25 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
               {/* Highlights & Inclusions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'أبرز المميزات (سطر لكل نقطة)' : 'Highlights (One per line)'}
                   </label>
                   <textarea
                     rows={2}
                     value={highlightsInput}
                     onChange={(e) => setHighlightsInput(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'ما تتضمنه التجربة (سطر لكل نقطة)' : "What's Included (One per line)"}
                   </label>
                   <textarea
                     rows={2}
                     value={inclusionsInput}
                     onChange={(e) => setInclusionsInput(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
@@ -792,7 +807,7 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
               {/* Meeting Point & Status / Featured */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'نقطة التجمع' : 'Meeting Point'}
                   </label>
                   <input
@@ -803,17 +818,17 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                         ? setMeetingPointAr(e.target.value)
                         : setMeetingPoint(e.target.value)
                     }
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'حالة النشر *' : 'Publication Status *'}
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as any)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl font-bold focus:outline-none focus:ring-1 focus:ring-[#123B32] cursor-pointer"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl font-bold focus:outline-none cursor-pointer"
                   >
                     <option value="PUBLISHED">
                       {isArabic ? 'منشور (مرئي للجمهور)' : 'PUBLISHED (Visible to Public)'}
@@ -830,26 +845,28 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     id="featuredCheckbox"
                     checked={featured}
                     onChange={(e) => setFeatured(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#123B32] focus:ring-[#123B32]"
+                    style={{ accentColor: currentAccentHex }}
+                    className="w-4 h-4 rounded"
                   />
-                  <label htmlFor="featuredCheckbox" className="text-xs font-semibold text-[#123B32] cursor-pointer">
+                  <label htmlFor="featuredCheckbox" className="text-xs font-semibold text-[var(--tf-heading)] cursor-pointer">
                     {isArabic ? 'مميزة في واجهة الصفحة الرئيسية' : 'Featured Homepage Carousel'}
                   </label>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="pt-6 border-t border-[#D9C29A]/40 flex items-center justify-end gap-3">
+              <div className="pt-6 border-t border-[var(--tf-border)] flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="py-2.5 px-4 text-xs font-semibold text-[#777D75] hover:bg-neutral-100 rounded-xl cursor-pointer"
+                  className="py-2.5 px-4 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] hover:bg-[var(--tf-surface-hover)] rounded-xl cursor-pointer"
                 >
                   {isArabic ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="py-2.5 px-6 text-xs font-semibold text-white bg-[#123B32] hover:bg-[#1D5546] rounded-xl shadow-sm cursor-pointer transition-colors"
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                  className="py-2.5 px-6 text-xs font-bold rounded-xl shadow-sm cursor-pointer transition-opacity hover:opacity-90"
                 >
                   {editingExperienceId
                     ? isArabic

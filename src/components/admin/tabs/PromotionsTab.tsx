@@ -21,7 +21,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
 }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex } = useTheme();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
@@ -138,7 +138,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
 
         <button
           onClick={handleOpenCreate}
-          style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+          style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
           className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-opacity hover:opacity-90 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
@@ -165,14 +165,14 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 {(promo.badge || promo.badgeAr) && (
                   <div
-                    className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-2 py-0.5 rounded text-[#102E29] text-[10px] font-bold"
-                    style={{ backgroundColor: currentAccentHex }}
+                    className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-2 py-0.5 rounded text-[10px] font-bold"
+                    style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                   >
                     {isArabic ? promo.badgeAr || promo.badge : promo.badge}
                   </div>
                 )}
-                <div className="absolute bottom-3 left-3 rtl:left-auto rtl:right-3 text-white">
-                  <h3 className="font-serif text-lg font-bold">
+                <div className="absolute bottom-3 left-3 rtl:left-auto rtl:right-3 text-[#FAF0DC]">
+                  <h3 className="font-serif text-lg font-bold tf-photo-text">
                     {isArabic ? promo.titleAr || promo.title : promo.title}
                   </h3>
                 </div>
@@ -191,8 +191,8 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                       promo.active
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-400/35'
-                        : 'bg-neutral-500/15 text-[var(--tf-muted)] border-[var(--tf-border)]'
+                        ? 'bg-[var(--tf-success-bg)] text-[var(--tf-success-text)] border-[var(--tf-success-border)]'
+                        : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)]'
                     }`}
                   >
                     {promo.active
@@ -278,7 +278,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
             />
             <button
               type="submit"
-              style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+              style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
               className="py-2 px-3.5 rounded-xl text-xs font-bold cursor-pointer transition-opacity hover:opacity-90"
             >
               {isArabic ? 'إضافة قسيمة' : 'Add Voucher'}
@@ -331,10 +331,10 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                   </td>
                   <td className="py-3 px-3">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                         c.active
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : 'bg-neutral-500/15 text-[var(--tf-muted)]'
+                          ? 'bg-[var(--tf-success-bg)] text-[var(--tf-success-text)] border-[var(--tf-success-border)]'
+                          : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)]'
                       }`}
                     >
                       {c.active
@@ -351,7 +351,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                       type="button"
                       onClick={() => DataService.updateCoupon(c.id, { active: !c.active })}
                       className="text-xs font-semibold hover:underline cursor-pointer"
-                      style={{ color: currentAccentHex }}
+                      style={{ color: currentAccentTextHex }}
                     >
                       {c.active
                         ? isArabic
@@ -375,9 +375,9 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
           dir={isRtl ? 'rtl' : 'ltr'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
-              <h3 className="font-serif text-xl font-bold text-[#123B32]">
+          <div className="bg-[var(--tf-modal-bg)] border border-[var(--tf-border)] rounded-2xl shadow-2xl max-w-xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[var(--tf-text)]">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--tf-border)] mb-6">
+              <h3 className="font-serif text-xl font-bold text-[var(--tf-heading)]">
                 {editingPromoId
                   ? isArabic
                     ? 'تعديل الحملة الترويجية'
@@ -388,7 +388,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-[#777D75] hover:text-[#123B32]"
+                className="p-1.5 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] rounded-lg hover:bg-[var(--tf-surface-hover)] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -397,7 +397,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'عنوان الحملة (بالإنجليزية) *' : 'Campaign Title (English) *'}
                   </label>
                   <input
@@ -405,11 +405,11 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'عنوان الحملة (بالعربية)' : 'Campaign Title (Arabic)'}
                   </label>
                   <input
@@ -417,25 +417,25 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                     dir="rtl"
                     value={titleAr}
                     onChange={(e) => setTitleAr(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'وسم الشارة (بالإنجليزية)' : 'Badge Tag (English)'}
                   </label>
                   <input
                     type="text"
                     value={badge}
                     onChange={(e) => setBadge(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'وسم الشارة (بالعربية)' : 'Badge Tag (Arabic)'}
                   </label>
                   <input
@@ -443,7 +443,7 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                     dir="rtl"
                     value={badgeAr}
                     onChange={(e) => setBadgeAr(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
@@ -459,18 +459,18 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'وصف الحملة (بالإنجليزية)' : 'Campaign Description (English)'}
                   </label>
                   <textarea
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'وصف الحملة (بالعربية)' : 'Campaign Description (Arabic)'}
                   </label>
                   <textarea
@@ -478,14 +478,14 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                     dir="rtl"
                     value={descriptionAr}
                     onChange={(e) => setDescriptionAr(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'نص زر الإجراء' : 'CTA Button Label'}
                   </label>
                   <input
@@ -494,11 +494,11 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                     onChange={(e) =>
                       isArabic ? setCtaTextAr(e.target.value) : setCtaText(e.target.value)
                     }
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#123B32] mb-1">
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'رابط القسم المستهدف' : 'CTA Target Section Link'}
                   </label>
                   <input
@@ -506,18 +506,19 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                     dir="ltr"
                     value={ctaLink}
                     onChange={(e) => setCtaLink(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl"
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="pt-2">
-                <label className="flex items-center gap-2 text-xs font-semibold text-[#123B32] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs font-semibold text-[var(--tf-heading)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#123B32]"
+                    style={{ accentColor: currentAccentHex }}
+                    className="w-4 h-4 rounded"
                   />
                   <span>
                     {isArabic
@@ -527,17 +528,18 @@ export const PromotionsTab: React.FC<PromotionsTabProps> = ({
                 </label>
               </div>
 
-              <div className="pt-4 border-t border-[#D9C29A]/40 flex justify-end gap-3">
+              <div className="pt-4 border-t border-[var(--tf-border)] flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="py-2 px-4 text-xs font-semibold text-[#777D75] cursor-pointer"
+                  className="py-2 px-4 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] hover:bg-[var(--tf-surface-hover)] rounded-xl cursor-pointer"
                 >
                   {isArabic ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="py-2 px-5 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                  className="py-2 px-5 rounded-xl text-xs font-bold cursor-pointer transition-opacity hover:opacity-90"
                 >
                   {isArabic ? 'حفظ الحملة' : 'Save Campaign'}
                 </button>

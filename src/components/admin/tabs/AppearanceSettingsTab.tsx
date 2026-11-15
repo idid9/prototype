@@ -43,6 +43,8 @@ export const AppearanceSettingsTab: React.FC = () => {
     updateVisitorGlassy,
     resetToDefaults,
     currentAccentHex,
+    currentAccentTextHex,
+    currentAccentBtnTextHex,
     currentAccentRgb,
     blurPixels,
     getGlassyCardStyle,
@@ -128,7 +130,7 @@ export const AppearanceSettingsTab: React.FC = () => {
         <div>
           <div
             className="text-xs font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5"
-            style={{ color: currentAccentHex }}
+            style={{ color: currentAccentTextHex }}
           >
             <Palette className="w-4 h-4" />
             <span>
@@ -154,7 +156,7 @@ export const AppearanceSettingsTab: React.FC = () => {
           onClick={resetToDefaults}
           className="py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <RotateCcw className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+          <RotateCcw className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
           <span>{isArabic ? 'إعادة الضبط للافتراضي' : 'Reset Default Theme'}</span>
         </button>
       </div>
@@ -197,16 +199,13 @@ export const AppearanceSettingsTab: React.FC = () => {
               <div>
                 <div
                   className="text-[11px] font-bold uppercase tracking-wider"
-                  style={{ color: currentAccentHex, textShadow: 'var(--tf-text-shadow)' }}
+                  style={{ color: currentAccentTextHex }}
                 >
                   {isArabic
                     ? 'معاينة فورية لأيقونات ومظهر لوحة الزوار'
                     : 'Live Visitor Panel Icon & Glass Preview'}
                 </div>
-                <p
-                  className="text-[11px] text-[var(--tf-muted)]"
-                  style={{ textShadow: 'var(--tf-text-shadow)' }}
-                >
+                <p className="text-[11px] text-[var(--tf-muted)]">
                   {isArabic
                     ? 'تعرض هذه المعاينة شكل الأيقونات والألواح الزجاجية كما يراها الزائر مباشرة.'
                     : 'Updates instantaneously as you adjust blur, text contrast, icon theme, or wallpaper.'}
@@ -216,7 +215,6 @@ export const AppearanceSettingsTab: React.FC = () => {
 
             <div
               className="text-[11px] font-mono tabular-nums text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] px-3 py-1.5 rounded-xl shrink-0"
-              style={{ textShadow: 'var(--tf-text-shadow)' }}
               dir="ltr"
             >
               {`Blur ${blurPixels}px · ${Math.round(settings.cardTranslucency * 100)}% · Glow ${Math.round(
@@ -237,19 +235,13 @@ export const AppearanceSettingsTab: React.FC = () => {
               >
                 <Compass className="w-4 h-4" />
               </div>
-              <span
-                className="font-bold text-sm tracking-tight text-[var(--tf-heading)] truncate"
-                style={{ textShadow: 'var(--tf-text-shadow)' }}
-              >
+              <span className="font-bold text-sm tracking-tight text-[var(--tf-heading)] truncate">
                 {isArabic ? 'تور' : 'Tour'}
-                <span style={{ color: currentAccentHex }}>{isArabic ? 'فلو' : 'Flow'}</span>
+                <span style={{ color: currentAccentTextHex }}>{isArabic ? 'فلو' : 'Flow'}</span>
               </span>
             </div>
 
-            <div
-              className="hidden md:flex items-center gap-4 text-[11px] font-medium text-[var(--tf-text)]"
-              style={{ textShadow: 'var(--tf-text-shadow)' }}
-            >
+            <div className="hidden md:flex items-center gap-4 text-[11px] font-medium text-[var(--tf-text)]">
               <span>{isArabic ? 'استكشف' : 'Explore'}</span>
               <span>{isArabic ? 'الوجهات' : 'Destinations'}</span>
               <span>{isArabic ? 'التجارب' : 'Experiences'}</span>
@@ -257,12 +249,12 @@ export const AppearanceSettingsTab: React.FC = () => {
 
             <div className="flex items-center gap-2 shrink-0">
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-heading)]">
-                <Globe className="w-3 h-3" style={{ color: currentAccentHex }} />
+                <Globe className="w-3 h-3" style={{ color: currentAccentTextHex }} />
                 <span>{isArabic ? 'العربية' : 'EN'}</span>
               </span>
               <span
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold"
-                style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
               >
                 <Sparkles className="w-3 h-3" />
                 <span>{isArabic ? 'احجز الآن' : 'Explore'}</span>
@@ -278,10 +270,7 @@ export const AppearanceSettingsTab: React.FC = () => {
               className="rounded-xl p-3.5 space-y-2.5 transition-all duration-200"
             >
               <div className="flex items-center justify-between">
-                <span
-                  className="text-[11px] font-bold text-[var(--tf-heading)]"
-                  style={{ textShadow: 'var(--tf-text-shadow)' }}
-                >
+                <span className="text-[11px] font-bold text-[var(--tf-heading)]">
                   {isArabic ? 'أيقونات المزايا والثقة' : 'Visitor Commitment Icons'}
                 </span>
                 <span className="text-[10px] font-mono text-[var(--tf-muted)]">
@@ -299,10 +288,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <p
-                className="text-[11px] text-[var(--tf-muted)] leading-snug"
-                style={{ textShadow: 'var(--tf-text-shadow)' }}
-              >
+              <p className="text-[11px] text-[var(--tf-muted)] leading-snug">
                 {isArabic
                   ? 'رواة سعوديون معتمدون وتسعير مباشر بالريال السعودي.'
                   : 'Certified Saudi guides & transparent direct SAR pricing.'}
@@ -315,10 +301,7 @@ export const AppearanceSettingsTab: React.FC = () => {
               className="rounded-xl p-3.5 space-y-2.5 transition-all duration-200"
             >
               <div className="flex items-center justify-between gap-2">
-                <span
-                  className="text-[11px] font-bold text-[var(--tf-heading)] truncate"
-                  style={{ textShadow: 'var(--tf-text-shadow)' }}
-                >
+                <span className="text-[11px] font-bold text-[var(--tf-heading)] truncate">
                   {isArabic ? 'مغامرة وتراث العلا' : 'AlUla Hegra Heritage'}
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-[var(--tf-heading)] shrink-0">
@@ -331,24 +314,21 @@ export const AppearanceSettingsTab: React.FC = () => {
               </div>
               <div className="flex flex-wrap items-center gap-3 text-[11px] text-[var(--tf-text)]">
                 <span className="inline-flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+                  <MapPin className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
                   <span>{isArabic ? 'العلا' : 'AlUla'}</span>
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+                  <Clock className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
                   <span>{isArabic ? '4 ساعات' : '4 hours'}</span>
                 </span>
               </div>
               <div className="pt-2 border-t border-[var(--tf-border)] flex items-center justify-between text-[11px]">
                 <span className="inline-flex items-center gap-1 text-[var(--tf-muted)]">
-                  <Search className="w-3 h-3" style={{ color: currentAccentHex }} />
+                  <Search className="w-3 h-3" style={{ color: currentAccentTextHex }} />
                   <span>{isArabic ? 'شريط البحث' : 'Filter Icon'}</span>
                 </span>
-                <span
-                  className="font-mono font-bold text-[var(--tf-heading)] tabular-nums"
-                  style={{ textShadow: 'var(--tf-text-shadow)' }}
-                >
-                  450 <span style={{ color: currentAccentHex }}>{isArabic ? 'ر.س' : 'SAR'}</span>
+                <span className="font-mono font-bold text-[var(--tf-heading)] tabular-nums">
+                  450 <span style={{ color: currentAccentTextHex }}>{isArabic ? 'ر.س' : 'SAR'}</span>
                 </span>
               </div>
             </div>
@@ -366,10 +346,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div
-                    className="text-[11px] font-bold text-[var(--tf-heading)] truncate"
-                    style={{ textShadow: 'var(--tf-text-shadow)' }}
-                  >
+                  <div className="text-[11px] font-bold text-[var(--tf-heading)] truncate">
                     {isArabic ? 'تحدي المعرفة والمستكشف' : 'Interactive Matcher & Quiz'}
                   </div>
                   <div className="text-[10px] text-[var(--tf-muted)] truncate">
@@ -377,10 +354,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div
-                className="text-[11px] text-[var(--tf-text)] leading-snug"
-                style={{ textShadow: 'var(--tf-text-shadow)' }}
-              >
+              <div className="text-[11px] text-[var(--tf-text)] leading-snug">
                 {isArabic
                   ? 'نصوص وأيقونات عالية التباين فوق الخلفية المختارة.'
                   : 'High-contrast typography & icons synced over active wallpaper.'}
@@ -422,12 +396,12 @@ export const AppearanceSettingsTab: React.FC = () => {
                 onClick={() => updateSettings({ glassSurfaceTone: 'dark' })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   settings.glassSurfaceTone === 'dark'
-                    ? 'shadow-sm text-[#102E29]'
+                    ? 'shadow-sm'
                     : 'text-[var(--tf-muted)] hover:text-[var(--tf-heading)]'
                 }`}
                 style={
                   settings.glassSurfaceTone === 'dark'
-                    ? { backgroundColor: currentAccentHex }
+                    ? { backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }
                     : undefined
                 }
               >
@@ -439,12 +413,12 @@ export const AppearanceSettingsTab: React.FC = () => {
                 onClick={() => updateSettings({ glassSurfaceTone: 'light' })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   settings.glassSurfaceTone === 'light'
-                    ? 'shadow-sm text-[#102E29]'
+                    ? 'shadow-sm'
                     : 'text-[var(--tf-muted)] hover:text-[var(--tf-heading)]'
                 }`}
                 style={
                   settings.glassSurfaceTone === 'light'
-                    ? { backgroundColor: currentAccentHex }
+                    ? { backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }
                     : undefined
                 }
               >
@@ -494,7 +468,7 @@ export const AppearanceSettingsTab: React.FC = () => {
               <span className="text-[var(--tf-heading)]">
                 {isArabic ? 'مستوى شدة الضبابية (Blur)' : 'Blur Intensity'}
               </span>
-              <span className="font-mono tabular-nums font-bold" style={{ color: currentAccentHex }} dir="ltr">
+              <span className="font-mono tabular-nums font-bold" style={{ color: currentAccentTextHex }} dir="ltr">
                 {blurPixels}px
               </span>
             </div>
@@ -521,7 +495,7 @@ export const AppearanceSettingsTab: React.FC = () => {
               <span className="text-[var(--tf-heading)]">
                 {isArabic ? 'شفافية الطبقة الزجاجية' : 'Glass Transparency'}
               </span>
-              <span className="font-mono tabular-nums font-bold" style={{ color: currentAccentHex }}>
+              <span className="font-mono tabular-nums font-bold" style={{ color: currentAccentTextHex }}>
                 {Math.round(settings.cardTranslucency * 100)}%
               </span>
             </div>
@@ -538,44 +512,64 @@ export const AppearanceSettingsTab: React.FC = () => {
             />
             <div className="flex justify-between text-[11px] text-[var(--tf-muted)]">
               <span>{isArabic ? '١٠٪ (شفاف)' : '10% (Sheer)'}</span>
-              <span>{isArabic ? '٣٤٪ (مثالي)' : '34% (Ideal)'}</span>
+              <span>{isArabic ? '٤٤٪ (متوازن)' : '44% (Balanced)'}</span>
               <span>{isArabic ? '٨٦٪ (كثيف)' : '86% (Opaque)'}</span>
             </div>
           </div>
         </div>
 
-        {/* Text Color Contrast Selector so text never blends into glassy backgrounds */}
+        {/* Text Color Contrast Selector — Strictly Paired 2-Option Mode */}
         <div className="space-y-3 pt-1">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--tf-heading)]">
-            <Type className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+            <Type className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
             <span>
               {isArabic
-                ? 'لون النصوص على الزجاج (لتفادي الاندماج مع الخلفية):'
-                : 'Text Color & Contrast on Glass:'}
+                ? 'لون النصوص على الزجاج (مرتبط تلقائياً بثيم الزجاج):'
+                : 'Text Color & Contrast on Glass (Paired by Theme):'}
             </span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {TEXT_COLOR_OPTIONS.map((opt) => {
               const isSelected = settings.textColorMode === opt.id;
               return (
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => updateSettings({ textColorMode: opt.id })}
-                  className={`p-3 rounded-xl border text-start flex items-center gap-2.5 transition-all cursor-pointer ${
+                  onClick={() =>
+                    updateSettings({
+                      textColorMode: opt.id,
+                      glassSurfaceTone: opt.pairedTone,
+                    })
+                  }
+                  className={`p-3.5 rounded-xl border text-start flex items-center justify-between gap-3 transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-[var(--tf-surface-hover)] shadow-sm'
                       : 'border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)]'
                   }`}
                   style={isSelected ? { borderColor: currentAccentHex } : undefined}
                 >
-                  <span
-                    className="w-5 h-5 rounded-full border border-[var(--tf-border)] shrink-0"
-                    style={{ backgroundColor: opt.swatchHex }}
-                  />
-                  <span className="text-xs font-semibold text-[var(--tf-heading)] leading-tight">
-                    {isArabic ? opt.nameAr : opt.name}
-                  </span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className="w-6 h-6 rounded-full border border-[var(--tf-border)] shrink-0 shadow-xs"
+                      style={{ backgroundColor: opt.swatchHex }}
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-[var(--tf-heading)] leading-tight truncate">
+                        {isArabic ? opt.nameAr : opt.name}
+                      </div>
+                      <div className="text-[11px] text-[var(--tf-muted)] mt-0.5 truncate">
+                        {isArabic ? opt.pairedThemeLabelAr : opt.pairedThemeLabel}
+                      </div>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                    >
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -595,7 +589,7 @@ export const AppearanceSettingsTab: React.FC = () => {
               disabled={!settings.isGlassyEnabled}
               onClick={handleToggleAllVisitorTargets}
               className="text-xs font-semibold hover:underline cursor-pointer disabled:opacity-40"
-              style={{ color: currentAccentHex }}
+              style={{ color: currentAccentTextHex }}
             >
               {allVisitorTargetsActive
                 ? isArabic
@@ -629,7 +623,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                 >
                   <span className="truncate">{isArabic ? opt.labelAr : opt.label}</span>
                   {checked && (
-                    <Check className="w-3.5 h-3.5 shrink-0" style={{ color: currentAccentHex }} />
+                    <Check className="w-3.5 h-3.5 shrink-0" style={{ color: currentAccentTextHex }} />
                   )}
                 </button>
               );
@@ -683,20 +677,20 @@ export const AppearanceSettingsTab: React.FC = () => {
                     styleOpt.id === 'solid'
                       ? {
                           backgroundColor: currentAccentHex,
-                          color: '#0D2620',
+                          color: currentAccentBtnTextHex,
                         }
                       : styleOpt.id === 'glow_outline'
                       ? {
-                          backgroundColor: `rgba(${currentAccentRgb}, 0.16)`,
-                          color: isDarkGlass ? currentAccentHex : '#0B2D24',
-                          border: `1.5px solid ${currentAccentHex}`,
+                          backgroundColor: `rgba(${currentAccentRgb}, 0.14)`,
+                          color: currentAccentTextHex,
+                          border: `1.5px solid ${isDarkGlass ? currentAccentHex : currentAccentTextHex}`,
                         }
                       : {
                           backgroundColor: isDarkGlass
-                            ? 'rgba(255,255,255,0.12)'
-                            : 'rgba(255,255,255,0.8)',
-                          color: isDarkGlass ? currentAccentHex : '#0D2F27',
-                          border: `1px solid rgba(${currentAccentRgb}, 0.6)`,
+                            ? 'rgba(250, 240, 220, 0.10)'
+                            : 'rgba(255, 253, 248, 0.88)',
+                          color: currentAccentTextHex,
+                          border: `1px solid rgba(${currentAccentRgb}, 0.55)`,
                         }
                   }
                 >
@@ -790,9 +784,9 @@ export const AppearanceSettingsTab: React.FC = () => {
             <span className="text-[var(--tf-heading)]">
               {isArabic ? 'شدة توهج الأيقونات وإطار الزجاج' : 'Icon & Glass Border Glow'}
             </span>
-            <span className="font-mono tabular-nums font-bold" style={{ color: currentAccentHex }}>
-              {Math.round(settings.glowStrength * 100)}%
-            </span>
+              <span className="font-mono tabular-nums font-bold" style={{ color: currentAccentTextHex }}>
+                {Math.round(settings.glowStrength * 100)}%
+              </span>
           </div>
           <input
             type="range"
@@ -852,6 +846,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                   updateSettings({
                     backgroundPreset: preset.id,
                     glassSurfaceTone: preset.recommendedTone,
+                    textColorMode: preset.recommendedTone === 'dark' ? 'warm_ivory' : 'emerald_ink',
                   })
                 }
                 className={`relative h-32 rounded-xl border-2 p-3 flex flex-col justify-between text-start transition-all overflow-hidden cursor-pointer ${
@@ -861,7 +856,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                   borderColor: isSelected ? currentAccentHex : undefined,
                   backgroundColor: preset.baseColor,
                   backgroundImage: preset.imageUrl
-                    ? `linear-gradient(to top, rgba(12,16,15,0.78), rgba(12,16,15,0.2)), url(${preset.imageUrl})`
+                    ? `linear-gradient(to top, rgba(12,16,15,0.78), rgba(12,16,15,0.22)), url(${preset.imageUrl})`
                     : preset.gradientImage || 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -871,8 +866,8 @@ export const AppearanceSettingsTab: React.FC = () => {
                   <span
                     className={`text-[11px] font-bold px-2 py-0.5 rounded shadow-xs ${
                       preset.recommendedTone === 'dark'
-                        ? 'bg-black/65 text-white backdrop-blur-sm'
-                        : 'bg-white/90 text-[#0A241E]'
+                        ? 'bg-black/65 text-[#FAF0DC] backdrop-blur-sm'
+                        : 'bg-[#FFFDF8]/92 text-[#0B3B30]'
                     }`}
                   >
                     {isArabic ? preset.nameAr : preset.name}
@@ -880,7 +875,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                   {isSelected && (
                     <div
                       className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                      style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                     >
                       <Check className="w-3 h-3 stroke-[3]" />
                     </div>
@@ -888,7 +883,7 @@ export const AppearanceSettingsTab: React.FC = () => {
                 </div>
                 <span
                   className={`text-[10px] line-clamp-2 ${
-                    preset.recommendedTone === 'dark' ? 'text-white/90' : 'text-[#0A241E]/85'
+                    preset.recommendedTone === 'dark' ? 'text-[#FAF0DC]/90' : 'text-[#0B3B30]/90 font-medium'
                   }`}
                 >
                   {isArabic ? preset.descriptionAr : preset.description}

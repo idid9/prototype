@@ -13,7 +13,7 @@ interface SettingsTabProps {
 export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
   const { language, setLanguage, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex } = useTheme();
 
   const [businessName, setBusinessName] = useState(settings.businessName);
   const [businessEmail, setBusinessEmail] = useState(settings.businessEmail);
@@ -84,8 +84,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
         </div>
 
         {(savedSuccess || resetSuccess) && (
-          <div className="px-3 py-1.5 bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm">
-            <Check className="w-4 h-4 text-emerald-400" />
+          <div className="px-3 py-1.5 bg-[var(--tf-success-bg)] border border-[var(--tf-success-border)] text-[var(--tf-success-text)] text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm">
+            <Check className="w-4 h-4 shrink-0" />
             <span>
               {resetSuccess
                 ? isArabic
@@ -102,7 +102,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
       {/* DATABASE ARCHITECTURE & REALTIME ENGINE STATUS */}
       <GlassContainer className="p-6">
         <div className="flex items-center gap-2 mb-2">
-          <Database className="w-5 h-5" style={{ color: currentAccentHex }} />
+          <Database className="w-5 h-5" style={{ color: currentAccentTextHex }} />
           <h3 className="font-serif text-base font-bold text-[var(--tf-heading)]">
             {isArabic
               ? 'بنية قاعدة البيانات: محرك المزامنة الفورية الثنائي'
@@ -117,7 +117,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="p-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl">
-            <div className="flex items-center gap-1.5 text-emerald-400 font-bold mb-1">
+            <div className="flex items-center gap-1.5 text-[var(--tf-info-text)] font-bold mb-1">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
               <span>{isArabic ? 'محرك الوقت الفعلي نشط' : 'Real-Time Engine Active'}</span>
             </div>
@@ -130,7 +130,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
 
           <div className="p-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl">
             <div className="flex items-center gap-1.5 text-[var(--tf-heading)] font-bold mb-1">
-              <Server className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+              <Server className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
               <span>{isArabic ? 'قواعد الأمان مفعّلة' : 'Firestore Rules Deployed'}</span>
             </div>
             <p className="text-[11px] text-[var(--tf-muted)]">
@@ -142,7 +142,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
 
           <div className="p-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl">
             <div className="flex items-center gap-1.5 text-[var(--tf-heading)] font-bold mb-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--tf-info-text)]" />
               <span>{isArabic ? 'التحكم بالصلاحيات مفعل' : 'Access Control Enforced'}</span>
             </div>
             <p className="text-[11px] text-[var(--tf-muted)]">
@@ -296,7 +296,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
           <button
             type="button"
             onClick={() => setShowResetConfirm(true)}
-            className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-red-400/50 text-red-400 hover:bg-red-500/15 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+            className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-danger-border)] text-[var(--tf-danger-text)] hover:bg-[var(--tf-danger-bg)] rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{isArabic ? 'استعادة البيانات التجريبية' : 'Reset Demo Seed Data'}</span>
@@ -304,7 +304,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
 
           <button
             type="submit"
-            style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+            style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
             className="py-3 px-8 rounded-xl text-xs font-bold shadow-md transition-opacity hover:opacity-90 cursor-pointer"
           >
             {isArabic ? 'حفظ الإعدادات' : 'Save Settings'}
@@ -318,12 +318,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
           dir={isRtl ? 'rtl' : 'ltr'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-[#D9C29A]/50 shadow-xl text-center text-[#202923]">
-            <RotateCcw className="w-10 h-10 text-red-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-[#123B32] mb-1">
+          <div className="bg-[var(--tf-modal-bg)] rounded-2xl p-6 max-w-sm w-full border border-[var(--tf-border)] shadow-xl text-center text-[var(--tf-text)]">
+            <RotateCcw className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            <h3 className="text-base font-bold text-[var(--tf-heading)] mb-1">
               {isArabic ? 'إعادة تعيين كافة البيانات التجريبية؟' : 'Reset All Demo Data?'}
             </h3>
-            <p className="text-xs text-[#777D75] mb-6">
+            <p className="text-xs text-[var(--tf-muted)] mb-6">
               {isArabic
                 ? 'سيؤدي ذلك إلى استعادة جميع الوجهات السعودية الافتراضية والتجارب المنشورة والعروض والاستفسارات النموذجية ومحتوى الموقع.'
                 : 'This will restore all default Saudi destinations, published experiences, promotions, sample inquiries, and CMS copy.'}
@@ -331,13 +331,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ settings }) => {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#777D75] bg-neutral-100 rounded-xl cursor-pointer"
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl cursor-pointer hover:bg-[var(--tf-surface-hover)]"
               >
                 {isArabic ? 'إلغاء' : 'Cancel'}
               </button>
               <button
                 onClick={handleResetDemoData}
-                className="w-1/2 py-2 px-3 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#FAF0DC] bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
               >
                 {isArabic ? 'تأكيد الاستعادة' : 'Confirm Reset'}
               </button>

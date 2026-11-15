@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Promotion, WebsiteContent, Experience } from '../../types';
+import { getSiteText } from '../../utils/siteTexts';
 import {
   Compass,
   Users,
@@ -29,12 +30,14 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
   experiences = [],
   onSelectPromotion,
 }) => {
-  const { language, t, isRtl } = useLanguage();
+  const { language, isRtl } = useLanguage();
   const {
     getVisitorGlassyStyle,
     getGlassyCardStyle,
     getGlassyIconStyle,
     currentAccentHex,
+    currentAccentTextHex,
+    currentAccentBtnTextHex,
   } = useTheme();
   const isArabic = language === 'ar';
 
@@ -71,64 +74,44 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
   const reasons = [
     {
       icon: <Users className="w-5 h-5" />,
-      title: 'Direct Operator Empowerment',
-      titleAr: 'تمكين مباشر للمشغلين المحليين',
-      desc: '100% of our experiences are hosted by Saudi registered SMEs, Bedouin guides, and independent cultural custodians.',
-      descAr: 'جميع تجاربنا يقودها مشغلون سعوديون مرخصون ورواة محليون للحفاظ على الهوية الأصيلة.',
+      title: getSiteText(content, 'why.r1Title', language),
+      desc: getSiteText(content, 'why.r1Desc', language),
     },
     {
       icon: <Award className="w-5 h-5" />,
-      title: 'Certified Saudi Rawis (Storytellers)',
-      titleAr: 'رواة ومرشدون سياحيون معتمدون',
-      desc: 'Every narrative is authenticated by certified local guides recognized by the Ministry of Tourism and the Royal Commissions.',
-      descAr: 'سرد تاريخي موثق بإشراف مرشدين مؤهلين ومعتمدين من وزارة السياحة والهيئات الملكية.',
+      title: getSiteText(content, 'why.r2Title', language),
+      desc: getSiteText(content, 'why.r2Desc', language),
     },
     {
       icon: <Shield className="w-5 h-5" />,
-      title: 'Transparent SAR Direct Rates',
-      titleAr: 'أسعار مباشرة بالريال السعودي',
-      desc: 'No middleman markups or opaque commissions. Inquire directly and coordinate custom itineraries with local operators.',
-      descAr: 'بدون رسوم وساطة خفية، تواصل مباشر مع المشغلين لتنسيق باقات وتفاصيل الرحلة.',
+      title: getSiteText(content, 'why.r3Title', language),
+      desc: getSiteText(content, 'why.r3Desc', language),
     },
     {
       icon: <HeartHandshake className="w-5 h-5" />,
-      title: 'Regenerative Cultural Stewardship',
-      titleAr: 'استدامة التراث وحماية البيئة',
-      desc: 'Supporting the Saudi Green Initiative and community tourism that directly funds heritage preservation.',
-      descAr: 'دعم مبادرة السعودية الخضراء والسياحة المجتمعية لتمويل استدامة المواقع التراثية.',
+      title: getSiteText(content, 'why.r4Title', language),
+      desc: getSiteText(content, 'why.r4Desc', language),
     },
   ];
 
   const travelerFeedback = [
     {
-      guest: 'Elena Vance · London, UK',
-      guestAr: 'إيلينا فانس · لندن، المملكة المتحدة',
-      quote:
-        'Our local AlUla Rawi timed our Hegra canyon arrival at golden hour and arranged Bedouin cardamom coffee under the stars.',
-      quoteAr:
-        'رتب الراوي المحلي وصولنا إلى الحجر عند الغروب مع قهوة سعودية أصيلة تحت النجوم.',
+      guest: getSiteText(content, 'reviews.t1Guest', language),
+      quote: getSiteText(content, 'reviews.t1Quote', language),
       rating: '5.0',
       trip: ratingStats.topPackages[0]?.title || 'AlUla Hegra Heritage & Stargazing',
       tripAr: ratingStats.topPackages[0]?.titleAr || 'مغامرة وتراث الحجر ورصد النجوم بالعلا',
     },
     {
-      guest: 'Faisal Al-Qahtani · Riyadh, KSA',
-      guestAr: 'فيصل القحطاني · الرياض، السعودية',
-      quote:
-        'Seamless direct SAR coordination with no agency markup. Our family felt genuinely welcomed from pickup to farewell.',
-      quoteAr:
-        'تنسيق مباشر وشفاف بالريال السعودي بدون أي عمولات إضافية واستقبال عائلي رائع.',
+      guest: getSiteText(content, 'reviews.t2Guest', language),
+      quote: getSiteText(content, 'reviews.t2Quote', language),
       rating: '4.9',
       trip: ratingStats.topPackages[1]?.title || 'Diriyah At-Turaif Private Walk',
       tripAr: ratingStats.topPackages[1]?.titleAr || 'جولة خاصة في حي الطريف بالدرعية',
     },
     {
-      guest: 'Marcello Rossi · Milan, Italy',
-      guestAr: 'مارسيلو روسي · ميلانو، إيطاليا',
-      quote:
-        'World-class conservation standards and deeply knowledgeable coastal conservation guides along the Red Sea islands.',
-      quoteAr:
-        'معايير عالمية في السياحة المستدامة ومرشدون متخصصون في جزر البحر الأحمر.',
+      guest: getSiteText(content, 'reviews.t3Guest', language),
+      quote: getSiteText(content, 'reviews.t3Quote', language),
       rating: '4.9',
       trip: ratingStats.topPackages[2]?.title || 'Red Sea Coral Island Expedition',
       tripAr: ratingStats.topPackages[2]?.titleAr || 'رحلة استكشاف جزر الشعاب المرجانية بالبحر الأحمر',
@@ -146,14 +129,12 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
           <div className="mb-8">
             <span
               className="text-xs font-bold uppercase tracking-widest"
-              style={{ color: currentAccentHex }}
+              style={{ color: currentAccentTextHex }}
             >
-              {isArabic ? 'أبرز عروض الموسم' : 'Seasonal Highlights'}
+              {getSiteText(content, 'campaigns.eyebrow', language)}
             </span>
             <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] mt-1">
-              {isArabic
-                ? 'حملات سعودية محدودة وإصدارات خاصة'
-                : 'Limited Saudi Campaigns & Special Editions'}
+              {getSiteText(content, 'campaigns.title', language)}
             </h2>
           </div>
 
@@ -174,22 +155,22 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                     alt={promoTitle}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#102E29]/95 via-[#102E29]/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#102E29]/95 via-[#102E29]/45 to-transparent" />
 
                   {promo.badge && (
                     <div
                       className="absolute top-4 left-4 rtl:left-auto rtl:right-4 text-[11px] font-bold px-2.5 py-1 rounded-md shadow-sm"
-                      style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                      style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                     >
                       {isArabic ? promo.badgeAr || promo.badge : promo.badge}
                     </div>
                   )}
 
-                  <div className="absolute bottom-0 inset-x-0 p-6 text-white">
-                    <h3 className="font-serif text-lg font-bold text-white mb-2">
+                  <div className="absolute bottom-0 inset-x-0 p-6 text-[#FAF0DC]">
+                    <h3 className="font-serif text-lg font-bold text-[#FAF0DC] tf-photo-text mb-2">
                       {promoTitle}
                     </h3>
-                    <p className="text-xs text-white/80 line-clamp-2 mb-4 leading-relaxed">
+                    <p className="text-xs text-[#EDE0C6] line-clamp-2 mb-4 leading-relaxed">
                       {promoDesc}
                     </p>
                     <div
@@ -214,17 +195,15 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
             <div className="text-center max-w-2xl mx-auto mb-14">
               <span
                 className="text-xs font-bold uppercase tracking-widest"
-                style={{ color: currentAccentHex }}
+                style={{ color: currentAccentTextHex }}
               >
-                {isArabic ? 'التزام تورفلو' : 'The TourFlow Commitment'}
+                {getSiteText(content, 'why.eyebrow', language)}
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight mt-1">
-                {isArabic ? 'لماذا تختار المشغلين السعوديين المحليين؟' : 'Why Choose Local Saudi Operators?'}
+                {getSiteText(content, 'why.title', language)}
               </h2>
               <p className="mt-3 text-sm text-[var(--tf-muted)]">
-                {isArabic
-                  ? 'الفخامة الحقيقية تكمن في التواصل الإنساني الأصيل، والتراث الحي، وكرم الضيافة الصحراوية الصادقة.'
-                  : 'True luxury lies in authentic human connection, living heritage, and genuine desert hospitality.'}
+                {getSiteText(content, 'why.sub', language)}
               </p>
             </div>
 
@@ -245,17 +224,11 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                   >
                     {r.icon}
                   </div>
-                  <h3
-                    className="font-serif text-base font-bold text-[var(--tf-heading)] mb-2"
-                    style={{ textShadow: 'var(--tf-text-shadow)' }}
-                  >
-                    {isArabic ? r.titleAr : r.title}
+                  <h3 className="font-serif text-base font-bold text-[var(--tf-heading)] mb-2">
+                    {r.title}
                   </h3>
-                  <p
-                    className="text-xs text-[var(--tf-muted)] leading-relaxed"
-                    style={{ textShadow: 'var(--tf-text-shadow)' }}
-                  >
-                    {isArabic ? r.descAr : r.desc}
+                  <p className="text-xs text-[var(--tf-muted)] leading-relaxed">
+                    {r.desc}
                   </p>
                 </motion.div>
               ))}
@@ -268,14 +241,12 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
               <div>
                 <span
                   className="text-xs font-bold uppercase tracking-widest"
-                  style={{ color: currentAccentHex }}
+                  style={{ color: currentAccentTextHex }}
                 >
-                  {isArabic ? 'تقييمات المسافرين ومؤشر الثقة' : 'Traveler Ratings & Trust Score'}
+                  {getSiteText(content, 'reviews.eyebrow', language)}
                 </span>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] mt-1">
-                  {isArabic
-                    ? 'آراء الضيوف الموثقة وتقييمات المشغلين'
-                    : 'Verified Guest Feedback & Operator Ratings'}
+                  {getSiteText(content, 'reviews.title', language)}
                 </h3>
               </div>
 
@@ -290,7 +261,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                     <span>{ratingStats.avgRating}</span>
                   </div>
                   <span className="text-[11px] text-[var(--tf-muted)]">
-                    {isArabic ? 'متوسط تقييم التجارب' : 'Average Experience Score'}
+                    {getSiteText(content, 'reviews.avgScoreLabel', language)}
                   </span>
                 </div>
                 <div className="pl-6 border-l border-[var(--tf-border)] rtl:pl-0 rtl:pr-6 rtl:border-l-0 rtl:border-r">
@@ -298,7 +269,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                     {ratingStats.totalReviews > 0 ? `${ratingStats.totalReviews}+` : '480+'}
                   </div>
                   <span className="text-[11px] text-[var(--tf-muted)]">
-                    {isArabic ? 'تقييمات موثقة' : 'Verified Reviews'}
+                    {getSiteText(content, 'reviews.totalLabel', language)}
                   </span>
                 </div>
                 <div className="pl-6 border-l border-[var(--tf-border)] rtl:pl-0 rtl:pr-6 rtl:border-l-0 rtl:border-r">
@@ -306,7 +277,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                     {content.stats.satisfactionRate}%
                   </div>
                   <span className="text-[11px] text-[var(--tf-muted)]">
-                    {isArabic ? 'نسبة رضا الضيوف' : 'Guest Satisfaction'}
+                    {getSiteText(content, 'reviews.satisfactionLabel', language)}
                   </span>
                 </div>
               </div>
@@ -325,7 +296,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Quote className="w-4 h-4" style={{ color: currentAccentHex }} />
+                      <Quote className="w-4 h-4" style={{ color: currentAccentTextHex }} />
                       <div className="flex items-center gap-1 text-xs font-mono font-bold text-[var(--tf-heading)]">
                         <Star
                           className="w-3.5 h-3.5"
@@ -334,20 +305,14 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                         <span className="tabular-nums">{fb.rating}</span>
                       </div>
                     </div>
-                    <p
-                      className="text-xs sm:text-sm text-[var(--tf-text)] leading-relaxed"
-                      style={{ textShadow: 'var(--tf-text-shadow)' }}
-                    >
-                      "{isArabic ? fb.quoteAr : fb.quote}"
+                    <p className="text-xs sm:text-sm text-[var(--tf-text)] leading-relaxed">
+                      "{fb.quote}"
                     </p>
                   </div>
 
                   <div className="pt-3 border-t border-[var(--tf-border)]">
-                    <div
-                      className="text-xs font-bold text-[var(--tf-heading)]"
-                      style={{ textShadow: 'var(--tf-text-shadow)' }}
-                    >
-                      {isArabic ? fb.guestAr : fb.guest}
+                    <div className="text-xs font-bold text-[var(--tf-heading)]">
+                      {fb.guest}
                     </div>
                     <div className="text-[11px] text-[var(--tf-muted)] truncate mt-0.5">
                       {isArabic ? fb.tripAr : fb.trip}
@@ -370,23 +335,17 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
           <div className="lg:col-span-6 space-y-6">
             <div
               className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest"
-              style={{ color: currentAccentHex }}
+              style={{ color: currentAccentTextHex }}
             >
-              <Compass className="w-4 h-4" style={{ color: currentAccentHex }} />
-              <span>{t('about.tagline')}</span>
+              <Compass className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+              <span>{getSiteText(content, 'about.tagline', language)}</span>
             </div>
 
-            <h2
-              className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight"
-              style={{ textShadow: 'var(--tf-text-shadow)' }}
-            >
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
               {isArabic ? content.aboutHeadlineAr || content.aboutHeadline : content.aboutHeadline}
             </h2>
 
-            <p
-              className="text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed"
-              style={{ textShadow: 'var(--tf-text-shadow)' }}
-            >
+            <p className="text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed">
               {isArabic ? content.aboutTextAr || content.aboutText : content.aboutText}
             </p>
 
@@ -395,82 +354,84 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
                   {content.stats.operators}+
                 </div>
-                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">{t('about.statOperators')}</div>
+                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
+                  {getSiteText(content, 'about.statOperators', language)}
+                </div>
               </div>
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
                   {content.stats.experiences}+
                 </div>
-                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">{t('about.statExperiences')}</div>
+                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
+                  {getSiteText(content, 'about.statExperiences', language)}
+                </div>
               </div>
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
                   {content.stats.travelersServed.toLocaleString()}
                 </div>
-                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">{t('about.statTravelers')}</div>
+                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
+                  {getSiteText(content, 'about.statTravelers', language)}
+                </div>
               </div>
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
                   {content.stats.satisfactionRate}%
                 </div>
-                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">{t('about.statSatisfaction')}</div>
+                <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
+                  {getSiteText(content, 'about.statSatisfaction', language)}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Newsletter Box */}
+          {/* Newsletter Box (Always dark glass surface -> Warm Sand Ivory ink) */}
           <div className="lg:col-span-6">
             <div
               style={getGlassyCardStyle(true)}
-              className="text-white rounded-3xl p-8 sm:p-10 relative overflow-hidden"
+              className="text-[#FAF0DC] rounded-3xl p-8 sm:p-10 relative overflow-hidden"
             >
               <div className="relative z-10">
                 <span
                   className="text-xs font-bold uppercase tracking-widest mb-2 block"
                   style={{ color: currentAccentHex }}
                 >
-                  {isArabic ? 'ابقَ على تواصل' : 'Stay Connected'}
+                  {getSiteText(content, 'newsletter.eyebrow', language)}
                 </span>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold mb-3 text-white">
-                  {isArabic ? 'انضم إلى مسيرة السياحة السعودية' : 'Join the Saudi Tourism Movement'}
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold mb-3 text-[#FAF0DC]">
+                  {getSiteText(content, 'newsletter.title', language)}
                 </h3>
-                <p className="text-xs sm:text-sm text-white/80 leading-relaxed mb-6">
-                  {isArabic
-                    ? 'اشترك لتصلك البرامج الموسمية، والرسائل الثقافية من العلا والدرعية، والأسعار الحصرية مباشرة من المشغلين.'
-                    : 'Subscribe to receive seasonal itineraries, cultural dispatches from AlUla and Diriyah, and exclusive operator rates.'}
+                <p className="text-xs sm:text-sm text-[#EDE0C6] leading-relaxed mb-6">
+                  {getSiteText(content, 'newsletter.desc', language)}
                 </p>
 
                 {newsletterSubscribed ? (
                   <div
-                    className="p-4 bg-white/10 border border-white/20 rounded-xl text-xs flex items-center gap-2"
+                    className="p-4 bg-[#FAF0DC]/10 border border-[#FAF0DC]/20 rounded-xl text-xs flex items-center gap-2"
                     style={{ color: currentAccentHex }}
                   >
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>
-                      {isArabic
-                        ? 'شكراً لاشتراكك! ستصلك أحدث الوجهات والعروض الموسمية السعودية في بريدك.'
-                        : 'Thank you for subscribing! Seasonal Saudi updates will arrive in your inbox.'}
-                    </span>
+                    <span>{getSiteText(content, 'newsletter.success', language)}</span>
                   </div>
                 ) : (
                   <form onSubmit={handleNewsletter} className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
-                      <Mail className="w-4 h-4 text-white/60 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
+                      <Mail className="w-4 h-4 text-[#EDE0C6]/70 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="email"
                         required
-                        placeholder={isArabic ? 'أدخل بريدك الإلكتروني' : 'Enter your email address'}
+                        placeholder={getSiteText(content, 'newsletter.placeholder', language)}
                         value={newsletterEmail}
                         onChange={(e) => setNewsletterEmail(e.target.value)}
-                        className="w-full text-xs py-3 pl-9 pr-4 rtl:pl-4 rtl:pr-9 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none"
+                        className="w-full text-xs py-3 pl-9 pr-4 rtl:pl-4 rtl:pr-9 bg-[#FAF0DC]/10 border border-[#FAF0DC]/20 rounded-xl text-[#FAF0DC] placeholder:text-[#EDE0C6]/60 focus:outline-none"
                       />
                     </div>
                     <button
                       type="submit"
-                      style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                      style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }}
                       className="py-3 px-6 font-bold text-xs rounded-xl shadow-md hover:brightness-105 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      {isArabic ? 'اشترك الآن' : 'Subscribe'}
+                      {getSiteText(content, 'newsletter.btn', language)}
                     </button>
                   </form>
                 )}

@@ -13,7 +13,7 @@ import loungeBackdropImg from '../assets/images/glassy_lounge_backdrop_179455138
 
 export type BlurIntensity = 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type GlassSurfaceTone = 'dark' | 'light';
-export type TextColorMode = 'auto' | 'crisp_white' | 'warm_ivory' | 'obsidian_ink' | 'emerald_ink';
+export type TextColorMode = 'warm_ivory' | 'emerald_ink';
 export type IconThemeStyle = 'frosted' | 'solid' | 'glow_outline';
 export type BackgroundPreset =
   | 'lounge_interior'
@@ -28,45 +28,33 @@ export const LOUNGE_INTERIOR_IMAGE = loungeBackdropImg;
 
 export interface TextColorOption {
   id: TextColorMode;
+  pairedTone: GlassSurfaceTone;
   name: string;
   nameAr: string;
+  pairedThemeLabel: string;
+  pairedThemeLabelAr: string;
   swatchHex: string;
-  isLightText: boolean | 'auto';
+  isLightText: boolean;
 }
 
 export const TEXT_COLOR_OPTIONS: TextColorOption[] = [
   {
-    id: 'auto',
-    name: 'Auto High-Contrast',
-    nameAr: 'تباين تلقائي ذكي',
-    swatchHex: '#94A3B8',
-    isLightText: 'auto',
-  },
-  {
-    id: 'crisp_white',
-    name: 'Pure Crisp White',
-    nameAr: 'أبيض ناصع عالي الوضوح',
-    swatchHex: '#FFFFFF',
-    isLightText: true,
-  },
-  {
     id: 'warm_ivory',
+    pairedTone: 'dark',
     name: 'Warm Sand Ivory',
     nameAr: 'عاجي رملي دافئ',
+    pairedThemeLabel: 'Smoked Dark Theme',
+    pairedThemeLabelAr: 'الوضع الداكن المدخّن',
     swatchHex: '#FAF0DC',
     isLightText: true,
   },
   {
-    id: 'obsidian_ink',
-    name: 'Obsidian Dark Ink',
-    nameAr: 'حبر داكن فاحم',
-    swatchHex: '#0D1916',
-    isLightText: false,
-  },
-  {
     id: 'emerald_ink',
+    pairedTone: 'light',
     name: 'Saudi Emerald Ink',
-    nameAr: 'حبر زمردي داكن',
+    nameAr: 'حبر زمردي سعودي',
+    pairedThemeLabel: 'Crystal Light Theme',
+    pairedThemeLabelAr: 'الوضع الفاتح الكريستالي',
     swatchHex: '#0B3B30',
     isLightText: false,
   },
@@ -109,6 +97,8 @@ export interface AccentColorOption {
   name: string;
   nameAr: string;
   hex: string;
+  darkSurfaceTextHex: string;
+  lightSurfaceTextHex: string;
   rgb: string;
   glow: string;
 }
@@ -119,6 +109,8 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     name: 'Desert Champagne',
     nameAr: 'شامبين صحراوي',
     hex: '#C6A46B',
+    darkSurfaceTextHex: '#DFBF84',
+    lightSurfaceTextHex: '#846121',
     rgb: '198, 164, 107',
     glow: 'rgba(198, 164, 107, 0.45)',
   },
@@ -127,6 +119,8 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     name: 'Saudi Emerald',
     nameAr: 'زمرد سعودي',
     hex: '#10B981',
+    darkSurfaceTextHex: '#34D399',
+    lightSurfaceTextHex: '#047857',
     rgb: '16, 185, 129',
     glow: 'rgba(16, 185, 129, 0.45)',
   },
@@ -135,6 +129,8 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     name: 'Red Sea Turquoise',
     nameAr: 'فيروز البحر الأحمر',
     hex: '#06B6D4',
+    darkSurfaceTextHex: '#22D3EE',
+    lightSurfaceTextHex: '#0E7490',
     rgb: '6, 182, 212',
     glow: 'rgba(6, 182, 212, 0.45)',
   },
@@ -143,6 +139,8 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     name: 'Royal Jacaranda',
     nameAr: 'جاكاراندا ملكي',
     hex: '#8B5CF6',
+    darkSurfaceTextHex: '#B39DDB',
+    lightSurfaceTextHex: '#6D28D9',
     rgb: '139, 92, 246',
     glow: 'rgba(139, 92, 246, 0.45)',
   },
@@ -151,6 +149,8 @@ export const ACCENT_PRESETS: AccentColorOption[] = [
     name: 'Taif Rose',
     nameAr: 'ورد الطائف',
     hex: '#F43F5E',
+    darkSurfaceTextHex: '#FDA4AF',
+    lightSurfaceTextHex: '#BE123C',
     rgb: '244, 63, 94',
     glow: 'rgba(244, 63, 94, 0.45)',
   },
@@ -280,12 +280,12 @@ const DEFAULT_VISITOR_GLASSY: VisitorGlassySettings = {
 const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   isGlassyEnabled: true,
   glassSurfaceTone: 'dark',
-  textColorMode: 'auto',
+  textColorMode: 'warm_ivory',
   iconThemeStyle: 'frosted',
   blurIntensity: 'lg',
   blurRadius: 24,
-  cardTranslucency: 0.34,
-  borderOpacity: 0.28,
+  cardTranslucency: 0.44,
+  borderOpacity: 0.26,
   glowStrength: 0.45,
   glassSheen: 0.65,
   backgroundPreset: 'lounge_interior',
@@ -298,15 +298,50 @@ const DEFAULT_THEME_SETTINGS: ThemeSettings = {
 const THEME_STORAGE_KEY = 'tourflow_theme_appearance_v4';
 const THEME_BROADCAST_CHANNEL = 'tourflow_theme_sync';
 
-function hexToRgbTuple(hex: string): string {
+function parseHexRgb(hex: string): [number, number, number] {
   const clean = hex.replace('#', '').trim();
   if (/^[0-9A-Fa-f]{6}$/.test(clean)) {
-    const r = parseInt(clean.slice(0, 2), 16);
-    const g = parseInt(clean.slice(2, 4), 16);
-    const b = parseInt(clean.slice(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
+    return [
+      parseInt(clean.slice(0, 2), 16),
+      parseInt(clean.slice(2, 4), 16),
+      parseInt(clean.slice(4, 6), 16),
+    ];
   }
-  return '198, 164, 107';
+  return [198, 164, 107];
+}
+
+function hexToRgbTuple(hex: string): string {
+  const [r, g, b] = parseHexRgb(hex);
+  return `${r}, ${g}, ${b}`;
+}
+
+function getRelativeLuminance(hex: string): number {
+  const [r, g, b] = parseHexRgb(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function adjustCustomAccentForSurface(hex: string, useDarkSurface: boolean): string {
+  const [r, g, b] = parseHexRgb(hex);
+  const lum = getRelativeLuminance(hex);
+  if (useDarkSurface) {
+    // Ensure custom accent is bright enough on Smoked Dark surfaces
+    if (lum >= 0.34) return hex;
+    const mix = 0.42;
+    const nr = Math.round(r + (250 - r) * mix);
+    const ng = Math.round(g + (240 - g) * mix);
+    const nb = Math.round(b + (220 - b) * mix);
+    return `#${[nr, ng, nb].map((x) => x.toString(16).padStart(2, '0')).join('')}`;
+  }
+  // Ensure custom accent has deep ink contrast on Crystal Light frosted surfaces
+  if (lum <= 0.19) return hex;
+  const scale = 0.56;
+  const nr = Math.max(0, Math.round(r * scale));
+  const ng = Math.max(0, Math.round(g * scale));
+  const nb = Math.max(0, Math.round(b * scale));
+  return `#${[nr, ng, nb].map((x) => x.toString(16).padStart(2, '0')).join('')}`;
 }
 
 interface ThemeContextType {
@@ -316,6 +351,8 @@ interface ThemeContextType {
   updateVisitorGlassy: (partial: Partial<VisitorGlassySettings>) => void;
   resetToDefaults: () => void;
   currentAccentHex: string;
+  currentAccentTextHex: string;
+  currentAccentBtnTextHex: string;
   currentAccentRgb: string;
   currentAccentGlow: string;
   blurTailwindClass: string;
@@ -340,6 +377,8 @@ const ThemeContext = createContext<ThemeContextType>({
   updateVisitorGlassy: () => {},
   resetToDefaults: () => {},
   currentAccentHex: '#C6A46B',
+  currentAccentTextHex: '#DFBF84',
+  currentAccentBtnTextHex: '#0D2B24',
   currentAccentRgb: '198, 164, 107',
   currentAccentGlow: 'rgba(198, 164, 107, 0.45)',
   blurTailwindClass: 'backdrop-blur-xl',
@@ -377,6 +416,28 @@ export const closestBlurIntensity = (px: number): BlurIntensity => {
   return '2xl';
 };
 
+/**
+ * Normalize legacy or partial theme payloads so Glassy themes strictly stay paired:
+ * - Smoked Dark ('dark') <-> Warm Sand Ivory ('warm_ivory')
+ * - Crystal Light ('light') <-> Saudi Emerald Ink ('emerald_ink')
+ */
+function normalizePairedToneAndText(
+  rawTone?: GlassSurfaceTone,
+  rawTextMode?: string
+): { glassSurfaceTone: GlassSurfaceTone; textColorMode: TextColorMode } {
+  if (rawTextMode === 'emerald_ink' || rawTextMode === 'obsidian_ink') {
+    return { glassSurfaceTone: 'light', textColorMode: 'emerald_ink' };
+  }
+  if (rawTextMode === 'warm_ivory' || rawTextMode === 'crisp_white') {
+    return { glassSurfaceTone: 'dark', textColorMode: 'warm_ivory' };
+  }
+  const resolvedTone: GlassSurfaceTone = rawTone === 'light' ? 'light' : 'dark';
+  return {
+    glassSurfaceTone: resolvedTone,
+    textColorMode: resolvedTone === 'dark' ? 'warm_ivory' : 'emerald_ink',
+  };
+}
+
 const mergeThemeSettings = (parsed: Partial<ThemeSettings>): ThemeSettings => {
   const mergedBlurRadius =
     typeof parsed.blurRadius === 'number'
@@ -392,13 +453,19 @@ const mergeThemeSettings = (parsed: Partial<ThemeSettings>): ThemeSettings => {
       ? LOUNGE_INTERIOR_IMAGE
       : rawCustomBgUrl;
 
+  const { glassSurfaceTone, textColorMode } = normalizePairedToneAndText(
+    parsed.glassSurfaceTone,
+    parsed.textColorMode as string | undefined
+  );
+
   return {
     ...DEFAULT_THEME_SETTINGS,
     ...parsed,
+    glassSurfaceTone,
+    textColorMode,
     customBgUrl: normalizedCustomBgUrl,
     blurRadius: mergedBlurRadius,
     blurIntensity: parsed.blurIntensity || closestBlurIntensity(mergedBlurRadius),
-    textColorMode: parsed.textColorMode || DEFAULT_THEME_SETTINGS.textColorMode,
     iconThemeStyle: parsed.iconThemeStyle || DEFAULT_THEME_SETTINGS.iconThemeStyle,
     glassSheen:
       typeof parsed.glassSheen === 'number'
@@ -411,44 +478,23 @@ const mergeThemeSettings = (parsed: Partial<ThemeSettings>): ThemeSettings => {
   };
 };
 
-function resolveTextPalette(mode: TextColorMode, surfaceIsDark: boolean) {
-  const resolvedMode: Exclude<TextColorMode, 'auto'> =
-    mode === 'auto' ? (surfaceIsDark ? 'crisp_white' : 'obsidian_ink') : mode;
-
-  switch (resolvedMode) {
-    case 'crisp_white':
-      return {
-        isLightText: true,
-        heading: '#FFFFFF',
-        text: 'rgba(247, 250, 248, 0.96)',
-        muted: 'rgba(222, 234, 228, 0.86)',
-        shadow: '0 1px 2px rgba(0, 0, 0, 0.48)',
-      };
-    case 'warm_ivory':
-      return {
-        isLightText: true,
-        heading: '#FFF8EB',
-        text: '#F5EBD8',
-        muted: 'rgba(235, 222, 198, 0.88)',
-        shadow: '0 1px 2px rgba(0, 0, 0, 0.45)',
-      };
-    case 'obsidian_ink':
-      return {
-        isLightText: false,
-        heading: '#0A241E',
-        text: '#162420',
-        muted: '#384B45',
-        shadow: '0 1px 1px rgba(255, 255, 255, 0.45)',
-      };
-    case 'emerald_ink':
-      return {
-        isLightText: false,
-        heading: '#0B3B30',
-        text: '#134035',
-        muted: '#2D594E',
-        shadow: '0 1px 1px rgba(255, 255, 255, 0.45)',
-      };
+function resolveTextPalette(mode: TextColorMode) {
+  if (mode === 'warm_ivory') {
+    return {
+      isLightText: true,
+      heading: '#FAF0DC',
+      text: '#EDE0C6',
+      muted: '#C8B899',
+      shadow: 'none',
+    };
   }
+  return {
+    isLightText: false,
+    heading: '#0B3B30',
+    text: '#15473A',
+    muted: '#42685E',
+    shadow: 'none',
+  };
 }
 
 function toFirestoreThemeConfig(settings: ThemeSettings) {
@@ -459,8 +505,8 @@ function toFirestoreThemeConfig(settings: ThemeSettings) {
     iconThemeStyle: settings.iconThemeStyle,
     blurIntensity: settings.blurIntensity,
     blurRadius: Math.max(0, Math.min(64, Number(settings.blurRadius) || 0)),
-    cardTranslucency: Math.max(0.05, Math.min(1, Number(settings.cardTranslucency) || 0.34)),
-    borderOpacity: Math.max(0, Math.min(1, Number(settings.borderOpacity) || 0.28)),
+    cardTranslucency: Math.max(0.05, Math.min(1, Number(settings.cardTranslucency) || 0.44)),
+    borderOpacity: Math.max(0, Math.min(1, Number(settings.borderOpacity) || 0.26)),
     glowStrength: Math.max(0, Math.min(1, Number(settings.glowStrength) || 0.45)),
     glassSheen: Math.max(0, Math.min(1, Number(settings.glassSheen) || 0.65)),
     backgroundPreset: settings.backgroundPreset,
@@ -615,11 +661,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [flushPendingThemeWrite]);
 
+  const isDarkGlass = settings.glassSurfaceTone === 'dark';
+
   const currentAccent = ACCENT_PRESETS.find((p) => p.id === settings.accentPreset);
   const currentAccentHex =
     settings.accentPreset === 'custom'
       ? settings.customAccentHex
       : currentAccent?.hex || '#C6A46B';
+
+  const currentAccentTextHex =
+    settings.accentPreset === 'custom'
+      ? adjustCustomAccentForSurface(settings.customAccentHex, isDarkGlass)
+      : isDarkGlass
+      ? currentAccent?.darkSurfaceTextHex || '#DFBF84'
+      : currentAccent?.lightSurfaceTextHex || '#846121';
+
+  const currentAccentBtnTextHex =
+    getRelativeLuminance(currentAccentHex) < 0.28 ? '#FAF0DC' : '#0D2B24';
 
   const currentAccentRgb =
     settings.accentPreset === 'custom'
@@ -642,15 +700,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const blurPixels = settings.blurRadius;
 
-  // Ensure surface tone adapts safely if textColorMode explicitly locks light or dark text
-  const textPalette = resolveTextPalette(
-    settings.textColorMode,
-    settings.glassSurfaceTone === 'dark'
-  );
-  const isDarkGlass =
-    settings.textColorMode === 'auto'
-      ? settings.glassSurfaceTone === 'dark'
-      : textPalette.isLightText;
+  const textPalette = resolveTextPalette(settings.textColorMode);
 
   // Persist to localStorage and bind high-contrast CSS variables dynamically
   useEffect(() => {
@@ -669,27 +719,58 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.style.setProperty('--glass-border-opacity', settings.borderOpacity.toString());
       root.style.setProperty('--glass-glow-strength', settings.glowStrength.toString());
 
-      // Dynamic Contrast-Protected Text & Inner Control Tokens
+      // Dynamic Contrast-Protected Text & Surface Tokens
+      root.dataset.glassTone = isDarkGlass ? 'dark' : 'light';
+      root.dataset.textTone = textPalette.isLightText ? 'light' : 'dark';
       root.style.setProperty('--tf-heading', textPalette.heading);
       root.style.setProperty('--tf-text', textPalette.text);
       root.style.setProperty('--tf-muted', textPalette.muted);
       root.style.setProperty('--tf-text-shadow', textPalette.shadow);
+      root.style.setProperty('--tf-accent-text', currentAccentTextHex);
+      root.style.setProperty('--tf-accent-btn-text', currentAccentBtnTextHex);
 
-      if (textPalette.isLightText) {
-        root.style.setProperty('--tf-surface-subtle', 'rgba(12, 20, 18, 0.48)');
-        root.style.setProperty('--tf-surface-hover', 'rgba(20, 32, 28, 0.68)');
-        root.style.setProperty('--tf-border', 'rgba(255, 255, 255, 0.22)');
+      if (isDarkGlass) {
+        root.style.setProperty('--tf-surface-subtle', 'rgba(250, 240, 220, 0.06)');
+        root.style.setProperty('--tf-surface-hover', 'rgba(250, 240, 220, 0.12)');
+        root.style.setProperty('--tf-border', 'rgba(250, 240, 220, 0.18)');
         root.style.setProperty('--tf-input-bg', 'rgba(10, 18, 16, 0.72)');
-        root.style.setProperty('--tf-table-head', 'rgba(10, 18, 16, 0.55)');
+        root.style.setProperty('--tf-table-head', 'rgba(10, 18, 16, 0.56)');
+        root.style.setProperty('--tf-modal-bg', '#11231E');
+        root.style.setProperty('--tf-modal-subtle', '#0D1B17');
+        root.style.setProperty('--tf-success-bg', 'rgba(16, 185, 129, 0.16)');
+        root.style.setProperty('--tf-success-border', 'rgba(52, 211, 153, 0.36)');
+        root.style.setProperty('--tf-success-text', '#6EE7B7');
+        root.style.setProperty('--tf-danger-bg', 'rgba(244, 63, 94, 0.16)');
+        root.style.setProperty('--tf-danger-border', 'rgba(251, 113, 133, 0.38)');
+        root.style.setProperty('--tf-danger-text', '#FDA4AF');
+        root.style.setProperty('--tf-info-text', '#34D399');
       } else {
-        root.style.setProperty('--tf-surface-subtle', 'rgba(255, 255, 255, 0.72)');
-        root.style.setProperty('--tf-surface-hover', 'rgba(255, 255, 255, 0.90)');
-        root.style.setProperty('--tf-border', 'rgba(18, 59, 50, 0.18)');
-        root.style.setProperty('--tf-input-bg', 'rgba(255, 255, 255, 0.88)');
-        root.style.setProperty('--tf-table-head', 'rgba(255, 255, 255, 0.68)');
+        root.style.setProperty('--tf-surface-subtle', 'rgba(255, 253, 248, 0.78)');
+        root.style.setProperty('--tf-surface-hover', 'rgba(255, 255, 255, 0.95)');
+        root.style.setProperty('--tf-border', 'rgba(11, 59, 48, 0.16)');
+        root.style.setProperty('--tf-input-bg', 'rgba(255, 255, 255, 0.92)');
+        root.style.setProperty('--tf-table-head', 'rgba(244, 239, 229, 0.85)');
+        root.style.setProperty('--tf-modal-bg', '#FFFDF8');
+        root.style.setProperty('--tf-modal-subtle', '#F7F3EA');
+        root.style.setProperty('--tf-success-bg', 'rgba(16, 185, 129, 0.12)');
+        root.style.setProperty('--tf-success-border', 'rgba(5, 150, 105, 0.35)');
+        root.style.setProperty('--tf-success-text', '#065F46');
+        root.style.setProperty('--tf-danger-bg', 'rgba(225, 29, 72, 0.10)');
+        root.style.setProperty('--tf-danger-border', 'rgba(225, 29, 72, 0.32)');
+        root.style.setProperty('--tf-danger-text', '#9F1239');
+        root.style.setProperty('--tf-info-text', '#047857');
       }
     }
-  }, [settings, currentAccentHex, currentAccentGlow, blurPixels, textPalette]);
+  }, [
+    settings,
+    isDarkGlass,
+    currentAccentHex,
+    currentAccentTextHex,
+    currentAccentBtnTextHex,
+    currentAccentGlow,
+    blurPixels,
+    textPalette,
+  ]);
 
   // Cross-tab synchronization listener
   useEffect(() => {
@@ -739,11 +820,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     lastLocalEditAtRef.current = Date.now();
     const prev = settingsRef.current;
     const next: ThemeSettings = { ...prev, ...partial };
+
+    // Keep Smoked Dark <-> Warm Sand Ivory and Crystal Light <-> Saudi Emerald Ink strictly paired
+    if (partial.textColorMode !== undefined && partial.glassSurfaceTone === undefined) {
+      next.glassSurfaceTone = partial.textColorMode === 'warm_ivory' ? 'dark' : 'light';
+    } else if (partial.glassSurfaceTone !== undefined && partial.textColorMode === undefined) {
+      next.textColorMode = partial.glassSurfaceTone === 'dark' ? 'warm_ivory' : 'emerald_ink';
+    } else if (partial.glassSurfaceTone !== undefined && partial.textColorMode !== undefined) {
+      next.textColorMode = partial.glassSurfaceTone === 'dark' ? 'warm_ivory' : 'emerald_ink';
+    }
+
     if (partial.blurRadius !== undefined && partial.blurIntensity === undefined) {
       next.blurIntensity = closestBlurIntensity(partial.blurRadius);
     } else if (partial.blurIntensity !== undefined && partial.blurRadius === undefined) {
       next.blurRadius = getBlurPixels(partial.blurIntensity);
     }
+
     setSettings(next);
     broadcastUpdate(next);
     persistThemeToCloud(next, false);
@@ -781,27 +873,27 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const sheen = settings.glassSheen;
 
     const topHighlight = useDark
-      ? (0.04 + sheen * 0.16).toFixed(3)
-      : (0.28 + sheen * 0.4).toFixed(3);
+      ? (0.04 + sheen * 0.14).toFixed(3)
+      : (0.34 + sheen * 0.36).toFixed(3);
     const midHighlight = useDark
-      ? (0.01 + sheen * 0.05).toFixed(3)
-      : (0.1 + sheen * 0.18).toFixed(3);
+      ? (0.01 + sheen * 0.04).toFixed(3)
+      : (0.14 + sheen * 0.16).toFixed(3);
     const bottomTint = useDark
       ? (0.01 + sheen * 0.02).toFixed(3)
-      : (0.04 + sheen * 0.08).toFixed(3);
+      : (0.06 + sheen * 0.08).toFixed(3);
 
-    // Maintain a safe contrast floor so text never blends into busy wallpapers
-    const darkAlpha = Math.max(0.22, alpha);
-    const lightAlpha = Math.max(0.42, alpha);
+    // Maintain comfortable legibility floors so text never bleeds into busy backgrounds
+    const darkAlpha = Math.max(0.46, alpha);
+    const lightAlpha = Math.max(0.68, alpha);
     const bgColor = useDark
-      ? `rgba(10, 16, 14, ${darkAlpha})`
-      : `rgba(255, 255, 255, ${lightAlpha})`;
+      ? `rgba(11, 20, 18, ${darkAlpha})`
+      : `rgba(255, 253, 248, ${lightAlpha})`;
 
     const sheenGradient = `linear-gradient(135deg, rgba(255, 255, 255, ${topHighlight}) 0%, rgba(255, 255, 255, ${midHighlight}) 42%, rgba(255, 255, 255, ${bottomTint}) 100%)`;
 
     const resolvedBorderColor = useDark
-      ? `rgba(255, 255, 255, ${borderAlpha})`
-      : `rgba(255, 255, 255, ${Math.min(0.95, borderAlpha + 0.3)})`;
+      ? `rgba(250, 240, 220, ${Math.max(0.14, borderAlpha * 0.85)})`
+      : `rgba(11, 59, 48, ${Math.min(0.28, Math.max(0.12, borderAlpha * 0.45))})`;
 
     const borderProps: React.CSSProperties =
       borderSides === 'none'
@@ -819,26 +911,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           };
 
     const innerRimTop = useDark
-      ? `inset 0 1px 1px rgba(255, 255, 255, ${(0.12 + sheen * 0.28).toFixed(2)})`
-      : `inset 0 1px 1px rgba(255, 255, 255, ${(0.6 + sheen * 0.35).toFixed(2)})`;
+      ? `inset 0 1px 1px rgba(250, 240, 220, ${(0.10 + sheen * 0.20).toFixed(2)})`
+      : `inset 0 1px 1px rgba(255, 255, 255, ${(0.72 + sheen * 0.25).toFixed(2)})`;
 
     const innerRimEdge = useDark
-      ? `inset 1px 0 0 rgba(255, 255, 255, ${(0.04 + sheen * 0.12).toFixed(2)})`
-      : `inset 1px 0 0 rgba(255, 255, 255, ${(0.3 + sheen * 0.3).toFixed(2)})`;
+      ? `inset 1px 0 0 rgba(250, 240, 220, ${(0.04 + sheen * 0.09).toFixed(2)})`
+      : `inset 1px 0 0 rgba(255, 255, 255, ${(0.45 + sheen * 0.25).toFixed(2)})`;
 
     const baseDrop = useDark
-      ? '0 18px 44px -12px rgba(0, 0, 0, 0.52)'
-      : '0 14px 36px -10px rgba(18, 59, 50, 0.14)';
+      ? '0 18px 44px -12px rgba(0, 0, 0, 0.50)'
+      : '0 14px 34px -10px rgba(11, 59, 48, 0.13)';
 
     const accentGlow =
       glowAlpha > 0
-        ? `, 0 0 ${Math.round(14 + glowAlpha * 32)}px rgba(${currentAccentRgb}, ${(glowAlpha * 0.38).toFixed(2)})`
+        ? `, 0 0 ${Math.round(12 + glowAlpha * 28)}px rgba(${currentAccentRgb}, ${(glowAlpha * 0.30).toFixed(2)})`
         : '';
 
-    const saturation = Math.round(145 + sheen * 60);
+    const saturation = Math.round(145 + sheen * 55);
     const filterValue =
       blurPixels > 0
-        ? `blur(${blurPixels}px) saturate(${saturation}%) contrast(104%)`
+        ? `blur(${blurPixels}px) saturate(${saturation}%) contrast(103%)`
         : `saturate(${saturation}%)`;
 
     return {
@@ -856,12 +948,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (!settings.isGlassyEnabled) {
       return {
-        backgroundColor: useDark ? '#102420' : '#FFFFFF',
+        backgroundColor: useDark ? '#102420' : '#FFFDF8',
         backgroundImage: 'none',
         borderWidth: '1px',
         borderStyle: 'solid',
-        borderColor: useDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(18, 59, 50, 0.14)',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+        borderColor: useDark ? 'rgba(250, 240, 220, 0.18)' : 'rgba(11, 59, 48, 0.16)',
+        boxShadow: useDark
+          ? '0 8px 24px rgba(0, 0, 0, 0.28)'
+          : '0 6px 20px rgba(11, 59, 48, 0.08)',
       };
     }
 
@@ -875,15 +969,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const glowPx = Math.round(8 + settings.glowStrength * 18);
     const glowShadow =
       settings.glowStrength > 0
-        ? `, 0 0 ${glowPx}px rgba(${currentAccentRgb}, ${(0.25 + settings.glowStrength * 0.35).toFixed(2)})`
+        ? `, 0 0 ${glowPx}px rgba(${currentAccentRgb}, ${(0.22 + settings.glowStrength * 0.30).toFixed(2)})`
         : '';
+
+    const iconInkLightBg =
+      settings.accentPreset === 'custom'
+        ? adjustCustomAccentForSurface(settings.customAccentHex, false)
+        : currentAccent?.lightSurfaceTextHex || '#0B3B30';
+
+    const iconInkDarkBg =
+      settings.accentPreset === 'custom'
+        ? adjustCustomAccentForSurface(settings.customAccentHex, true)
+        : currentAccent?.darkSurfaceTextHex || '#DFBF84';
 
     if (settings.iconThemeStyle === 'solid') {
       return {
         backgroundColor: currentAccentHex,
         backgroundImage:
           'linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 60%)',
-        color: '#0D2620',
+        color: currentAccentBtnTextHex,
         borderWidth: '1px',
         borderStyle: 'solid',
         borderColor: 'rgba(255, 255, 255, 0.35)',
@@ -895,12 +999,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return {
         backgroundColor: useDark
           ? `rgba(${currentAccentRgb}, 0.16)`
-          : `rgba(${currentAccentRgb}, 0.14)`,
+          : `rgba(${currentAccentRgb}, 0.12)`,
         backgroundImage: 'none',
-        color: useDark ? currentAccentHex : '#0B2D24',
+        color: useDark ? iconInkDarkBg : iconInkLightBg,
         borderWidth: '1.5px',
         borderStyle: 'solid',
-        borderColor: currentAccentHex,
+        borderColor: useDark ? currentAccentHex : iconInkLightBg,
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.28)${glowShadow}`,
@@ -910,15 +1014,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Default: 'frosted'
     return {
       backgroundColor: useDark
-        ? 'rgba(255, 255, 255, 0.12)'
-        : 'rgba(255, 255, 255, 0.78)',
+        ? 'rgba(250, 240, 220, 0.10)'
+        : 'rgba(255, 253, 248, 0.86)',
       backgroundImage: useDark
-        ? 'linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 100%)'
-        : 'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.45) 100%)',
-      color: useDark ? currentAccentHex : '#0D2F27',
+        ? 'linear-gradient(135deg, rgba(250,240,220,0.18) 0%, rgba(250,240,220,0.04) 100%)'
+        : 'linear-gradient(135deg, rgba(255,255,255,0.94) 0%, rgba(255,250,240,0.60) 100%)',
+      color: useDark ? iconInkDarkBg : iconInkLightBg,
       borderWidth: '1px',
       borderStyle: 'solid',
-      borderColor: `rgba(${currentAccentRgb}, ${useDark ? 0.55 : 0.65})`,
+      borderColor: useDark
+        ? `rgba(${currentAccentRgb}, 0.52)`
+        : `rgba(11, 59, 48, 0.22)`,
       backdropFilter: 'blur(12px) saturate(160%)',
       WebkitBackdropFilter: 'blur(12px) saturate(160%)',
       boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.45)${glowShadow}`,
@@ -946,8 +1052,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (!active) {
       const solidBorder = useDark
-        ? 'rgba(255, 255, 255, 0.16)'
-        : 'rgba(18, 59, 50, 0.14)';
+        ? 'rgba(250, 240, 220, 0.18)'
+        : 'rgba(11, 59, 48, 0.16)';
       const borderProps: React.CSSProperties =
         borderSides === 'none'
           ? {}
@@ -964,10 +1070,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             };
 
       return {
-        backgroundColor: useDark ? '#102420' : '#FFFFFF',
+        backgroundColor: useDark ? '#102420' : '#FFFDF8',
         backgroundImage: 'none',
         ...borderProps,
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+        boxShadow: useDark
+          ? '0 8px 24px rgba(0, 0, 0, 0.28)'
+          : '0 6px 20px rgba(11, 59, 48, 0.08)',
       };
     }
 
@@ -979,8 +1087,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (settings.backgroundPreset === 'custom' && settings.customBgUrl) {
       const overlay = useDarkScrim
-        ? 'linear-gradient(135deg, rgba(10, 14, 13, 0.34), rgba(14, 24, 20, 0.44))'
-        : 'linear-gradient(rgba(246, 244, 239, 0.48), rgba(246, 244, 239, 0.6))';
+        ? 'linear-gradient(135deg, rgba(9, 15, 13, 0.46), rgba(12, 22, 18, 0.56))'
+        : 'linear-gradient(rgba(249, 246, 239, 0.72), rgba(245, 240, 231, 0.78))';
       return {
         backgroundColor: useDarkScrim ? '#0D1714' : '#F6F4EF',
         backgroundImage: `${overlay}, url(${settings.customBgUrl})`,
@@ -994,10 +1102,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const preset = BACKGROUND_PRESETS.find((p) => p.id === settings.backgroundPreset);
     if (preset?.imageUrl) {
       const overlay = useDarkScrim
-        ? 'linear-gradient(135deg, rgba(10, 14, 13, 0.24) 0%, rgba(14, 22, 19, 0.38) 100%)'
-        : 'linear-gradient(rgba(246, 244, 239, 0.46), rgba(246, 244, 239, 0.58))';
+        ? 'linear-gradient(135deg, rgba(9, 15, 13, 0.44) 0%, rgba(12, 22, 18, 0.54) 100%)'
+        : 'linear-gradient(rgba(249, 246, 239, 0.72), rgba(245, 240, 231, 0.78))';
       return {
-        backgroundColor: preset.baseColor,
+        backgroundColor: useDarkScrim ? preset.baseColor : '#F6F4EF',
         backgroundImage: `${overlay}, url(${preset.imageUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -1007,9 +1115,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     if (preset) {
+      // Ensure contrast veil if user mixes light gradient with Smoked Dark or dark gradient with Crystal Light
+      const mismatchVeil =
+        preset.recommendedTone === 'light' && useDarkScrim
+          ? 'linear-gradient(rgba(9, 17, 15, 0.68), rgba(11, 22, 19, 0.74)), '
+          : preset.recommendedTone === 'dark' && !useDarkScrim
+          ? 'linear-gradient(rgba(249, 246, 239, 0.78), rgba(245, 240, 231, 0.82)), '
+          : '';
       return {
-        backgroundColor: preset.baseColor,
-        backgroundImage: preset.gradientImage || 'none',
+        backgroundColor: useDarkScrim && preset.recommendedTone === 'light' ? '#0D1714' : preset.baseColor,
+        backgroundImage: `${mismatchVeil}${preset.gradientImage || 'none'}`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
@@ -1036,6 +1151,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateVisitorGlassy,
         resetToDefaults,
         currentAccentHex,
+        currentAccentTextHex,
+        currentAccentBtnTextHex,
         currentAccentRgb,
         currentAccentGlow,
         blurTailwindClass,

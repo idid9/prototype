@@ -18,42 +18,67 @@
     --glass-glow-strength: 0.45;
     --tourflow-accent: #C6A46B;
 
-    /* Semantic Light Surface Tokens (High-Contrast Ink) */
-    --tf-heading: #0A241E;
-    --tf-text: #162420;
-    --tf-muted: #3A4D47;
-    --tf-text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
-    --tf-surface-subtle: rgba(255, 255, 255, 0.72);
-    --tf-surface-hover: rgba(255, 255, 255, 0.88);
-    --tf-border: rgba(18, 59, 50, 0.16);
-    --tf-input-bg: rgba(255, 255, 255, 0.86);
-    --tf-table-head: rgba(255, 255, 255, 0.65);
+    /* Semantic Crystal Light Surface Tokens (Saudi Emerald Ink) */
+    --tf-heading: #0B3B30;
+    --tf-text: #15473A;
+    --tf-muted: #42685E;
+    --tf-text-shadow: none;
+    --tf-accent-text: #846121;
+    --tf-accent-btn-text: #0D2B24;
+    --tf-surface-subtle: rgba(255, 253, 248, 0.78);
+    --tf-surface-hover: rgba(255, 255, 255, 0.95);
+    --tf-border: rgba(11, 59, 48, 0.16);
+    --tf-input-bg: rgba(255, 255, 255, 0.92);
+    --tf-table-head: rgba(244, 239, 229, 0.85);
+    --tf-modal-bg: #FFFDF8;
+    --tf-modal-subtle: #F7F3EA;
+    --tf-success-bg: rgba(16, 185, 129, 0.12);
+    --tf-success-border: rgba(5, 150, 105, 0.35);
+    --tf-success-text: #065F46;
+    --tf-danger-bg: rgba(225, 29, 72, 0.10);
+    --tf-danger-border: rgba(225, 29, 72, 0.32);
+    --tf-danger-text: #9F1239;
+    --tf-info-text: #047857;
   }
 
   [data-glass-tone="dark"] {
-    --tf-heading: #FFFFFF;
-    --tf-text: rgba(247, 250, 248, 0.96);
-    --tf-muted: rgba(220, 232, 226, 0.84);
-    --tf-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48);
-    --tf-surface-subtle: rgba(12, 20, 18, 0.48);
-    --tf-surface-hover: rgba(20, 32, 28, 0.68);
-    --tf-border: rgba(255, 255, 255, 0.22);
+    /* Smoked Dark Surface Tokens (Warm Sand Ivory) */
+    --tf-heading: #FAF0DC;
+    --tf-text: #EDE0C6;
+    --tf-muted: #C8B899;
+    --tf-text-shadow: none;
+    --tf-accent-text: #DFBF84;
+    --tf-accent-btn-text: #0D2B24;
+    --tf-surface-subtle: rgba(250, 240, 220, 0.06);
+    --tf-surface-hover: rgba(250, 240, 220, 0.12);
+    --tf-border: rgba(250, 240, 220, 0.18);
     --tf-input-bg: rgba(10, 18, 16, 0.72);
-    --tf-table-head: rgba(10, 18, 16, 0.55);
+    --tf-table-head: rgba(10, 18, 16, 0.56);
+    --tf-modal-bg: #11231E;
+    --tf-modal-subtle: #0D1B17;
+    --tf-success-bg: rgba(16, 185, 129, 0.16);
+    --tf-success-border: rgba(52, 211, 153, 0.36);
+    --tf-success-text: #6EE7B7;
+    --tf-danger-bg: rgba(244, 63, 94, 0.16);
+    --tf-danger-border: rgba(251, 113, 133, 0.38);
+    --tf-danger-text: #FDA4AF;
+    --tf-info-text: #34D399;
   }
 
   [data-glass-tone="dark"] select option {
     background-color: #102420;
-    color: #FFFFFF;
+    color: #FAF0DC;
   }
 
   [data-glass-tone="light"] select option {
-    background-color: #FFFFFF;
-    color: #0A241E;
+    background-color: #FFFDF8;
+    color: #0B3B30;
   }
 
   body {
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   [dir="rtl"] body, [dir="rtl"] {
@@ -69,19 +94,26 @@
   }
 }
 
+@layer utilities {
+  /* Crisp, gentle shadow strictly for headlines placed directly over photographic hero banners */
+  .tf-photo-text {
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  }
+}
+
 /* Custom Glassmorphism styles */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 253, 248, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(11, 59, 48, 0.16);
 }
 
 .glass-panel-dark {
-  background: rgba(18, 59, 50, 0.85);
+  background: rgba(14, 34, 29, 0.86);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(250, 240, 220, 0.18);
 }
 
 /* Smooth custom scrollbars */

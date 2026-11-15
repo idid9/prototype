@@ -26,7 +26,7 @@ interface InquiriesTabProps {
 export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experiences = [] }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex, isDarkGlass } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex, isDarkGlass } = useTheme();
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -149,7 +149,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
           onClick={handleExportCSV}
           className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <Download className="w-4 h-4" style={{ color: currentAccentHex }} />
+          <Download className="w-4 h-4" style={{ color: currentAccentTextHex }} />
           <span>{isArabic ? 'تصدير تقرير CSV' : 'Export CSV Report'}</span>
         </button>
       </div>
@@ -168,7 +168,7 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
+            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
           />
         </div>
 
@@ -178,12 +178,16 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap border ${
               statusFilter === 'all'
-                ? 'text-[#102E29]'
+                ? ''
                 : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)] hover:text-[var(--tf-heading)]'
             }`}
             style={
               statusFilter === 'all'
-                ? { backgroundColor: currentAccentHex, borderColor: currentAccentHex }
+                ? {
+                    backgroundColor: currentAccentHex,
+                    borderColor: currentAccentHex,
+                    color: currentAccentBtnTextHex,
+                  }
                 : undefined
             }
           >
@@ -198,12 +202,16 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
                 onClick={() => setStatusFilter(st)}
                 className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap border ${
                   active
-                    ? 'text-[#102E29]'
+                    ? ''
                     : 'bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] border-[var(--tf-border)] hover:text-[var(--tf-heading)]'
                 }`}
                 style={
                   active
-                    ? { backgroundColor: currentAccentHex, borderColor: currentAccentHex }
+                    ? {
+                        backgroundColor: currentAccentHex,
+                        borderColor: currentAccentHex,
+                        color: currentAccentBtnTextHex,
+                      }
                     : undefined
                 }
               >
@@ -322,68 +330,72 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
           dir={isRtl ? 'rtl' : 'ltr'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
+          <div className="bg-[var(--tf-modal-bg)] border border-[var(--tf-border)] rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[var(--tf-text)]">
             {/* Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
+            <div className="flex items-start justify-between pb-4 border-b border-[var(--tf-border)] mb-6">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded text-[#123B32]">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded text-[var(--tf-heading)]">
                     {activeInquiryModal.id}
                   </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded border ${getStatusBadge(activeInquiryModal.status, true)}`}>
+                  <span className={`text-[10px] px-2 py-0.5 rounded border ${getStatusBadge(activeInquiryModal.status, false)}`}>
                     {localizeInquiryStatus(activeInquiryModal.status, language)}
                   </span>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-[#123B32] mt-1">
+                <h3 className="font-serif text-xl font-bold text-[var(--tf-heading)] mt-1">
                   {isArabic ? 'طلب حجز: ' : 'Inquiry: '}
                   {activeInquiryModal.customerName}
                 </h3>
               </div>
               <button
                 onClick={() => setActiveInquiryId(null)}
-                className="p-1.5 text-[#777D75] hover:text-[#123B32] rounded-lg hover:bg-neutral-100"
+                className="p-1.5 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] rounded-lg hover:bg-[var(--tf-surface-hover)] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Customer Details Box */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl text-xs mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl text-xs mb-6">
               <div>
-                <span className="text-[#777D75] block">
+                <span className="text-[var(--tf-muted)] block">
                   {isArabic ? 'اسم العميل:' : 'Customer Name:'}
                 </span>
-                <span className="font-bold text-[#202923] text-sm">{activeInquiryModal.customerName}</span>
+                <span className="font-bold text-[var(--tf-heading)] text-sm">{activeInquiryModal.customerName}</span>
               </div>
               <div>
-                <span className="text-[#777D75] block">
+                <span className="text-[var(--tf-muted)] block">
                   {isArabic ? 'البريد الإلكتروني:' : 'Email:'}
                 </span>
-                <a href={`mailto:${activeInquiryModal.email}`} className="font-semibold text-[#123B32] hover:underline">
+                <a
+                  href={`mailto:${activeInquiryModal.email}`}
+                  className="font-semibold hover:underline"
+                  style={{ color: currentAccentTextHex }}
+                >
                   {activeInquiryModal.email}
                 </a>
               </div>
               <div>
-                <span className="text-[#777D75] block">
+                <span className="text-[var(--tf-muted)] block">
                   {isArabic ? 'رقم الهاتف:' : 'Phone:'}
                 </span>
-                <span className="font-mono font-semibold text-[#202923]" dir="ltr">
+                <span className="font-mono font-semibold text-[var(--tf-heading)]" dir="ltr">
                   {activeInquiryModal.phone}
                 </span>
               </div>
               <div>
-                <span className="text-[#777D75] block">
+                <span className="text-[var(--tf-muted)] block">
                   {isArabic ? 'دولة الإقامة / الجنسية:' : 'Origin Country:'}
                 </span>
-                <span className="font-semibold text-[#202923]">
+                <span className="font-semibold text-[var(--tf-text)]">
                   {localizeCountry(activeInquiryModal.country, language)}
                 </span>
               </div>
               <div>
-                <span className="text-[#777D75] block">
+                <span className="text-[var(--tf-muted)] block">
                   {isArabic ? 'الجولة المختارة:' : 'Selected Tour:'}
                 </span>
-                <span className="font-bold text-[#123B32]">
+                <span className="font-bold text-[var(--tf-heading)]">
                   {localizeExperienceTitle(
                     activeInquiryModal.experienceTitle,
                     language,
@@ -393,10 +405,10 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
                 </span>
               </div>
               <div>
-                <span className="text-[#777D75] block">
+                <span className="text-[var(--tf-muted)] block">
                   {isArabic ? 'التاريخ وعدد الضيوف:' : 'Date & Guests:'}
                 </span>
-                <span className="font-semibold text-[#202923]">
+                <span className="font-semibold text-[var(--tf-text)]">
                   {activeInquiryModal.preferredDate} ({formatGuestsCount(activeInquiryModal.guests, language)})
                 </span>
               </div>
@@ -405,52 +417,64 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
             {/* Special Requests / Message */}
             {activeInquiryModal.message && (
               <div className="mb-6">
-                <span className="text-xs font-bold text-[#123B32] uppercase tracking-wider block mb-1.5">
+                <span className="text-xs font-bold text-[var(--tf-heading)] uppercase tracking-wider block mb-1.5">
                   {isArabic ? 'رسالة المسافر / الطلبات الخاصة:' : 'Traveler Message / Special Requests:'}
                 </span>
-                <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-[#202923] italic">
+                <div className="p-3 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl text-xs text-[var(--tf-text)] italic">
                   "{activeInquiryModal.message}"
                 </div>
               </div>
             )}
 
             {/* Status Change Selector */}
-            <div className="mb-6 p-4 bg-white border border-[#D9C29A]/50 rounded-xl">
-              <label className="block text-xs font-bold text-[#123B32] mb-1.5">
+            <div className="mb-6 p-4 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl">
+              <label className="block text-xs font-bold text-[var(--tf-heading)] mb-1.5">
                 {isArabic ? 'تحديث الحالة (يُحفظ فورياً):' : 'Update Status (Saves Immediately):'}
               </label>
               <div className="flex flex-wrap items-center gap-2">
-                {statusOptions.map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => handleStatusChange(activeInquiryModal.id, st)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
-                      activeInquiryModal.status === st
-                        ? 'bg-[#123B32] text-white border-[#123B32] shadow-sm'
-                        : 'bg-[#FAF8F5] text-[#777D75] border-[#D9C29A]/40 hover:bg-[#D9C29A]/20'
-                    }`}
-                  >
-                    {localizeInquiryStatus(st, language)}
-                  </button>
-                ))}
+                {statusOptions.map((st) => {
+                  const selected = activeInquiryModal.status === st;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => handleStatusChange(activeInquiryModal.id, st)}
+                      style={
+                        selected
+                          ? {
+                              backgroundColor: currentAccentHex,
+                              borderColor: currentAccentHex,
+                              color: currentAccentBtnTextHex,
+                            }
+                          : undefined
+                      }
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                        selected
+                          ? 'shadow-sm font-bold'
+                          : 'bg-[var(--tf-input-bg)] text-[var(--tf-muted)] border-[var(--tf-border)] hover:text-[var(--tf-heading)]'
+                      }`}
+                    >
+                      {localizeInquiryStatus(st, language)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Internal Admin Notes (Private from visitors §6.D) */}
-            <div className="border-t border-[#D9C29A]/40 pt-4">
-              <span className="text-xs font-bold text-[#123B32] uppercase tracking-wider block mb-2">
+            <div className="border-t border-[var(--tf-border)] pt-4">
+              <span className="text-xs font-bold text-[var(--tf-heading)] uppercase tracking-wider block mb-2">
                 {isArabic ? 'ملاحظات المشغل الداخلية (خاصة):' : 'Internal Operator Notes (Private):'}
               </span>
 
               <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
                 {activeInquiryModal.internalNotes && activeInquiryModal.internalNotes.length > 0 ? (
                   activeInquiryModal.internalNotes.map((note, idx) => (
-                    <div key={idx} className="p-2.5 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-lg text-xs text-[#202923]">
+                    <div key={idx} className="p-2.5 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-lg text-xs text-[var(--tf-text)]">
                       {note}
                     </div>
                   ))
                 ) : (
-                  <div className="text-xs text-[#777D75] italic">
+                  <div className="text-xs text-[var(--tf-muted)] italic">
                     {isArabic ? 'لا توجد ملاحظات داخلية بعد.' : 'No internal notes yet.'}
                   </div>
                 )}
@@ -466,12 +490,13 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
                   }
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  className="flex-1 text-xs py-2 px-3 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32]"
+                  className="flex-1 text-xs py-2 px-3 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={!newNote.trim()}
-                  className="py-2 px-4 bg-[#123B32] hover:bg-[#1D5546] disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                  className="py-2 px-4 disabled:opacity-50 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{isArabic ? 'إضافة ملاحظة' : 'Add Note'}</span>

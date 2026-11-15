@@ -146,6 +146,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
       {/* Navigation */}
       <VisitorNavbar
         businessName={businessSettings.businessName}
+        content={websiteContent}
         onNavigateSection={handleScrollToSection}
         onGoToAdmin={onGoToAdmin}
       />
@@ -191,6 +192,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
           <FeaturedDestinations
             destinations={destinations}
             experiences={experiences}
+            content={websiteContent}
             onSelectDestination={(id) => {
               setSelectedDestination(id);
               handleScrollToSection('experiences');
@@ -201,6 +203,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
           <ExperienceCatalog
             experiences={experiences}
             destinations={destinations}
+            content={websiteContent}
             currency={businessSettings.currency}
             selectedDestination={selectedDestination}
             onSelectDestination={setSelectedDestination}
@@ -213,6 +216,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
           <InteractiveQuiz
             quizQuestions={quizzes}
             experiences={experiences}
+            content={websiteContent}
             currency={businessSettings.currency}
             onSelectExperience={handleSelectExperience}
           />

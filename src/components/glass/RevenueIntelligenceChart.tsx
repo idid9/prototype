@@ -29,16 +29,16 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
   currency = 'SAR',
 }) => {
   const { language, isRtl } = useLanguage();
-  const { currentAccentHex, isDarkGlass } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, isDarkGlass } = useTheme();
   const isArabic = language === 'ar';
   const localizedCurrency = localizeCurrency(currency, language);
 
   const pipelineData = useMemo(() => {
     const stages = [
-      { key: 'NEW', label: 'New Leads', labelAr: 'طلبات جديدة', weight: 0.25, color: '#F59E0B' },
-      { key: 'CONTACTED', label: 'Contacted', labelAr: 'تم التواصل', weight: 0.45, color: '#38BDF8' },
-      { key: 'PENDING', label: 'Proposal Pending', labelAr: 'عروض قيد الانتظار', weight: 0.7, color: '#A78BFA' },
-      { key: 'CONFIRMED', label: 'Confirmed', labelAr: 'حجوزات مؤكدة', weight: 1.0, color: '#10B981' },
+      { key: 'NEW', label: 'New Leads', labelAr: 'طلبات جديدة', weight: 0.25, color: isDarkGlass ? '#FBBF24' : '#D97706' },
+      { key: 'CONTACTED', label: 'Contacted', labelAr: 'تم التواصل', weight: 0.45, color: isDarkGlass ? '#38BDF8' : '#0284C7' },
+      { key: 'PENDING', label: 'Proposal Pending', labelAr: 'عروض قيد الانتظار', weight: 0.7, color: isDarkGlass ? '#A78BFA' : '#7C3AED' },
+      { key: 'CONFIRMED', label: 'Confirmed', labelAr: 'حجوزات مؤكدة', weight: 1.0, color: isDarkGlass ? '#34D399' : '#059669' },
       { key: 'COMPLETED', label: 'Completed', labelAr: 'رحلات مكتملة', weight: 1.0, color: currentAccentHex },
     ];
 
@@ -99,7 +99,7 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--tf-border)]">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold text-[var(--tf-muted)]">
-              <TrendingUp className="w-4 h-4" style={{ color: currentAccentHex }} />
+              <TrendingUp className="w-4 h-4" style={{ color: currentAccentTextHex }} />
               <span>{isArabic ? 'ذكاء إيرادات إدارة العملاء' : 'CRM Revenue Intelligence'}</span>
             </div>
             <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--tf-heading)] mt-0.5">
@@ -122,7 +122,7 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
               </span>
               <span
                 className="font-mono text-base sm:text-lg font-bold tabular-nums"
-                style={{ color: currentAccentHex }}
+                style={{ color: currentAccentTextHex }}
               >
                 {confirmedSar.toLocaleString()} {localizedCurrency}
               </span>
@@ -206,7 +206,7 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
       <GlassContainer delay={0.12} className="lg:col-span-5 p-6 flex flex-col justify-between space-y-6">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--tf-muted)]">
-            <BarChart3 className="w-4 h-4" style={{ color: currentAccentHex }} />
+            <BarChart3 className="w-4 h-4" style={{ color: currentAccentTextHex }} />
             <span>{isArabic ? 'توزيع الفئات والقياس اللحظي' : 'Category Mix & Telemetry'}</span>
           </div>
           <h3 className="font-serif text-lg sm:text-xl font-bold text-[var(--tf-heading)] mt-0.5 mb-5">
@@ -235,8 +235,8 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
                       className="w-full h-2 rounded-full overflow-hidden"
                       style={{
                         backgroundColor: isDarkGlass
-                          ? 'rgba(255, 255, 255, 0.08)'
-                          : 'rgba(18, 59, 50, 0.08)',
+                          ? 'rgba(250, 240, 220, 0.08)'
+                          : 'rgba(11, 59, 48, 0.09)',
                       }}
                     >
                       <motion.div
@@ -261,7 +261,7 @@ export const RevenueIntelligenceChart: React.FC<RevenueIntelligenceChartProps> =
         {/* User Activity Metrics Strip (Single Clean Divider, Zero Nested Boxes) */}
         <div className="pt-5 border-t border-[var(--tf-border)]">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--tf-muted)] mb-3">
-            <Activity className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+            <Activity className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
             <span>{isArabic ? 'إشارات نشاط الزوار المباشرة' : 'Live Visitor Activity Signals'}</span>
           </div>
           <div className="grid grid-cols-3 gap-4">

@@ -9,6 +9,7 @@ import {
   localizeCurrency,
   localizeDestinationName,
 } from '../../utils/localization';
+import { getSiteText } from '../../utils/siteTexts';
 import {
   Clock,
   MapPin,
@@ -41,11 +42,11 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
   onExperienceBooked,
 }) => {
   const { language, t, isRtl } = useLanguage();
-  const { getGlassyCardStyle, currentAccentHex, isDarkGlass } = useTheme();
+  const { getGlassyCardStyle, currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex, isDarkGlass } = useTheme();
   const isArabic = language === 'ar';
 
   const cardStyle = getGlassyCardStyle();
-  const optionClass = isDarkGlass ? 'bg-[#102420] text-white' : 'bg-white text-[#202923]';
+  const optionClass = isDarkGlass ? 'bg-[#102420] text-[#FAF0DC]' : 'bg-[#FFFDF8] text-[#0B3B30]';
 
   const [selectedGalleryIdx, setSelectedGalleryIdx] = useState(0);
 
@@ -200,8 +201,8 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
             onClick={onBack}
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--tf-heading)] hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 rtl:rotate-180" style={{ color: currentAccentHex }} />
-            <span>{isArabic ? 'العودة إلى التجارب' : 'Back to Experiences'}</span>
+            <ArrowLeft className="w-4 h-4 rtl:rotate-180" style={{ color: currentAccentTextHex }} />
+            <span>{getSiteText(websiteContent, 'details.backToCatalog', language)}</span>
           </button>
 
           <button
@@ -210,12 +211,16 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
             className="inline-flex items-center gap-1.5 text-xs text-[var(--tf-heading)] px-3 py-1.5 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
           >
             {copiedShare ? (
-              <Check className="w-3.5 h-3.5 text-emerald-500" />
+              <Check className="w-3.5 h-3.5 text-[var(--tf-success-text)]" />
             ) : (
-              <Share2 className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+              <Share2 className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
             )}
             <span>
-              {copiedShare ? (isArabic ? 'تم نسخ الرابط' : 'Link Copied') : isArabic ? 'مشاركة' : 'Share'}
+              {copiedShare
+                ? isArabic
+                  ? 'تم نسخ الرابط'
+                  : 'Link Copied'
+                : getSiteText(websiteContent, 'details.shareBtn', language)}
             </span>
           </button>
         </div>
@@ -223,14 +228,14 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
         {/* Title & Metadata Zone */}
         <div className="mb-8">
           <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--tf-muted)] mb-2 font-medium">
-            <span className="font-bold" style={{ color: currentAccentHex }}>
+            <span className="font-bold" style={{ color: currentAccentTextHex }}>
               {localizeDestinationName(experience.destinationName, language, undefined, experience.destinationId)}
             </span>
             <span aria-hidden="true">/</span>
             <span>{localizeCategory(experience.category, language)}</span>
             <span aria-hidden="true">/</span>
             <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" style={{ color: currentAccentHex }} />
+              <Clock className="w-3 h-3" style={{ color: currentAccentTextHex }} />
               <span>{duration}</span>
             </span>
           </div>
@@ -240,7 +245,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
           </h1>
 
           <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--tf-muted)]">
-            <MapPin className="w-4 h-4" style={{ color: currentAccentHex }} />
+            <MapPin className="w-4 h-4" style={{ color: currentAccentTextHex }} />
             <span>{meetingPoint}</span>
           </div>
         </div>
@@ -285,7 +290,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
             {/* Overview */}
             <div style={cardStyle} className="p-6 sm:p-7 rounded-2xl">
               <h2 className="font-serif text-2xl font-bold text-[var(--tf-heading)] mb-4">
-                {t('details.overview')}
+                {getSiteText(websiteContent, 'details.overview', language)}
               </h2>
               <p className="text-sm sm:text-base text-[var(--tf-text)] leading-relaxed whitespace-pre-line">
                 {description}
@@ -296,14 +301,14 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
             {highlights && highlights.length > 0 && (
               <div style={cardStyle} className="p-6 rounded-2xl">
                 <h3 className="font-serif text-xl font-bold text-[var(--tf-heading)] mb-4">
-                  {t('details.highlights')}
+                  {getSiteText(websiteContent, 'details.highlights', language)}
                 </h3>
                 <ul className="space-y-3">
                   {highlights.map((item, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-[var(--tf-text)]">
                       <div
                         className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                        style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                       >
                         <Check className="w-3 h-3" />
                       </div>
@@ -319,12 +324,12 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
               {/* Inclusions */}
               <div style={cardStyle} className="p-6 rounded-2xl">
                 <h4 className="text-sm font-bold text-[var(--tf-heading)] uppercase tracking-wider mb-3">
-                  {t('details.included')}
+                  {getSiteText(websiteContent, 'details.included', language)}
                 </h4>
                 <ul className="space-y-2 text-xs text-[var(--tf-text)]">
                   {inclusions?.map((inc, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                      <Check className="w-3.5 h-3.5 text-[var(--tf-info-text)] shrink-0 mt-0.5" />
                       <span>{inc}</span>
                     </li>
                   ))}
@@ -334,7 +339,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
               {/* Exclusions */}
               <div style={cardStyle} className="p-6 rounded-2xl">
                 <h4 className="text-sm font-bold text-[var(--tf-heading)] uppercase tracking-wider mb-3">
-                  {t('details.notIncluded')}
+                  {getSiteText(websiteContent, 'details.notIncluded', language)}
                 </h4>
                 <ul className="space-y-2 text-xs text-[var(--tf-muted)]">
                   {exclusions?.map((exc, i) => (
@@ -350,16 +355,12 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
             {/* Location & Meeting Point */}
             <div style={cardStyle} className="p-6 rounded-2xl">
               <h3 className="font-serif text-lg font-bold text-[var(--tf-heading)] mb-2">
-                {t('details.meetingPoint')}
+                {getSiteText(websiteContent, 'details.meetingPoint', language)}
               </h3>
               <p className="text-xs sm:text-sm text-[var(--tf-muted)] mb-2">{meetingPoint}</p>
               <div className="inline-flex items-center gap-2 text-xs text-[var(--tf-heading)] font-semibold">
-                <ShieldCheck className="w-4 h-4" style={{ color: currentAccentHex }} />
-                <span>
-                  {isArabic
-                    ? 'مشغل سياحي مرخص ومعتمد من وزارة السياحة السعودية'
-                    : 'Verified Saudi Ministry of Tourism Operator'}
-                </span>
+                <ShieldCheck className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+                <span>{getSiteText(websiteContent, 'details.verifiedBadge', language)}</span>
               </div>
             </div>
           </div>
@@ -371,17 +372,17 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
               <div className="flex items-baseline justify-between pb-4 border-b border-[var(--tf-border)] mb-6">
                 <div>
                   <div className="text-[11px] font-semibold text-[var(--tf-muted)] uppercase tracking-wider">
-                    {isArabic ? 'السعر الرسمي' : 'Official Rate'}
+                    {getSiteText(websiteContent, 'details.officialRate', language)}
                   </div>
                   <div className="flex items-baseline gap-1 mt-0.5">
                     <span className="font-mono text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] tabular-nums">
                       {experience.price}
                     </span>
-                    <span className="text-sm font-bold" style={{ color: currentAccentHex }}>
+                    <span className="text-sm font-bold" style={{ color: currentAccentTextHex }}>
                       {localizedCurrency}
                     </span>
                     <span className="text-xs text-[var(--tf-muted)]">
-                      {isArabic ? '/ للضيف' : '/ guest'}
+                      {getSiteText(websiteContent, 'details.perGuest', language)}
                     </span>
                   </div>
                 </div>
@@ -389,9 +390,9 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                 <div className="text-end">
                   <span
                     className="text-xs font-semibold"
-                    style={{ color: currentAccentHex }}
+                    style={{ color: currentAccentTextHex }}
                   >
-                    {isArabic ? 'مباشرة مع المشغل' : 'Instant Operator Direct'}
+                    {getSiteText(websiteContent, 'details.instantDirect', language)}
                   </span>
                 </div>
               </div>
@@ -401,15 +402,15 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                 <div className="text-center py-4 space-y-4">
                   <div
                     className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
-                    style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                    style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                   >
                     <Sparkles className="w-6 h-6" />
                   </div>
                   <h3 className="font-serif text-xl font-bold text-[var(--tf-heading)]">
-                    {t('details.bookingCard.successTitle')}
+                    {getSiteText(websiteContent, 'details.successTitle', language)}
                   </h3>
                   <p className="text-xs text-[var(--tf-muted)] leading-relaxed">
-                    {t('details.bookingCard.successMsg')}
+                    {getSiteText(websiteContent, 'details.successMsg', language)}
                   </p>
 
                   <div className="p-3 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl text-xs font-mono">
@@ -427,7 +428,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                     className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-colors"
                   >
                     <MessageCircle className="w-4 h-4" />
-                    <span>{t('details.bookingCard.whatsapp')}</span>
+                    <span>{getSiteText(websiteContent, 'details.whatsappBtn', language)}</span>
                   </a>
 
                   <button
@@ -444,14 +445,14 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                 /* INQUIRY FORM */
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <h3 className="font-serif text-lg font-bold text-[var(--tf-heading)]">
-                    {t('details.bookingCard.title')}
+                    {getSiteText(websiteContent, 'details.bookingTitle', language)}
                   </h3>
                   <p className="text-xs text-[var(--tf-muted)]">
-                    {t('details.bookingCard.sub')}
+                    {getSiteText(websiteContent, 'details.bookingSub', language)}
                   </p>
 
                   {formError && (
-                    <div className="p-2.5 bg-red-500/15 border border-red-500/40 rounded-xl text-xs text-red-400 flex items-center gap-1.5">
+                    <div className="p-2.5 bg-[var(--tf-danger-bg)] border border-[var(--tf-danger-border)] rounded-xl text-xs text-[var(--tf-danger-text)] flex items-center gap-1.5">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>{formError}</span>
                     </div>
@@ -468,7 +469,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                       placeholder={isArabic ? 'مثال: فيصل الحربي' : 'e.g. Faisal Al-Harbi'}
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] focus:outline-none"
+                      className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder:text-[var(--tf-muted)] focus:outline-none"
                     />
                   </div>
 
@@ -484,7 +485,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                         placeholder="faisal@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] focus:outline-none"
+                        className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder:text-[var(--tf-muted)] focus:outline-none"
                       />
                     </div>
                     <div>
@@ -497,7 +498,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                         placeholder="+966 50 123 4567"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] focus:outline-none"
+                        className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder:text-[var(--tf-muted)] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -549,7 +550,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                       }
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] focus:outline-none"
+                      className="w-full text-xs py-2 px-3 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder:text-[var(--tf-muted)] focus:outline-none"
                     />
                   </div>
 
@@ -562,14 +563,14 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                       <div className="relative flex-1">
                         <Tag
                           className="w-3.5 h-3.5 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2"
-                          style={{ color: currentAccentHex }}
+                          style={{ color: currentAccentTextHex }}
                         />
                         <input
                           type="text"
                           placeholder={isArabic ? 'مثال: FOUNDING2026' : 'e.g. FOUNDING2026'}
                           value={promoCodeInput}
                           onChange={(e) => setPromoCodeInput(e.target.value)}
-                          className="w-full text-xs py-2 pl-8 pr-3 rtl:pl-3 rtl:pr-8 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder-[var(--tf-muted)] font-mono uppercase focus:outline-none"
+                          className="w-full text-xs py-2 pl-8 pr-3 rtl:pl-3 rtl:pr-8 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder:text-[var(--tf-muted)] font-mono uppercase focus:outline-none"
                         />
                       </div>
                       <button
@@ -583,7 +584,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                     {promoFeedback && (
                       <p
                         className={`text-[11px] mt-1 font-semibold ${
-                          appliedCoupon ? 'text-emerald-500' : 'text-rose-500'
+                          appliedCoupon ? 'text-[var(--tf-success-text)]' : 'text-[var(--tf-danger-text)]'
                         }`}
                       >
                         {promoFeedback}
@@ -594,7 +595,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                   {/* Total Estimate */}
                   <div className="p-3 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] rounded-xl space-y-1 text-xs">
                     {discountValue > 0 && (
-                      <div className="flex items-center justify-between text-[11px] text-emerald-500 font-semibold">
+                      <div className="flex items-center justify-between text-[11px] text-[var(--tf-success-text)] font-semibold">
                         <span>
                           {isArabic
                             ? `خصم القسيمة (${appliedCoupon?.code})`
@@ -611,7 +612,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                       </span>
                       <span
                         className="font-mono font-bold text-sm tabular-nums"
-                        style={{ color: currentAccentHex }}
+                        style={{ color: currentAccentTextHex }}
                       >
                         {finalEstimatedValue.toLocaleString()} {localizedCurrency}
                       </span>
@@ -622,21 +623,17 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                    style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }}
                     className="w-full py-3 px-4 disabled:opacity-50 rounded-xl text-xs sm:text-sm font-bold tracking-wide shadow-md hover:brightness-105 transition-all cursor-pointer"
                   >
                     {isSubmitting
                       ? t('details.bookingCard.submitting')
-                      : t('details.bookingCard.submit')}
+                      : getSiteText(websiteContent, 'details.submitBtn', language)}
                   </button>
 
                   <div className="text-[11px] text-center text-[var(--tf-muted)] flex items-center justify-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
-                    <span>
-                      {isArabic
-                        ? 'طلب مجاني · لا يتطلب أي دفع مسبق'
-                        : 'Free inquiry · No upfront payment required'}
-                    </span>
+                    <ShieldCheck className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
+                    <span>{getSiteText(websiteContent, 'details.freeNote', language)}</span>
                   </div>
                 </form>
               )}

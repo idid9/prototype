@@ -169,6 +169,8 @@ export interface WebsiteContent {
     linkedin?: string;
     youtube?: string;
   };
+  componentTexts?: Record<string, string>;
+  componentTextsAr?: Record<string, string>;
 }
 
 export interface AnalyticsEvent {

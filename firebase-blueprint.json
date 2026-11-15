@@ -181,7 +181,9 @@
         "contactPhone": { "type": "string", "maxLength": 40 },
         "whatsappNumber": { "type": "string", "maxLength": 40 },
         "officeAddress": { "type": "string", "maxLength": 300 },
-        "officeAddressAr": { "type": "string", "maxLength": 300 }
+        "officeAddressAr": { "type": "string", "maxLength": 300 },
+        "componentTexts": { "type": "object" },
+        "componentTextsAr": { "type": "object" }
       },
       "required": ["heroHeadline", "heroImage", "aboutHeadline"]
     },

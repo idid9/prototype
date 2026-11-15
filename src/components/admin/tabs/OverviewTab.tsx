@@ -54,7 +54,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex, isDarkGlass } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex, isDarkGlass } = useTheme();
 
   // Metrics computation from live real-time collections
   const totalInquiries = inquiries.length;
@@ -136,16 +136,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         <div>
           <div
             className="text-xs font-bold uppercase tracking-widest mb-1"
-            style={{ color: currentAccentHex }}
+            style={{ color: '#DFBF84' }}
           >
             {isArabic ? 'عمليات تورفلو التنفيذية' : 'TourFlow Executive Operations'}
           </div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#FAF0DC] text-balance">
             {isArabic
               ? 'محرك النمو الرقمي للسياحة السعودية'
               : 'Saudi Arabia Tourism Digital Growth Engine'}
           </h2>
-          <p className="text-xs sm:text-sm text-white/75 mt-1.5 max-w-xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#EDE0C6] mt-1.5 max-w-xl leading-relaxed">
             {isArabic
               ? 'ذكاء إدارة علاقات العملاء الفوري، وتوقعات المبيعات، وأدوات التحكم في بوابة الزوار موحدة في مساحة عمل واحدة.'
               : 'Real-time CRM intelligence, pipeline forecasting, and visitor portal controls unified in a single workspace.'}
@@ -154,8 +154,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
         <button
           onClick={onOpenCreateExperience}
-          className="py-2.5 px-5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-transform hover:scale-[1.02] cursor-pointer whitespace-nowrap shrink-0 text-[#102E29]"
-          style={{ backgroundColor: currentAccentHex }}
+          className="py-2.5 px-5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-transform hover:scale-[1.02] cursor-pointer whitespace-nowrap shrink-0"
+          style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
         >
           <PlusCircle className="w-4 h-4" />
           <span>{isArabic ? 'تجربة جديدة' : 'New Experience'}</span>
@@ -201,8 +201,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
             <button
               onClick={() => onNavigateTab('inquiries')}
-              className="text-xs font-semibold text-[var(--tf-heading)] hover:opacity-80 flex items-center gap-1 cursor-pointer whitespace-nowrap"
-              style={{ color: currentAccentHex }}
+              className="text-xs font-semibold hover:opacity-80 flex items-center gap-1 cursor-pointer whitespace-nowrap"
+              style={{ color: currentAccentTextHex }}
             >
               <span>
                 {isArabic ? `عرض الكل (${inquiries.length})` : `View All (${inquiries.length})`}

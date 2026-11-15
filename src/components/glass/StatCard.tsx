@@ -29,10 +29,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       className="p-5 flex flex-col justify-between"
     >
       <div className="flex items-center justify-between gap-3 mb-3">
-        <span
-          className="text-xs font-semibold text-[var(--tf-muted)] tracking-wide"
-          style={{ textShadow: 'var(--tf-text-shadow)' }}
-        >
+        <span className="text-xs font-semibold text-[var(--tf-muted)] tracking-wide">
           {label}
         </span>
         <div
@@ -44,16 +41,10 @@ export const StatCard: React.FC<StatCardProps> = ({
       </div>
 
       <div>
-        <div
-          className="font-mono text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] tabular-nums tracking-tight"
-          style={{ textShadow: 'var(--tf-text-shadow)' }}
-        >
+        <div className="font-mono text-2xl sm:text-3xl font-bold text-[var(--tf-heading)] tabular-nums tracking-tight">
           {value}
         </div>
-        <div
-          className="text-xs text-[var(--tf-muted)] mt-1 font-medium"
-          style={{ textShadow: 'var(--tf-text-shadow)' }}
-        >
+        <div className="text-xs text-[var(--tf-muted)] mt-1 font-medium">
           {sub}
         </div>
       </div>

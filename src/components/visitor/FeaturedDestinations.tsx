@@ -1,22 +1,25 @@
 import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Destination, Experience } from '../../types';
+import { Destination, Experience, WebsiteContent } from '../../types';
+import { getSiteText } from '../../utils/siteTexts';
 import { ArrowUpRight, Compass } from 'lucide-react';
 
 interface FeaturedDestinationsProps {
   destinations: Destination[];
   experiences?: Experience[];
+  content?: WebsiteContent;
   onSelectDestination: (destId: string) => void;
 }
 
 export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
   destinations,
   experiences = [],
+  content,
   onSelectDestination,
 }) => {
-  const { language, t, isRtl } = useLanguage();
-  const { currentAccentHex, currentAccentRgb, settings } = useTheme();
+  const { language, isRtl } = useLanguage();
+  const { currentAccentHex, currentAccentTextHex, currentAccentRgb, settings } = useTheme();
   const isArabic = language === 'ar';
 
   const publishedDestinations = destinations.filter((d) => d.published);
@@ -45,23 +48,22 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
           <div className="max-w-2xl">
             <div
               className="text-xs font-bold tracking-widest uppercase mb-2 flex items-center gap-1.5"
-              style={{ color: currentAccentHex }}
+              style={{ color: currentAccentTextHex }}
             >
-              <Compass className="w-4 h-4" style={{ color: currentAccentHex }} />
-              <span>{t('section.destinations.viewAll')}</span>
+              <Compass className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+              <span>{getSiteText(content, 'destinations.viewAll', language)}</span>
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
-              {t('section.destinations.title')}
+              {getSiteText(content, 'destinations.title', language)}
             </h2>
             <p className="mt-3 text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed">
-              {t('section.destinations.sub')}
+              {getSiteText(content, 'destinations.sub', language)}
             </p>
           </div>
           <div className="hidden md:block">
             <span className="text-xs text-[var(--tf-muted)] tabular-nums">
-              {isArabic
-                ? `${publishedDestinations.length} وجهات سياحية رئيسية`
-                : `${publishedDestinations.length} Key Tourism Hubs`}
+              {publishedDestinations.length}{' '}
+              {getSiteText(content, 'destinations.hubsSuffix', language)}
             </span>
           </div>
         </div>
@@ -96,20 +98,20 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-[#102E29]/95 via-[#102E29]/40 to-transparent transition-opacity" />
 
                 {/* Region Tag */}
-                <div className="absolute top-4 left-4 rtl:left-auto rtl:right-4 text-xs font-medium tracking-wide text-white/90 bg-black/45 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                <div className="absolute top-4 left-4 rtl:left-auto rtl:right-4 text-xs font-medium tracking-wide text-[#FAF0DC] bg-black/45 backdrop-blur-md px-3 py-1 rounded-full border border-[#FAF0DC]/20">
                   {region}
                 </div>
 
                 {/* Content */}
-                <div className="absolute bottom-0 inset-x-0 p-6 text-white flex flex-col justify-end">
+                <div className="absolute bottom-0 inset-x-0 p-6 text-[#FAF0DC] flex flex-col justify-end">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-serif text-2xl font-bold tracking-tight text-white transition-colors">
+                    <h3 className="font-serif text-2xl font-bold tracking-tight text-[#FAF0DC] tf-photo-text transition-colors">
                       {name}
                     </h3>
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
                       style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.16)',
+                        backgroundColor: 'rgba(250, 240, 220, 0.16)',
                         color: currentAccentHex,
                       }}
                     >
@@ -117,12 +119,12 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-white/80 line-clamp-2 mb-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#EDE0C6] line-clamp-2 mb-3 leading-relaxed">
                     {description}
                   </p>
 
                   <div
-                    className="flex items-center gap-3 text-xs font-medium pt-2 border-t border-white/15"
+                    className="flex items-center gap-3 text-xs font-medium pt-2 border-t border-[#FAF0DC]/15"
                     style={{ color: currentAccentHex }}
                   >
                     <span>
@@ -131,10 +133,10 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
                             (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
                           ).length
                         : dest.experienceCount}{' '}
-                      {isArabic ? 'تجارب مختارة' : 'Curated Experiences'}
+                      {getSiteText(content, 'destinations.experiencesSuffix', language)}
                     </span>
                     <span aria-hidden="true">·</span>
-                    <span>{isArabic ? 'استكشف الوجهة' : 'Explore Destination'}</span>
+                    <span>{getSiteText(content, 'destinations.exploreCta', language)}</span>
                   </div>
                 </div>
               </div>

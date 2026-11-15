@@ -24,7 +24,7 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
 }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex, isDarkGlass } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, isDarkGlass } = useTheme();
 
   const pageViews = analyticsEvents.filter((e) => e.type === 'page_view').length + 180;
   const experienceViews = analyticsEvents.filter((e) => e.type === 'experience_view').length + 64;
@@ -185,7 +185,7 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({
                     {exp.price} {localizeCurrency(exp.currency, language)}
                   </span>
                   {exp.rating && exp.rating > 0 ? (
-                    <span className="text-xs font-bold" style={{ color: currentAccentHex }}>
+                    <span className="text-xs font-bold" style={{ color: currentAccentTextHex }}>
                       ★ {exp.rating.toFixed(1)}
                     </span>
                   ) : null}

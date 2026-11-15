@@ -248,7 +248,8 @@ service cloud.firestore {
           'heroHeadline', 'heroHeadlineAr', 'heroDescription', 'heroDescriptionAr',
           'heroImage', 'aboutHeadline', 'aboutHeadlineAr', 'aboutText', 'aboutTextAr',
           'stats', 'contactEmail', 'contactPhone', 'whatsappNumber',
-          'officeAddress', 'officeAddressAr', 'socialLinks'
+          'officeAddress', 'officeAddressAr', 'socialLinks',
+          'componentTexts', 'componentTextsAr'
         ]) &&
         data.heroHeadline is string && data.heroHeadline.size() <= 300 &&
         (!('heroHeadlineAr' in data) || (data.heroHeadlineAr is string && data.heroHeadlineAr.size() <= 300)) &&
@@ -265,7 +266,9 @@ service cloud.firestore {
         (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 40)) &&
         (!('officeAddress' in data) || (data.officeAddress is string && data.officeAddress.size() <= 300)) &&
         (!('officeAddressAr' in data) || (data.officeAddressAr is string && data.officeAddressAr.size() <= 300)) &&
-        (!('socialLinks' in data) || data.socialLinks is map);
+        (!('socialLinks' in data) || data.socialLinks is map) &&
+        (!('componentTexts' in data) || (data.componentTexts is map && data.componentTexts.keys().size() <= 160)) &&
+        (!('componentTextsAr' in data) || (data.componentTextsAr is map && data.componentTextsAr.keys().size() <= 160));
     }
 
     function isValidBusinessSettings(data) {

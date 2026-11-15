@@ -43,7 +43,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const { isAdminAuthenticated, logout, openLoginModal } = useAuth();
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { getDashboardBgStyle, isDarkGlass } = useTheme();
+  const {
+    getDashboardBgStyle,
+    getGlassyCardStyle,
+    getGlassyIconStyle,
+    isDarkGlass,
+    currentAccentHex,
+    currentAccentBtnTextHex,
+  } = useTheme();
 
   const [currentTab, setCurrentTab] = useState<AdminTab>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -94,17 +101,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   if (!isAdminAuthenticated) {
     return (
       <div
+        data-glass-tone={isDarkGlass ? 'dark' : 'light'}
+        style={getDashboardBgStyle()}
         dir={isRtl ? 'rtl' : 'ltr'}
-        className="min-h-screen bg-[#F6F4EF] flex items-center justify-center p-4 text-[#202923]"
+        className="min-h-screen flex items-center justify-center p-4 text-[var(--tf-text)] transition-colors duration-300"
       >
-        <div className="max-w-md w-full bg-white border border-[#D9C29A]/60 rounded-2xl p-8 text-center shadow-xl">
-          <div className="w-14 h-14 rounded-2xl bg-[#123B32] text-[#D9C29A] flex items-center justify-center mx-auto mb-4">
+        <div
+          style={getGlassyCardStyle()}
+          className="max-w-md w-full rounded-2xl p-8 text-center shadow-2xl"
+        >
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm"
+            style={getGlassyIconStyle()}
+          >
             <Lock className="w-7 h-7" />
           </div>
-          <h2 className="font-serif text-2xl font-bold text-[#123B32] mb-2">
+          <h2 className="font-serif text-2xl font-bold text-[var(--tf-heading)] mb-2">
             {isArabic ? 'دخول مقيد للمشغلين' : 'Restricted Operator Access'}
           </h2>
-          <p className="text-xs text-[#777D75] mb-6 leading-relaxed">
+          <p className="text-xs text-[var(--tf-muted)] mb-6 leading-relaxed">
             {isArabic
               ? 'تتطلب مساحة عمل إدارة تورفلو مصادقة مصرح بها. يرجى إدخال كلمة المرور للمتابعة.'
               : 'The TourFlow Admin Workspace requires authorized authentication. Please enter your administrator password to proceed.'}
@@ -113,13 +128,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           <div className="flex flex-col gap-3">
             <button
               onClick={openLoginModal}
-              className="w-full py-2.5 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm"
+              style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+              className="w-full py-2.5 px-4 rounded-xl text-xs font-bold cursor-pointer shadow-sm hover:opacity-95 transition-opacity"
             >
               {isArabic ? 'إدخال كلمة المرور (تجريبي: 12341234)' : 'Enter Password (Demo: 12341234)'}
             </button>
             <button
               onClick={onGoToVisitorSite}
-              className="w-full py-2.5 px-4 bg-[#FAF8F5] border border-[#D9C29A]/50 text-[#123B32] rounded-xl text-xs font-semibold cursor-pointer"
+              className="w-full py-2.5 px-4 bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] text-[var(--tf-heading)] rounded-xl text-xs font-semibold cursor-pointer transition-colors"
             >
               {isArabic ? 'العودة إلى موقع الزوار العام' : 'Return to Public Visitor Website'}
             </button>

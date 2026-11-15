@@ -25,7 +25,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
 }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex } = useTheme();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
@@ -119,7 +119,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
           onClick={handleExportCSV}
           className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <Download className="w-4 h-4" style={{ color: currentAccentHex }} />
+          <Download className="w-4 h-4" style={{ color: currentAccentTextHex }} />
           <span>{isArabic ? 'تصدير دليل العملاء' : 'Export Customer Directory'}</span>
         </button>
       </div>
@@ -137,7 +137,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
+            className="w-full text-xs pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
           />
         </div>
 
@@ -210,7 +210,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                     <td className="py-3 px-4 font-mono font-bold text-[var(--tf-heading)] tabular-nums">
                       {cust.totalInquiries}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-emerald-400 tabular-nums">
+                    <td className="py-3 px-4 font-mono font-bold text-[var(--tf-success-text)] tabular-nums">
                       {cust.confirmedBookings}
                     </td>
                     <td className="py-3 px-4 text-[var(--tf-muted)] whitespace-nowrap font-mono">
@@ -241,52 +241,55 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
           dir={isRtl ? 'rtl' : 'ltr'}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
-          <div className="bg-white border border-[#D9C29A]/50 rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[#202923]">
-            <div className="flex items-start justify-between pb-4 border-b border-[#D9C29A]/40 mb-6">
+          <div className="bg-[var(--tf-modal-bg)] border border-[var(--tf-border)] rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto text-[var(--tf-text)]">
+            <div className="flex items-start justify-between pb-4 border-b border-[var(--tf-border)] mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#123B32] text-[#D9C29A] flex items-center justify-center font-bold">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                >
                   <User className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-[#123B32]">
+                  <h3 className="font-serif text-xl font-bold text-[var(--tf-heading)]">
                     {selectedCustomer.name}
                   </h3>
-                  <div className="text-xs text-[#777D75]">
+                  <div className="text-xs text-[var(--tf-muted)]">
                     {selectedCustomer.email} · <span dir="ltr">{selectedCustomer.phone}</span>
                   </div>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedCustomerId(null)}
-                className="p-1.5 text-[#777D75] hover:text-[#123B32]"
+                className="p-1.5 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] rounded-lg hover:bg-[var(--tf-surface-hover)] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 p-4 bg-[#FAF8F5] border border-[#D9C29A]/40 rounded-xl text-center mb-6">
+            <div className="grid grid-cols-3 gap-3 p-4 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl text-center mb-6">
               <div>
-                <span className="text-[11px] text-[#777D75] block">
+                <span className="text-[11px] text-[var(--tf-muted)] block">
                   {isArabic ? 'إجمالي الطلبات' : 'Total Inquiries'}
                 </span>
-                <span className="font-mono text-lg font-bold text-[#123B32]">
+                <span className="font-mono text-lg font-bold text-[var(--tf-heading)]">
                   {selectedCustomer.totalInquiries}
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-[#777D75] block">
+                <span className="text-[11px] text-[var(--tf-muted)] block">
                   {isArabic ? 'الحجوزات المؤكدة' : 'Confirmed Bookings'}
                 </span>
-                <span className="font-mono text-lg font-bold text-emerald-700">
+                <span className="font-mono text-lg font-bold text-[var(--tf-success-text)]">
                   {selectedCustomer.confirmedBookings}
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-[#777D75] block">
+                <span className="text-[11px] text-[var(--tf-muted)] block">
                   {isArabic ? 'الدولة' : 'Origin'}
                 </span>
-                <span className="text-xs font-bold text-[#123B32] mt-1 block">
+                <span className="text-xs font-bold text-[var(--tf-heading)] mt-1 block">
                   {localizeCountry(selectedCustomer.country, language)}
                 </span>
               </div>
@@ -294,7 +297,7 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
 
             {/* Associated Inquiries */}
             <div className="mb-6">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#123B32] mb-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--tf-heading)] mb-3">
                 {isArabic ? 'سجل الطلبات' : 'Inquiry History'}
               </h4>
               <div className="space-y-2">
@@ -303,10 +306,10 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                   .map((inq) => (
                     <div
                       key={inq.id}
-                      className="p-3 bg-white border border-[#D9C29A]/50 rounded-xl text-xs flex items-center justify-between gap-2"
+                      className="p-3 bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl text-xs flex items-center justify-between gap-2"
                     >
                       <div>
-                        <div className="font-bold text-[#123B32]">
+                        <div className="font-bold text-[var(--tf-heading)]">
                           {localizeExperienceTitle(
                             inq.experienceTitle,
                             language,
@@ -314,13 +317,13 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                             inq.experienceId
                           )}
                         </div>
-                        <div className="text-[11px] text-[#777D75]">
+                        <div className="text-[11px] text-[var(--tf-muted)]">
                           {isArabic ? 'التاريخ:' : 'Date:'} {inq.preferredDate} ·{' '}
                           {formatGuestsCount(inq.guests, language)} ·{' '}
                           {isArabic ? 'المرجع:' : 'Ref:'} {inq.id}
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] border border-[#D9C29A]/50 shrink-0">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--tf-surface-subtle)] text-[var(--tf-heading)] border border-[var(--tf-border)] shrink-0">
                         {localizeInquiryStatus(inq.status, language)}
                       </span>
                     </div>
@@ -329,8 +332,8 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
             </div>
 
             {/* Concierge Notes */}
-            <div className="border-t border-[#D9C29A]/40 pt-4">
-              <label className="block text-xs font-bold text-[#123B32] mb-1">
+            <div className="border-t border-[var(--tf-border)] pt-4">
+              <label className="block text-xs font-bold text-[var(--tf-heading)] mb-1">
                 {isArabic ? 'ملاحظات ملف الخدمة الخاصة:' : 'Concierge Profile Notes:'}
               </label>
               <textarea
@@ -342,11 +345,11 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                     ? 'أضف تفضيلات العميل الخاصة (مثل حالة VIP، القيود الغذائية، اللغة المفضلة)...'
                     : 'Add private client preferences (e.g. VIP status, dietary restrictions, preferred language)...'
                 }
-                className="w-full text-xs p-3 bg-[#FAF8F5] border border-[#D9C29A]/50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#123B32] mb-3"
+                className="w-full text-xs p-3 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none mb-3"
               />
               <div className="flex items-center justify-between gap-3">
                 {notesSaved ? (
-                  <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                  <span className="text-xs font-semibold text-[var(--tf-success-text)] flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" />
                     {isArabic ? 'تم حفظ الملاحظات مباشرة' : 'Notes saved in real time'}
                   </span>
@@ -356,7 +359,8 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                 <button
                   type="button"
                   onClick={handleSaveNotes}
-                  className="py-2 px-4 bg-[#123B32] hover:bg-[#1D5546] text-white rounded-xl text-xs font-semibold cursor-pointer"
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
+                  className="py-2 px-4 rounded-xl text-xs font-bold cursor-pointer transition-opacity hover:opacity-90"
                 >
                   {isArabic ? 'حفظ الملاحظات' : 'Save Notes'}
                 </button>

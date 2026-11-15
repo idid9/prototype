@@ -52,7 +52,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   newInquiriesCount = 0,
 }) => {
   const { language, isRtl } = useLanguage();
-  const { settings, isDarkGlass, blurPixels, currentAccentHex, currentAccentRgb, getGlassyIconStyle } = useTheme();
+  const { settings, isDarkGlass, blurPixels, currentAccentHex, currentAccentBtnTextHex, currentAccentRgb, getGlassyIconStyle } = useTheme();
   const isArabic = language === 'ar';
 
   const menuItems: { id: AdminTab; label: string; labelAr: string; icon: React.ReactNode; badge?: number }[] = [
@@ -95,13 +95,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   return (
     <aside
       style={sidebarStyle}
-      className={`fixed top-0 bottom-0 z-30 flex flex-col text-white transition-all duration-300 ${
+      className={`fixed top-0 bottom-0 z-30 flex flex-col text-[#FAF0DC] transition-all duration-300 ${
         isRtl ? 'right-0' : 'left-0'
       } ${collapsed ? 'w-20' : 'w-64'}`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-white/15">
+      <div className="h-16 flex items-center justify-between px-5 border-b border-[#FAF0DC]/15">
         {!collapsed && (
           <div className="flex items-center gap-2.5">
             <div
@@ -122,7 +122,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   </>
                 )}
               </span>
-              <span className="text-[10px] text-white/65 tracking-wider uppercase mt-1">
+              <span className="text-[10px] text-[#EDE0C6]/75 tracking-wider uppercase mt-1">
                 {isArabic ? 'نظام إدارة المشغلين' : 'Operator SaaS'}
               </span>
             </div>
@@ -140,7 +140,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
         <button
           onClick={onToggleCollapse}
-          className="hidden md:flex p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+          className="hidden md:flex p-1.5 rounded-lg text-[#EDE0C6]/70 hover:text-[#FAF0DC] hover:bg-[#FAF0DC]/10 transition-colors cursor-pointer"
           title={
             collapsed
               ? isArabic
@@ -180,13 +180,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
                 isActive
                   ? 'shadow-sm'
-                  : 'border-transparent text-white/85 hover:bg-white/10 hover:text-white'
+                  : 'border-transparent text-[#EDE0C6]/85 hover:bg-[#FAF0DC]/10 hover:text-[#FAF0DC]'
               } ${collapsed ? 'justify-center px-0' : 'justify-between'}`}
               title={isArabic ? item.labelAr : item.label}
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={isActive ? '' : 'text-white/75'}
+                  className={isActive ? '' : 'text-[#EDE0C6]/75'}
                   style={isActive ? { color: currentAccentHex } : undefined}
                 >
                   {item.icon}
@@ -197,7 +197,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               {!collapsed && item.badge !== undefined && item.badge > 0 && (
                 <span
                   className="px-2 py-0.5 text-[10px] font-bold rounded-full"
-                  style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                 >
                   {item.badge}
                 </span>
@@ -215,11 +215,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </nav>
 
       {/* Bottom Footer Actions */}
-      <div className="p-3 border-t border-white/15 space-y-1">
+      <div className="p-3 border-t border-[#FAF0DC]/15 space-y-1">
         {/* Switch to Visitor Portal */}
         <button
           onClick={onGoToVisitorSite}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-white/85 hover:bg-white/10 hover:text-white transition-colors cursor-pointer ${
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-[#EDE0C6]/85 hover:bg-[#FAF0DC]/10 hover:text-[#FAF0DC] transition-colors cursor-pointer ${
             collapsed ? 'justify-center px-0' : ''
           }`}
           title={isArabic ? 'فتح موقع الزوار' : 'Open Visitor Website'}

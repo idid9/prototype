@@ -3,6 +3,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { WebsiteContent, Destination, BusinessSettings } from '../../types';
 import { localizeCurrency } from '../../utils/localization';
+import { getSiteText } from '../../utils/siteTexts';
 import { Compass, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 
 interface VisitorFooterProps {
@@ -21,7 +22,7 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
   onNavigateSection,
 }) => {
   const { language, t, isRtl } = useLanguage();
-  const { settings, isDarkGlass, blurPixels, currentAccentHex } = useTheme();
+  const { settings, isDarkGlass, blurPixels, currentAccentHex, currentAccentBtnTextHex } = useTheme();
   const isArabic = language === 'ar';
 
   const publishedDestinations = destinations.filter((d) => d.published);
@@ -55,20 +56,30 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
         borderTopColor: 'rgba(255, 255, 255, 0.14)',
       };
 
+  const customBrandWordmark = isArabic
+    ? content?.componentTextsAr?.['nav.brandName']?.trim()
+    : content?.componentTexts?.['nav.brandName']?.trim();
+  const hasCustomCmsBrand =
+    Boolean(customBrandWordmark) &&
+    customBrandWordmark !== 'TourFlow' &&
+    customBrandWordmark !== 'تورفلو';
+
   const isDefaultBrand =
-    !brandTitle ||
-    brandTitle === 'TourFlow' ||
-    brandTitle === 'TourFlow Digital Tourism Platform';
+    !hasCustomCmsBrand &&
+    (!brandTitle ||
+      brandTitle === 'TourFlow' ||
+      brandTitle === 'TourFlow Digital Tourism Platform');
+  const displayBrandName = hasCustomCmsBrand ? customBrandWordmark : brandTitle;
   const localizedBrandName = isDefaultBrand
     ? isArabic
       ? 'منصة تورفلو السياحية الرقمية'
       : brandTitle
-    : brandTitle;
+    : displayBrandName;
 
   return (
     <footer
       style={footerStyle}
-      className="text-white pt-16 pb-12 transition-all duration-300"
+      className="text-[#FAF0DC] pt-16 pb-12 transition-all duration-300"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,7 +89,7 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
             <div className="flex items-center gap-2">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center font-bold"
-                style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
               >
                 <Compass className="w-5 h-5" />
               </div>
@@ -94,24 +105,18 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
                     </>
                   )
                 ) : (
-                  brandTitle
+                  displayBrandName
                 )}
               </span>
             </div>
 
-            <p className="text-xs sm:text-sm text-white/70 max-w-sm leading-relaxed">
-              {isArabic
-                ? '"تحويل التجارب المحلية إلى نمو رقمي مستدام." المنصة الرقمية الرائدة في المملكة العربية السعودية لربط مشغلي الجولات المرخصين بالمسافرين محلياً وعالمياً.'
-                : '"Turning Local Experiences Into Digital Growth." Saudi Arabia’s premier digital platform connecting licensed tour operators with global and domestic travelers.'}
+            <p className="text-xs sm:text-sm text-[#EDE0C6]/85 max-w-sm leading-relaxed">
+              {getSiteText(content, 'footer.bio', language)}
             </p>
 
             <div className="flex items-center gap-3 text-xs pt-2" style={{ color: currentAccentHex }}>
               <ShieldCheck className="w-4 h-4" />
-              <span>
-                {isArabic
-                  ? 'متوافقة مع منظومة السياحة في رؤية السعودية 2030'
-                  : 'Aligned with Saudi Vision 2030 Tourism Ecosystem'}
-              </span>
+              <span>{getSiteText(content, 'footer.visionBadge', language)}</span>
             </div>
           </div>
 
@@ -121,9 +126,9 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
               className="text-xs font-bold uppercase tracking-widest"
               style={{ color: currentAccentHex }}
             >
-              {isArabic ? 'استكشف الوجهات' : 'Explore Destinations'}
+              {getSiteText(content, 'footer.destinationsCol', language)}
             </h4>
-            <ul className="space-y-2 text-xs text-white/75">
+            <ul className="space-y-2 text-xs text-[#EDE0C6]/85">
               {publishedDestinations.length > 0 ? (
                 publishedDestinations.map((dest) => (
                   <li key={dest.id}>
@@ -133,7 +138,7 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
                           ? onSelectDestination(dest.id)
                           : onNavigateSection('destinations')
                       }
-                      className="hover:text-white transition-colors cursor-pointer text-start"
+                      className="hover:text-[#FAF0DC] transition-colors cursor-pointer text-start"
                     >
                       {isArabic ? dest.nameAr : dest.name} · {isArabic ? dest.regionAr : dest.region}
                     </button>
@@ -143,7 +148,7 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
                 <li>
                   <button
                     onClick={() => onNavigateSection('destinations')}
-                    className="hover:text-white transition-colors cursor-pointer"
+                    className="hover:text-[#FAF0DC] transition-colors cursor-pointer"
                   >
                     {t('section.destinations.viewAll')}
                   </button>
@@ -158,9 +163,9 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
               className="text-xs font-bold uppercase tracking-widest"
               style={{ color: currentAccentHex }}
             >
-              {isArabic ? 'خدمة الكونسيرج والتواصل' : 'Platform Concierge'}
+              {getSiteText(content, 'footer.conciergeCol', language)}
             </h4>
-            <ul className="space-y-2.5 text-xs text-white/75">
+            <ul className="space-y-2.5 text-xs text-[#EDE0C6]/85">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 shrink-0" style={{ color: currentAccentHex }} />
                 <a href={`mailto:${content.contactEmail}`} className="hover:underline">
@@ -173,18 +178,16 @@ export const VisitorFooter: React.FC<VisitorFooterProps> = ({
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 shrink-0 mt-0.5" style={{ color: currentAccentHex }} />
-                <span>{isArabic ? content.officeAddressAr : content.officeAddress}</span>
+                <span>{isArabic ? content.officeAddressAr || content.officeAddress : content.officeAddress}</span>
               </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
+        <div className="pt-8 border-t border-[#FAF0DC]/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#EDE0C6]/75">
           <div>
-            {isArabic
-              ? `© 2026 ${localizedBrandName}. جميع الحقوق محفوظة.`
-              : `© 2026 ${brandTitle}. All rights reserved.`}
+            © 2026 {localizedBrandName}. {getSiteText(content, 'footer.rightsSuffix', language)}
           </div>
           <span className="text-[11px]" style={{ color: currentAccentHex }}>
             {isArabic ? 'العملة:' : 'Currency:'} {localizeCurrency(currencyLabel, language)}

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { QuizQuestion, Experience } from '../../types';
+import { QuizQuestion, Experience, WebsiteContent } from '../../types';
 import { localizeCurrency, localizeDestinationName } from '../../utils/localization';
+import { getSiteText } from '../../utils/siteTexts';
 import confetti from 'canvas-confetti';
 import { Sparkles, Trophy, CheckCircle2, XCircle, ArrowRight, RotateCcw, Share2, Check } from 'lucide-react';
 
 interface InteractiveQuizProps {
   quizQuestions: QuizQuestion[];
   experiences: Experience[];
+  content?: WebsiteContent;
   currency?: string;
   onSelectExperience: (exp: Experience) => void;
 }
@@ -16,14 +18,16 @@ interface InteractiveQuizProps {
 export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
   quizQuestions,
   experiences,
+  content,
   currency = 'SAR',
   onSelectExperience,
 }) => {
   const { language, t, isRtl } = useLanguage();
   const {
     getVisitorGlassyStyle,
-    isDarkGlass,
     currentAccentHex,
+    currentAccentTextHex,
+    currentAccentBtnTextHex,
   } = useTheme();
   const isArabic = language === 'ar';
 
@@ -53,8 +57,8 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
   const matcherSteps = [
     {
       id: 'atmosphere',
-      question: 'What landscape or setting calls to you most?',
-      questionAr: 'ما هي الطبيعة أو البيئة التي تجذبك أكثر؟',
+      question: getSiteText(content, 'quiz.matcherQ1', 'en'),
+      questionAr: getSiteText(content, 'quiz.matcherQ1', 'ar'),
       options: [
         { label: 'Dramatic sandstone canyons & star-filled desert', labelAr: 'مضائق صخرية شاهقة وسماء صحراوية مرصعة بالنجوم', category: 'Desert Adventure' },
         { label: 'Ancient mudbrick palaces & timeless heritage', labelAr: 'قصور طينية عريقة وحضارات تاريخية أصيلة', category: 'Cultural Experiences' },
@@ -64,8 +68,8 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
     },
     {
       id: 'travelers',
-      question: 'Who will be sharing this journey with you?',
-      questionAr: 'مع من تخطط لمشاركة هذه التجربة؟',
+      question: getSiteText(content, 'quiz.matcherQ2', 'en'),
+      questionAr: getSiteText(content, 'quiz.matcherQ2', 'ar'),
       options: [
         { label: 'Solo exploration & authentic cultural immersion', labelAr: 'استكشاف فردي وانغماس ثقافي هادئ', category: 'Cultural Experiences' },
         { label: 'Romantic escape / celebrating an anniversary', labelAr: 'رحلة رومانسية / احتفال بذكرى خاصة', category: 'Luxury Experiences' },
@@ -75,8 +79,8 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
     },
     {
       id: 'pace',
-      question: 'What is your preferred rhythm for the day?',
-      questionAr: 'ما هو النمط المفضل لبرنامج يومك؟',
+      question: getSiteText(content, 'quiz.matcherQ3', 'en'),
+      questionAr: getSiteText(content, 'quiz.matcherQ3', 'ar'),
       options: [
         { label: 'Thrilling action with off-road drives & open dunes', labelAr: 'إثارة وتشويق مع دفع رباعي وكثبان مفتوحة', category: 'Desert Adventure' },
         { label: 'In-depth storytelling with certified local historians', labelAr: 'سرد تاريخي عميق مع رواة ومرشدين محليين', category: 'Cultural Experiences' },
@@ -172,16 +176,16 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
         <div className="text-center mb-10">
           <div
             className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase mb-2"
-            style={{ color: currentAccentHex }}
+            style={{ color: currentAccentTextHex }}
           >
-            <Sparkles className="w-4 h-4" style={{ color: currentAccentHex }} />
-            <span>{t('quiz.badge')}</span>
+            <Sparkles className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+            <span>{getSiteText(content, 'quiz.badge', language)}</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
-            {t('quiz.title')}
+            {getSiteText(content, 'quiz.title', language)}
           </h2>
           <p className="mt-2 text-sm sm:text-base text-[var(--tf-muted)] max-w-xl mx-auto">
-            {t('quiz.sub')}
+            {getSiteText(content, 'quiz.sub', language)}
           </p>
 
           {/* Mode Switcher Tabs (Zero-pill segmented buttons) */}
@@ -193,7 +197,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
               onClick={() => setActiveTab('match')}
               style={
                 activeTab === 'match'
-                  ? { backgroundColor: currentAccentHex, color: '#102E29' }
+                  ? { backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }
                   : undefined
               }
               className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
@@ -202,13 +206,13 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   : 'text-[var(--tf-muted)] hover:text-[var(--tf-heading)]'
               }`}
             >
-              {isArabic ? 'مستكشف التجارب' : 'Experience Matcher'}
+              {getSiteText(content, 'quiz.tabMatcher', language)}
             </button>
             <button
               onClick={() => setActiveTab('knowledge')}
               style={
                 activeTab === 'knowledge'
-                  ? { backgroundColor: currentAccentHex, color: '#102E29' }
+                  ? { backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }
                   : undefined
               }
               className={`px-4 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
@@ -217,7 +221,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   : 'text-[var(--tf-muted)] hover:text-[var(--tf-heading)]'
               }`}
             >
-              {isArabic ? 'تحدي المعرفة السعودية' : 'Saudi Knowledge Game'}
+              {getSiteText(content, 'quiz.tabKnowledge', language)}
             </button>
           </div>
         </div>
@@ -266,7 +270,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                       <span>{isArabic ? opt.labelAr : opt.label}</span>
                       <ArrowRight
                         className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity rtl:rotate-180 shrink-0 ml-2 rtl:ml-0 rtl:mr-2"
-                        style={{ color: currentAccentHex }}
+                        style={{ color: currentAccentTextHex }}
                       />
                     </button>
                   ))}
@@ -276,17 +280,15 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
               <div className="text-center py-4">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
-                  style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                 >
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <h3 className="font-serif text-2xl font-bold text-[var(--tf-heading)] mb-2">
-                  {t('quiz.congrats')}
+                  {getSiteText(content, 'quiz.congrats', language)}
                 </h3>
                 <p className="text-xs sm:text-sm text-[var(--tf-muted)] max-w-md mx-auto mb-6">
-                  {isArabic
-                    ? 'بناءً على اختياراتك وتفضيلاتك، توصي منصتنا بهذه التجربة السعودية المصممة لك:'
-                    : 'Based on your preferences, our platform recommends this tailor-made Saudi experience:'}
+                  {getSiteText(content, 'quiz.matchSub', language)}
                 </p>
 
                 {recommendedExperience ? (
@@ -308,7 +310,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                         </span>
                         <span
                           className="font-mono font-bold text-sm tabular-nums"
-                          style={{ color: currentAccentHex }}
+                          style={{ color: currentAccentTextHex }}
                         >
                           {recommendedExperience.price} {localizeCurrency(currency, language)}
                         </span>
@@ -321,10 +323,10 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                       </p>
                       <button
                         onClick={() => onSelectExperience(recommendedExperience)}
-                        style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                        style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }}
                         className="w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer hover:brightness-105 transition-all"
                       >
-                        <span>{t('section.experiences.viewDetails')}</span>
+                        <span>{getSiteText(content, 'experiences.viewDetails', language)}</span>
                         <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                       </button>
                     </div>
@@ -336,7 +338,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--tf-muted)] hover:text-[var(--tf-heading)] cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{t('quiz.retake')}</span>
+                  <span>{getSiteText(content, 'quiz.retake', language)}</span>
                 </button>
               </div>
             )}
@@ -358,7 +360,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                   </span>
                   <div
                     className="flex items-center gap-1 font-bold tabular-nums"
-                    style={{ color: currentAccentHex }}
+                    style={{ color: currentAccentTextHex }}
                   >
                     <Trophy className="w-3.5 h-3.5" />
                     <span>
@@ -383,13 +385,11 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
 
                     if (isAnswerSubmitted) {
                       if (isCorrect) {
-                        optionClasses = isDarkGlass
-                          ? 'border-emerald-400/60 bg-emerald-500/20 text-emerald-200 font-semibold'
-                          : 'border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold';
+                        optionClasses =
+                          'border-[var(--tf-success-border)] bg-[var(--tf-success-bg)] text-[var(--tf-success-text)] font-semibold';
                       } else if (isSelected && !isCorrect) {
-                        optionClasses = isDarkGlass
-                          ? 'border-rose-400/60 bg-rose-500/20 text-rose-200'
-                          : 'border-red-500 bg-red-50 text-red-900';
+                        optionClasses =
+                          'border-[var(--tf-danger-border)] bg-[var(--tf-danger-bg)] text-[var(--tf-danger-text)] font-medium';
                       } else {
                         optionClasses = 'border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-[var(--tf-muted)] opacity-60';
                       }
@@ -411,10 +411,10 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                       >
                         <span>{opt}</span>
                         {isAnswerSubmitted && isCorrect && (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-[var(--tf-success-text)] shrink-0" />
                         )}
                         {isAnswerSubmitted && isSelected && !isCorrect && (
-                          <XCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                          <XCircle className="w-4 h-4 text-[var(--tf-danger-text)] shrink-0" />
                         )}
                       </button>
                     );
@@ -437,25 +437,21 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                     <button
                       onClick={handleSubmitAnswer}
                       disabled={selectedOption === null}
-                      style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                      style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }}
                       className="py-2.5 px-6 disabled:opacity-45 rounded-xl text-xs font-bold cursor-pointer hover:brightness-105 transition-all"
                     >
-                      {isArabic ? 'تأكيد الإجابة' : 'Confirm Answer'}
+                      {getSiteText(content, 'quiz.confirmAnswer', language)}
                     </button>
                   ) : (
                     <button
                       onClick={handleNextQuestion}
-                      style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                      style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }}
                       className="py-2.5 px-6 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:brightness-105 transition-all"
                     >
                       <span>
                         {gameStep < activeQuestions.length - 1
-                          ? isArabic
-                            ? 'السؤال التالي'
-                            : 'Next Question'
-                          : isArabic
-                          ? 'عرض النتيجة'
-                          : 'View Results'}
+                          ? getSiteText(content, 'quiz.nextQuestion', language)
+                          : getSiteText(content, 'quiz.viewResults', language)}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                     </button>
@@ -466,12 +462,12 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
               <div className="text-center py-6">
                 <div
                   className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md"
-                  style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                  style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }}
                 >
                   <Trophy className="w-8 h-8" />
                 </div>
                 <h3 className="font-serif text-2xl font-bold text-[var(--tf-heading)] mb-1">
-                  {isArabic ? 'اكتملت رحلة المعرفة!' : 'Knowledge Quest Complete!'}
+                  {getSiteText(content, 'quiz.completeTitle', language)}
                 </h3>
                 <p className="text-sm text-[var(--tf-muted)] mb-4">
                   {isArabic ? (
@@ -520,7 +516,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                 <div className="flex items-center justify-center gap-3">
                   <button
                     onClick={handleShareResult}
-                    style={{ backgroundColor: currentAccentHex, color: '#102E29' }}
+                    style={{ backgroundColor: currentAccentHex, color: currentAccentBtnTextHex, textShadow: 'none' }}
                     className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer hover:brightness-105 transition-all"
                   >
                     {copiedShare ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -529,7 +525,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                         ? isArabic
                           ? 'تم النسخ للحافظة!'
                           : 'Copied to Clipboard!'
-                        : t('quiz.share')}
+                        : getSiteText(content, 'quiz.share', language)}
                     </span>
                   </button>
                   <button
@@ -537,7 +533,7 @@ export const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({
                     className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>{t('quiz.retake')}</span>
+                    <span>{getSiteText(content, 'quiz.retake', language)}</span>
                   </button>
                 </div>
               </div>

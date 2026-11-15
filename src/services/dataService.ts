@@ -834,6 +834,8 @@ const INITIAL_WEBSITE_CONTENT: WebsiteContent = {
     instagram: 'https://instagram.com/tourflow.sa',
     linkedin: 'https://linkedin.com/company/tourflow-sa',
   },
+  componentTexts: {},
+  componentTextsAr: {},
 };
 
 const INITIAL_SETTINGS: BusinessSettings = {
@@ -1139,6 +1141,23 @@ function toFirestoreQuiz(quiz: QuizQuestion) {
   });
 }
 
+function sanitizeComponentTextMap(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const result: Record<string, string> = {};
+  let count = 0;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (count >= 150) break;
+    if (typeof k === 'string' && k.length > 0 && k.length <= 80 && typeof v === 'string') {
+      const trimmed = v.trim();
+      if (trimmed.length > 0) {
+        result[k] = trimmed.length > 1000 ? trimmed.slice(0, 1000) : trimmed;
+        count += 1;
+      }
+    }
+  }
+  return result;
+}
+
 function toFirestoreWebsiteContent(content: WebsiteContent) {
   const rawHero = typeof content.heroImage === 'string' ? content.heroImage : '';
   return stripUndefined({
@@ -1163,6 +1182,8 @@ function toFirestoreWebsiteContent(content: WebsiteContent) {
     officeAddress: clampStr(content.officeAddress, 300),
     officeAddressAr: clampStr(content.officeAddressAr, 300),
     socialLinks: content.socialLinks || {},
+    componentTexts: sanitizeComponentTextMap(content.componentTexts),
+    componentTextsAr: sanitizeComponentTextMap(content.componentTextsAr),
   });
 }
 
@@ -1232,6 +1253,8 @@ function normalizeCollectionData<T>(key: string, data: T): T {
     return {
       ...wc,
       heroImage: normalizeAssetUrl(wc.heroImage) || IMAGES.heroAlUla,
+      componentTexts: sanitizeComponentTextMap(wc.componentTexts),
+      componentTextsAr: sanitizeComponentTextMap(wc.componentTextsAr),
     } as unknown as T;
   }
   return data;
@@ -2429,6 +2452,14 @@ export const DataService = {
         ...current.socialLinks,
         ...(updates.socialLinks || {}),
       },
+      componentTexts:
+        updates.componentTexts !== undefined
+          ? sanitizeComponentTextMap(updates.componentTexts)
+          : sanitizeComponentTextMap(current.componentTexts),
+      componentTextsAr:
+        updates.componentTextsAr !== undefined
+          ? sanitizeComponentTextMap(updates.componentTextsAr)
+          : sanitizeComponentTextMap(current.componentTextsAr),
     };
     saveCollection(STORAGE_KEYS.WEBSITE_CONTENT, updated);
     notifyListeners(STORAGE_KEYS.WEBSITE_CONTENT, updated);

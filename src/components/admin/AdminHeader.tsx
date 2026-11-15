@@ -17,7 +17,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 }) => {
   const { language, setLanguage, isRtl } = useLanguage();
   const { adminUser } = useAuth();
-  const { settings, isDarkGlass, blurPixels, currentAccentHex, getGlassyIconStyle } = useTheme();
+  const { settings, isDarkGlass, blurPixels, currentAccentTextHex, getGlassyIconStyle } = useTheme();
 
   const isArabic = language === 'ar';
 
@@ -59,10 +59,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const headerStyle: React.CSSProperties = settings.isGlassyEnabled
     ? {
         backgroundColor: isDarkGlass
-          ? `rgba(14, 20, 18, ${Math.min(0.68, Math.max(0.18, settings.cardTranslucency + 0.08))})`
-          : `rgba(255, 255, 255, ${Math.min(0.78, Math.max(0.28, settings.cardTranslucency + 0.16))})`,
+          ? `rgba(11, 20, 18, ${Math.min(0.76, Math.max(0.46, settings.cardTranslucency + 0.08))})`
+          : `rgba(255, 253, 248, ${Math.min(0.88, Math.max(0.72, settings.cardTranslucency + 0.18))})`,
         backgroundImage: isDarkGlass
-          ? `linear-gradient(90deg, rgba(255, 255, 255, ${(0.03 + sheen * 0.12).toFixed(3)}) 0%, rgba(255, 255, 255, 0.01) 100%)`
+          ? `linear-gradient(90deg, rgba(250, 240, 220, ${(0.03 + sheen * 0.10).toFixed(3)}) 0%, rgba(250, 240, 220, 0.01) 100%)`
           : `linear-gradient(90deg, rgba(255, 255, 255, ${(0.25 + sheen * 0.35).toFixed(3)}) 0%, rgba(255, 255, 255, 0.08) 100%)`,
         backdropFilter:
           blurPixels > 0
@@ -74,12 +74,10 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             : `saturate(${Math.round(145 + sheen * 60)}%)`,
         borderBottomWidth: '1px',
         borderBottomStyle: 'solid',
-        borderBottomColor: isDarkGlass
-          ? `rgba(255, 255, 255, ${settings.borderOpacity})`
-          : `rgba(255, 255, 255, ${Math.min(0.9, settings.borderOpacity + 0.25)})`,
+        borderBottomColor: 'var(--tf-border)',
       }
     : {
-        backgroundColor: isDarkGlass ? '#102420' : '#FFFFFF',
+        backgroundColor: isDarkGlass ? '#102420' : '#FFFDF8',
         backgroundImage: 'none',
         borderBottomWidth: '1px',
         borderBottomStyle: 'solid',
@@ -105,10 +103,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         <span className="text-xs text-[var(--tf-muted)] whitespace-nowrap">
           {isArabic ? 'إدارة تورفلو /' : 'TourFlow Admin /'}
         </span>
-        <h1
-          className="text-sm sm:text-base font-bold text-[var(--tf-heading)] truncate"
-          style={{ textShadow: 'var(--tf-text-shadow)' }}
-        >
+        <h1 className="text-sm sm:text-base font-bold text-[var(--tf-heading)] truncate">
           {isArabic
             ? tabTitlesAr[currentTab] || 'الإدارة'
             : tabTitles[currentTab] || 'Management'}
@@ -122,7 +117,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           onClick={toggleLanguage}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] text-xs font-semibold text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] transition-colors cursor-pointer whitespace-nowrap"
         >
-          <Globe className="w-3.5 h-3.5" style={{ color: currentAccentHex }} />
+          <Globe className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
           <span>{language === 'en' ? 'العربية' : 'English'}</span>
         </button>
 
@@ -141,7 +136,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 : adminUser?.name || 'Administrator'}
             </div>
             <div className="text-[10px] text-[var(--tf-muted)] flex items-center gap-1">
-              <ShieldCheck className="w-2.5 h-2.5 text-emerald-500" />
+              <ShieldCheck className="w-2.5 h-2.5 text-[var(--tf-info-text)]" />
               <span>
                 {isArabic
                   ? adminUser?.roleAr || 'المسؤول العام'
