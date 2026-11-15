@@ -173,6 +173,12 @@
         "heroDescription": { "type": "string", "maxLength": 1500 },
         "heroDescriptionAr": { "type": "string", "maxLength": 1500 },
         "heroImage": { "type": "string", "maxLength": 750000 },
+        "heroImages": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 750000 }
+        },
+        "heroSlideshowEnabled": { "type": "boolean" },
+        "heroSlideIntervalSec": { "type": "number" },
         "aboutHeadline": { "type": "string", "maxLength": 300 },
         "aboutHeadlineAr": { "type": "string", "maxLength": 300 },
         "aboutText": { "type": "string", "maxLength": 3000 },

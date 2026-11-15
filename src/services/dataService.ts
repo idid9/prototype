@@ -814,6 +814,9 @@ const INITIAL_WEBSITE_CONTENT: WebsiteContent = {
   heroDescription: 'Explore extraordinary destinations, authentic local experiences, and unforgettable adventures across Saudi Arabia.',
   heroDescriptionAr: 'استكشف وجهات استثنائية، وتجارب محلية أصيلة، ومغامرات لا تُنسى في مختلف أنحاء المملكة العربية السعودية.',
   heroImage: IMAGES.heroAlUla,
+  heroImages: [IMAGES.heroAlUla, IMAGES.hegraHeritage, IMAGES.riyadhDiriyah],
+  heroSlideshowEnabled: true,
+  heroSlideIntervalSec: 5,
   aboutHeadline: 'Empowering Local Tourism SMEs in Saudi Arabia',
   aboutHeadlineAr: 'تمكين المنشآت السياحية السعودية وتحويل التجارب المحلية لنمو رقمي',
   aboutText: 'TourFlow is Saudi Arabia’s premier B2B tourism digital growth platform. We bridge boutique Saudi tour operators, Bedouin guides, cultural storytellers, and adventure curators with discerning travelers from across the Kingdom and the world.',
@@ -1159,13 +1162,38 @@ function sanitizeComponentTextMap(raw: unknown): Record<string, string> {
 }
 
 function toFirestoreWebsiteContent(content: WebsiteContent) {
-  const rawHero = typeof content.heroImage === 'string' ? content.heroImage : '';
+  const rawList = Array.isArray(content.heroImages)
+    ? content.heroImages.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).slice(0, 6)
+    : [];
+  const rawHero = typeof content.heroImage === 'string' && content.heroImage.trim().length > 0
+    ? content.heroImage
+    : rawList[0] || '';
+  const safeHero = rawHero.length > 0 && rawHero.length <= 750_000 ? rawHero : IMAGES.heroAlUla;
+
+  const MAX_HERO_IMAGES_TOTAL_CHARS = 740_000;
+  let remainingBudget = Math.max(0, MAX_HERO_IMAGES_TOTAL_CHARS - safeHero.length);
+  const safeHeroImages: string[] = [];
+  const candidateSlides = rawList.length > 0 ? rawList : [safeHero];
+
+  for (const slide of candidateSlides) {
+    if (slide.length <= remainingBudget && slide.length <= 750_000) {
+      safeHeroImages.push(slide);
+      remainingBudget -= slide.length;
+    }
+  }
+
+  const intervalNum = Math.round(finiteNum(content.heroSlideIntervalSec, 5));
+  const safeInterval = Math.max(2, Math.min(30, intervalNum));
+
   return stripUndefined({
     heroHeadline: clampStr(content.heroHeadline, 300),
     heroHeadlineAr: clampStr(content.heroHeadlineAr, 300),
     heroDescription: clampStr(content.heroDescription, 1500),
     heroDescriptionAr: clampStr(content.heroDescriptionAr, 1500),
-    heroImage: rawHero.length <= 750_000 ? rawHero : IMAGES.heroAlUla,
+    heroImage: safeHero,
+    heroImages: safeHeroImages,
+    heroSlideshowEnabled: content.heroSlideshowEnabled !== false,
+    heroSlideIntervalSec: safeInterval,
     aboutHeadline: clampStr(content.aboutHeadline, 300),
     aboutHeadlineAr: clampStr(content.aboutHeadlineAr, 300),
     aboutText: clampStr(content.aboutText, 3000),
@@ -1250,9 +1278,17 @@ function normalizeCollectionData<T>(key: string, data: T): T {
   }
   if (key === STORAGE_KEYS.WEBSITE_CONTENT && typeof data === 'object' && !Array.isArray(data)) {
     const wc = data as unknown as WebsiteContent;
+    const primaryHero = normalizeAssetUrl(wc.heroImage) || IMAGES.heroAlUla;
+    const rawSlides = Array.isArray(wc.heroImages)
+      ? wc.heroImages.map((img) => normalizeAssetUrl(img)).filter(Boolean).slice(0, 6)
+      : [];
+    const normalizedSlides = rawSlides.length > 0 ? rawSlides : [primaryHero];
     return {
       ...wc,
-      heroImage: normalizeAssetUrl(wc.heroImage) || IMAGES.heroAlUla,
+      heroImage: normalizedSlides[0] || primaryHero,
+      heroImages: normalizedSlides,
+      heroSlideshowEnabled: wc.heroSlideshowEnabled !== false,
+      heroSlideIntervalSec: Math.max(2, Math.min(30, Math.round(finiteNum(wc.heroSlideIntervalSec, 5)))),
       componentTexts: sanitizeComponentTextMap(wc.componentTexts),
       componentTextsAr: sanitizeComponentTextMap(wc.componentTextsAr),
     } as unknown as T;
@@ -2441,9 +2477,38 @@ export const DataService = {
 
   updateWebsiteContent(updates: Partial<WebsiteContent>): WebsiteContent {
     const current = this.getWebsiteContent();
+    const incomingSlides = Array.isArray(updates.heroImages)
+      ? updates.heroImages.map((s) => normalizeAssetUrl(s)).filter(Boolean).slice(0, 6)
+      : undefined;
+    const fallbackHero =
+      normalizeAssetUrl(updates.heroImage) ||
+      normalizeAssetUrl(current.heroImage) ||
+      IMAGES.heroAlUla;
+    const resolvedSlides =
+      incomingSlides && incomingSlides.length > 0
+        ? incomingSlides
+        : updates.heroImage !== undefined
+        ? [fallbackHero]
+        : Array.isArray(current.heroImages) && current.heroImages.length > 0
+        ? current.heroImages
+        : [fallbackHero];
+
     const updated: WebsiteContent = {
       ...current,
       ...updates,
+      heroImage: resolvedSlides[0] || fallbackHero,
+      heroImages: resolvedSlides,
+      heroSlideshowEnabled:
+        updates.heroSlideshowEnabled !== undefined
+          ? updates.heroSlideshowEnabled
+          : current.heroSlideshowEnabled !== false,
+      heroSlideIntervalSec: Math.max(
+        2,
+        Math.min(
+          30,
+          Math.round(finiteNum(updates.heroSlideIntervalSec ?? current.heroSlideIntervalSec, 5))
+        )
+      ),
       stats: {
         ...current.stats,
         ...(updates.stats || {}),

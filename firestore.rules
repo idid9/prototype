@@ -246,7 +246,8 @@ service cloud.firestore {
       return data.keys().hasAll(['heroHeadline', 'heroImage', 'aboutHeadline']) &&
         data.keys().hasOnly([
           'heroHeadline', 'heroHeadlineAr', 'heroDescription', 'heroDescriptionAr',
-          'heroImage', 'aboutHeadline', 'aboutHeadlineAr', 'aboutText', 'aboutTextAr',
+          'heroImage', 'heroImages', 'heroSlideshowEnabled', 'heroSlideIntervalSec',
+          'aboutHeadline', 'aboutHeadlineAr', 'aboutText', 'aboutTextAr',
           'stats', 'contactEmail', 'contactPhone', 'whatsappNumber',
           'officeAddress', 'officeAddressAr', 'socialLinks',
           'componentTexts', 'componentTextsAr'
@@ -256,6 +257,9 @@ service cloud.firestore {
         (!('heroDescription' in data) || (data.heroDescription is string && data.heroDescription.size() <= 1500)) &&
         (!('heroDescriptionAr' in data) || (data.heroDescriptionAr is string && data.heroDescriptionAr.size() <= 1500)) &&
         data.heroImage is string && data.heroImage.size() <= 750000 &&
+        (!('heroImages' in data) || (data.heroImages is list && data.heroImages.size() <= 6 && (data.heroImages.size() == 0 || (data.heroImages[0] is string && data.heroImages[0].size() <= 750000)))) &&
+        (!('heroSlideshowEnabled' in data) || data.heroSlideshowEnabled is bool) &&
+        (!('heroSlideIntervalSec' in data) || (data.heroSlideIntervalSec is number && data.heroSlideIntervalSec >= 2 && data.heroSlideIntervalSec <= 30)) &&
         data.aboutHeadline is string && data.aboutHeadline.size() <= 300 &&
         (!('aboutHeadlineAr' in data) || (data.aboutHeadlineAr is string && data.aboutHeadlineAr.size() <= 300)) &&
         (!('aboutText' in data) || (data.aboutText is string && data.aboutText.size() <= 3000)) &&

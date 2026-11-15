@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Destination, ExperienceCategory, WebsiteContent } from '../../types';
 import { formatGuestsCount, localizeCategory } from '../../utils/localization';
 import { getSiteText } from '../../utils/siteTexts';
-import { Search, MapPin, Calendar, Users, Compass, ChevronDown } from 'lucide-react';
+import { Search, MapPin, Calendar, Users, Compass, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HeroSectionProps {
   content: WebsiteContent;
@@ -40,6 +40,46 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const headline = isArabic ? content.heroHeadlineAr || content.heroHeadline : content.heroHeadline;
   const description = isArabic ? content.heroDescriptionAr || content.heroDescription : content.heroDescription;
 
+  const slides = useMemo(() => {
+    const raw = Array.isArray(content.heroImages) && content.heroImages.length > 0
+      ? content.heroImages.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      : [];
+    if (raw.length > 0) return raw;
+    return content.heroImage ? [content.heroImage] : [];
+  }, [content.heroImages, content.heroImage]);
+
+  const slideshowEnabled = slides.length > 1 && content.heroSlideshowEnabled !== false;
+  const slideIntervalMs = Math.max(2000, Math.min(30000, (content.heroSlideIntervalSec ?? 5) * 1000));
+
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [timerResetTick, setTimerResetTick] = useState(0);
+
+  const slidesSignature = slides.join('|');
+  useEffect(() => {
+    setActiveSlideIndex(0);
+  }, [slidesSignature]);
+
+  useEffect(() => {
+    if (!slideshowEnabled) return;
+    const timer = window.setInterval(() => {
+      setActiveSlideIndex((prev) => (prev + 1) % slides.length);
+    }, slideIntervalMs);
+    return () => window.clearInterval(timer);
+  }, [slideshowEnabled, slideIntervalMs, slides.length, timerResetTick]);
+
+  const safeSlideIndex = slides.length > 0 ? activeSlideIndex % slides.length : 0;
+
+  const handleStepSlide = (delta: number) => {
+    if (slides.length <= 1) return;
+    setActiveSlideIndex((prev) => (prev + delta + slides.length) % slides.length);
+    setTimerResetTick((t) => t + 1);
+  };
+
+  const handleSelectSlide = (index: number) => {
+    setActiveSlideIndex(index);
+    setTimerResetTick((t) => t + 1);
+  };
+
   const categories: ExperienceCategory[] = [
     'Desert Adventure',
     'Cultural Experiences',
@@ -53,18 +93,78 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   return (
     <section className="relative min-h-[92vh] flex items-center justify-center pt-24 pb-16 overflow-hidden">
-      {/* Background Image with Cinematic Scrim */}
+      {/* Background Image / Auto-Slideshow with Cinematic Scrim */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={content.heroImage}
-          alt={isArabic ? 'مشهد صحراء العلا في المملكة العربية السعودية' : 'AlUla Saudi Arabia Desert Landscape'}
-          className="w-full h-full object-cover object-center scale-105 animate-subtle-zoom"
-          referrerPolicy="no-referrer"
-        />
+        {slides.map((src, idx) => {
+          const isActive = idx === safeSlideIndex;
+          return (
+            <img
+              key={`${idx}-${src.slice(0, 48)}`}
+              src={src}
+              alt={
+                isArabic
+                  ? `مشهد سياحي في المملكة العربية السعودية (${idx + 1})`
+                  : `Saudi Arabia Curated Destination Scene ${idx + 1}`
+              }
+              aria-hidden={!isActive}
+              className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-1000 ease-in-out ${
+                isActive ? 'opacity-100 scale-105' : 'opacity-0 scale-100 pointer-events-none'
+              }`}
+              referrerPolicy="no-referrer"
+            />
+          );
+        })}
         {/* Measured Scrim for WCAG AA readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#102E29] via-[#123B32]/60 to-[#123B32]/40" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(16,46,41,0.5)_100%)]" />
       </div>
+
+      {/* Subtle Slideshow Navigation Indicators */}
+      {slides.length > 1 && (
+        <div
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#102E29]/60 backdrop-blur-md border border-[#FAF0DC]/20 shadow-md"
+          aria-label={isArabic ? 'عناصر التحكم في عرض الشرائح' : 'Hero slideshow controls'}
+        >
+          <button
+            type="button"
+            onClick={() => handleStepSlide(isRtl ? 1 : -1)}
+            aria-label={isArabic ? 'الصورة السابقة' : 'Previous hero photo'}
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[#FAF0DC]/80 hover:text-[#FAF0DC] hover:bg-[#FAF0DC]/15 transition-colors cursor-pointer"
+          >
+            {isRtl ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+          </button>
+
+          <div className="flex items-center gap-1.5 px-1">
+            {slides.map((_, idx) => {
+              const isActive = idx === safeSlideIndex;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelectSlide(idx)}
+                  aria-label={
+                    isArabic ? `الانتقال إلى الصورة ${idx + 1}` : `Go to slide ${idx + 1}`
+                  }
+                  aria-current={isActive ? 'true' : undefined}
+                  style={isActive ? { backgroundColor: currentAccentHex } : undefined}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    isActive ? 'w-6' : 'w-2 bg-[#FAF0DC]/45 hover:bg-[#FAF0DC]/75'
+                  }`}
+                />
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleStepSlide(isRtl ? -1 : 1)}
+            aria-label={isArabic ? 'الصورة التالية' : 'Next hero photo'}
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[#FAF0DC]/80 hover:text-[#FAF0DC] hover:bg-[#FAF0DC]/15 transition-colors cursor-pointer"
+          >
+            {isRtl ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-[#FAF0DC]" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* Trust metadata with separators */}

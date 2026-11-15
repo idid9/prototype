@@ -148,6 +148,9 @@ export interface WebsiteContent {
   heroDescription: string;
   heroDescriptionAr: string;
   heroImage: string;
+  heroImages?: string[];
+  heroSlideshowEnabled?: boolean;
+  heroSlideIntervalSec?: number;
   aboutHeadline: string;
   aboutHeadlineAr: string;
   aboutText: string;
