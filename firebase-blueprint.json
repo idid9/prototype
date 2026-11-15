@@ -234,6 +234,24 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "action", "details", "timestamp"]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Visitor email signups from Join the Saudi Tourism Movement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 150 },
+        "source": { "type": "string", "maxLength": 120 },
+        "language": { "type": "string", "enum": ["en", "ar"] },
+        "status": { "type": "string", "enum": ["ACTIVE", "CONTACTED", "UNSUBSCRIBED"] },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "lastSubject": { "type": "string", "maxLength": 200 },
+        "lastContactedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "email", "source", "language", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -284,6 +302,10 @@
     "/activityLogs/{logId}": {
       "schema": "ActivityLog",
       "description": "Admin activity log"
+    },
+    "/newsletterSubscribers/{subscriberId}": {
+      "schema": "NewsletterSubscriber",
+      "description": "Email signups from Join the Saudi Tourism Movement newsletter"
     }
   }
 }

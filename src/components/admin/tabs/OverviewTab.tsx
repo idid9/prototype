@@ -73,7 +73,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     .filter((i) => i.status === 'CONFIRMED' || i.status === 'COMPLETED')
     .reduce((acc, curr) => acc + (curr.estimatedValue || 0), 0);
 
-  const pageViews = analyticsEvents.filter((e) => e.type === 'page_view').length + 180;
+  const pageViews = analyticsEvents.filter((e) => e.type === 'page_view').length;
   const conversionRate =
     totalInquiries > 0 ? ((confirmedBookings / totalInquiries) * 100).toFixed(1) : '0';
 

@@ -14,6 +14,7 @@ import {
   BusinessSettings,
   AnalyticsEvent,
   ActivityLog,
+  NewsletterSubscriber,
 } from '../../types';
 import { DataService } from '../../services/dataService';
 import { AdminSidebar, AdminTab } from '../../components/admin/AdminSidebar';
@@ -23,6 +24,7 @@ import { ExperiencesTab } from '../../components/admin/tabs/ExperiencesTab';
 import { DestinationsTab } from '../../components/admin/tabs/DestinationsTab';
 import { InquiriesTab } from '../../components/admin/tabs/InquiriesTab';
 import { CustomersTab } from '../../components/admin/tabs/CustomersTab';
+import { SubscribersTab } from '../../components/admin/tabs/SubscribersTab';
 import { PromotionsTab } from '../../components/admin/tabs/PromotionsTab';
 import { InteractiveTab } from '../../components/admin/tabs/InteractiveTab';
 import { AnalyticsTab } from '../../components/admin/tabs/AnalyticsTab';
@@ -67,6 +69,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [settings, setSettings] = useState<BusinessSettings>(DataService.getSettings());
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
 
   // Subscribe to real-time collections
   useEffect(() => {
@@ -81,6 +84,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     const unsubSettings = DataService.subscribeSettings(setSettings);
     const unsubAnalytics = DataService.subscribeAnalyticsEvents(setAnalyticsEvents);
     const unsubLogs = DataService.subscribeActivityLogs(setActivityLogs);
+    const unsubSubscribers = DataService.subscribeSubscribers(setSubscribers);
 
     return () => {
       unsubExp();
@@ -94,6 +98,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       unsubSettings();
       unsubAnalytics();
       unsubLogs();
+      unsubSubscribers();
     };
   }, []);
 
@@ -146,6 +151,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   }
 
   const newInquiriesCount = inquiries.filter((i) => i.status === 'NEW').length;
+  const activeSubscribersCount = subscribers.filter((s) => s.status === 'ACTIVE').length;
 
   return (
     <div
@@ -162,6 +168,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         newInquiriesCount={newInquiriesCount}
+        newSubscribersCount={activeSubscribersCount}
       />
 
       {/* Header */}
@@ -214,6 +221,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
           {currentTab === 'customers' && (
             <CustomersTab customers={customers} inquiries={inquiries} experiences={experiences} />
+          )}
+
+          {currentTab === 'subscribers' && (
+            <SubscribersTab subscribers={subscribers} />
           )}
 
           {currentTab === 'promotions' && (

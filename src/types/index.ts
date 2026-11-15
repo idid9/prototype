@@ -209,3 +209,19 @@ export interface BusinessSettings {
   enableEmailNotifications: boolean;
   enableWhatsAppNotifications: boolean;
 }
+
+export type SubscriberStatus = 'ACTIVE' | 'CONTACTED' | 'UNSUBSCRIBED';
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  source: string;
+  language: Language;
+  status: SubscriberStatus;
+  notes?: string;
+  lastSubject?: string;
+  lastContactedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+

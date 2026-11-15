@@ -315,6 +315,24 @@ service cloud.firestore {
         data.timestamp is string && data.timestamp.size() <= 64;
     }
 
+    function isValidNewsletterSubscriber(data) {
+      return data.keys().hasAll(['id', 'email', 'source', 'language', 'status', 'createdAt']) &&
+        data.keys().hasOnly([
+          'id', 'email', 'source', 'language', 'status',
+          'notes', 'lastSubject', 'lastContactedAt', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+        data.source is string && data.source.size() <= 120 &&
+        data.language in ['en', 'ar'] &&
+        data.status in ['ACTIVE', 'CONTACTED', 'UNSUBSCRIBED'] &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000)) &&
+        (!('lastSubject' in data) || (data.lastSubject is string && data.lastSubject.size() <= 200)) &&
+        (!('lastContactedAt' in data) || (data.lastContactedAt is string && data.lastContactedAt.size() <= 64)) &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
     // Theme Config: Public read; schema-validated updates from Admin Portal
     match /themeConfig/{configId} {
       allow get: if isValidId(configId);
@@ -421,6 +439,15 @@ service cloud.firestore {
       allow create: if isValidId(logId) && isValidActivityLog(incoming());
       allow update: if isValidId(logId) && isValidActivityLog(incoming());
       allow delete: if isValidId(logId);
+    }
+
+    // Newsletter Subscribers: Visitors subscribe; Admin manages, contacts & exports
+    match /newsletterSubscribers/{subscriberId} {
+      allow get: if isValidId(subscriberId);
+      allow list: if request.time != null;
+      allow create: if isValidId(subscriberId) && isValidNewsletterSubscriber(incoming());
+      allow update: if isValidId(subscriberId) && isValidNewsletterSubscriber(incoming());
+      allow delete: if isValidId(subscriberId);
     }
 
     // Admin directory lookup (optional fallback if Firebase Auth is also configured)

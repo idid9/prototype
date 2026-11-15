@@ -778,17 +778,22 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                 </div>
               </div>
 
-              {/* Highlights & Inclusions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Highlights, Inclusions & Exclusions */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
                     {isArabic ? 'أبرز المميزات (سطر لكل نقطة)' : 'Highlights (One per line)'}
                   </label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={highlightsInput}
                     onChange={(e) => setHighlightsInput(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
+                    placeholder={
+                      isArabic
+                        ? 'أبرز نقاط التجربة...'
+                        : 'Key highlights, one per line...'
+                    }
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
                 <div>
@@ -796,10 +801,31 @@ export const ExperiencesTab: React.FC<ExperiencesTabProps> = ({
                     {isArabic ? 'ما تتضمنه التجربة (سطر لكل نقطة)' : "What's Included (One per line)"}
                   </label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={inclusionsInput}
                     onChange={(e) => setInclusionsInput(e.target.value)}
-                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
+                    placeholder={
+                      isArabic
+                        ? 'العناصر المشمولة...'
+                        : 'Included items, one per line...'
+                    }
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--tf-heading)] mb-1">
+                    {isArabic ? 'ما لا تتضمنه التجربة (سطر لكل نقطة)' : "What's Not Included (One per line)"}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={exclusionsInput}
+                    onChange={(e) => setExclusionsInput(e.target.value)}
+                    placeholder={
+                      isArabic
+                        ? 'العناصر غير المشمولة...'
+                        : 'Excluded items, one per line...'
+                    }
+                    className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] text-[var(--tf-text)] placeholder:text-[var(--tf-muted)] border border-[var(--tf-border)] rounded-xl focus:outline-none"
                   />
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Promotion, WebsiteContent, Experience } from '../../types';
+import { DataService } from '../../services/dataService';
 import { getSiteText } from '../../utils/siteTexts';
 import {
   Compass,
@@ -65,7 +66,9 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
 
   const handleNewsletter = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newsletterEmail.trim()) {
+    const cleaned = newsletterEmail.trim();
+    if (cleaned.length >= 3 && cleaned.includes('@')) {
+      DataService.subscribeNewsletter(cleaned, language, 'Join the Saudi Tourism Movement');
       setNewsletterSubscribed(true);
       setNewsletterEmail('');
     }

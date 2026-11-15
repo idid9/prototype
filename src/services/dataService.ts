@@ -25,6 +25,8 @@ import {
   ActivityLog,
   BusinessSettings,
   InquiryStatus,
+  NewsletterSubscriber,
+  SubscriberStatus,
 } from '../types';
 import {
   auth,
@@ -908,6 +910,31 @@ const INITIAL_LOGS: ActivityLog[] = [
   },
 ];
 
+const INITIAL_SUBSCRIBERS: NewsletterSubscriber[] = [
+  {
+    id: 'sub-1',
+    email: 'noura.alqahtani@riyadh-ventures.sa',
+    source: 'Join the Saudi Tourism Movement',
+    language: 'ar',
+    status: 'ACTIVE',
+    notes: 'Interested in private AlUla winter heritage group packages.',
+    createdAt: '2026-11-12T09:15:00.000Z',
+    updatedAt: '2026-11-12T09:15:00.000Z',
+  },
+  {
+    id: 'sub-2',
+    email: 'claire.dubois@atelier-voyage.fr',
+    source: 'Join the Saudi Tourism Movement',
+    language: 'en',
+    status: 'CONTACTED',
+    lastSubject: 'Welcome to TourFlow Saudi Arabia — Curated Desert & Red Sea Passes',
+    lastContactedAt: '2026-11-13T14:30:00.000Z',
+    notes: 'Boutique agency partner requesting seasonal Red Sea eco-resort brochure.',
+    createdAt: '2026-11-11T16:40:00.000Z',
+    updatedAt: '2026-11-13T14:30:00.000Z',
+  },
+];
+
 // Storage keys
 const STORAGE_KEYS = {
   EXPERIENCES: 'tourflow_experiences_v1',
@@ -921,6 +948,7 @@ const STORAGE_KEYS = {
   SETTINGS: 'tourflow_settings_v1',
   ACTIVITY_LOGS: 'tourflow_activity_logs_v1',
   ANALYTICS: 'tourflow_analytics_v1',
+  SUBSCRIBERS: 'tourflow_subscribers_v1',
 };
 
 // Broadcast channel for instantaneous cross-tab synchronization
@@ -1253,6 +1281,25 @@ function toFirestoreActivityLog(log: ActivityLog) {
   });
 }
 
+function toFirestoreSubscriber(sub: NewsletterSubscriber) {
+  const cleanEmail = clampStr((sub.email || '').trim().toLowerCase(), 150);
+  return stripUndefined({
+    id: clampStr(sub.id, 128),
+    email: cleanEmail.length >= 3 ? cleanEmail : 'visitor@tourflow.sa',
+    source: clampStr(sub.source || 'Join the Saudi Tourism Movement', 120) || 'Join the Saudi Tourism Movement',
+    language: sub.language === 'ar' ? 'ar' : 'en',
+    status:
+      sub.status === 'CONTACTED' || sub.status === 'UNSUBSCRIBED'
+        ? sub.status
+        : 'ACTIVE',
+    notes: sub.notes !== undefined ? clampStr(sub.notes, 2000) : undefined,
+    lastSubject: sub.lastSubject !== undefined ? clampStr(sub.lastSubject, 200) : undefined,
+    lastContactedAt: sub.lastContactedAt !== undefined ? clampStr(sub.lastContactedAt, 64) : undefined,
+    createdAt: clampStr(sub.createdAt, 64),
+    updatedAt: sub.updatedAt !== undefined ? clampStr(sub.updatedAt, 64) : undefined,
+  });
+}
+
 function normalizeCollectionData<T>(key: string, data: T): T {
   if (!data) return data;
   if (key === STORAGE_KEYS.EXPERIENCES && Array.isArray(data)) {
@@ -1547,6 +1594,9 @@ async function ensureCloudSeeded(): Promise<void> {
     for (const log of INITIAL_LOGS) {
       batch.set(doc(db, 'activityLogs', log.id), toFirestoreActivityLog(log));
     }
+    for (const sub of INITIAL_SUBSCRIBERS) {
+      batch.set(doc(db, 'newsletterSubscribers', sub.id), toFirestoreSubscriber(sub));
+    }
 
     batch.set(doc(db, 'websiteContent', 'main'), toFirestoreWebsiteContent(INITIAL_WEBSITE_CONTENT));
     batch.set(doc(db, 'settings', 'main'), toFirestoreBusinessSettings(INITIAL_SETTINGS));
@@ -1805,6 +1855,23 @@ function startFirestoreSubscriptions() {
         }
       )
     );
+
+    firestoreUnsubs.push(
+      onSnapshot(
+        collection(db, 'newsletterSubscribers'),
+        (snap) => {
+          if (!snap.empty || cloudSeedKnown) {
+            const items = sortByCreatedDesc(snap.docs.map((d) => d.data() as NewsletterSubscriber));
+            applyCloudSnapshot(STORAGE_KEYS.SUBSCRIBERS, items);
+          } else {
+            pendingEmptySnapshots[STORAGE_KEYS.SUBSCRIBERS] = [];
+          }
+        },
+        (err) => {
+          console.warn('NewsletterSubscribers snapshot error:', err.message);
+        }
+      )
+    );
   }
 }
 
@@ -1844,6 +1911,9 @@ export function initializeRepository() {
   }
   if (!localStorage.getItem(STORAGE_KEYS.ANALYTICS)) {
     saveCollection(STORAGE_KEYS.ANALYTICS, INITIAL_ANALYTICS);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.SUBSCRIBERS)) {
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, INITIAL_SUBSCRIBERS);
   }
 
   if (isFirebaseConfigured() && !firestoreListenersStarted) {
@@ -2655,6 +2725,168 @@ export const DataService = {
     return subscribeTo<ActivityLog[]>(STORAGE_KEYS.ACTIVITY_LOGS, callback);
   },
 
+  // Newsletter Subscribers ("Join the Saudi Tourism Movement")
+  getSubscribers(): NewsletterSubscriber[] {
+    return loadCollection<NewsletterSubscriber[]>(STORAGE_KEYS.SUBSCRIBERS) || [];
+  },
+
+  subscribeSubscribers(callback: (subs: NewsletterSubscriber[]) => void): () => void {
+    return subscribeTo<NewsletterSubscriber[]>(STORAGE_KEYS.SUBSCRIBERS, callback);
+  },
+
+  subscribeNewsletter(
+    email: string,
+    language: 'en' | 'ar' = 'en',
+    source = 'Join the Saudi Tourism Movement'
+  ): NewsletterSubscriber {
+    const cleanEmail = email.trim().toLowerCase();
+    const subs = [...this.getSubscribers()];
+    const existingIdx = subs.findIndex((s) => s.email.trim().toLowerCase() === cleanEmail);
+    const now = new Date().toISOString();
+
+    if (existingIdx !== -1 && adminCloudMode) {
+      const updated: NewsletterSubscriber = {
+        ...subs[existingIdx],
+        language,
+        source,
+        status: subs[existingIdx].status === 'UNSUBSCRIBED' ? 'ACTIVE' : subs[existingIdx].status,
+        updatedAt: now,
+      };
+      subs[existingIdx] = updated;
+      saveCollection(STORAGE_KEYS.SUBSCRIBERS, subs);
+      notifyListeners(STORAGE_KEYS.SUBSCRIBERS, subs);
+      if (isFirebaseConfigured() && db) {
+        writeCloudDoc('newsletterSubscribers', updated.id, toFirestoreSubscriber(updated));
+      }
+      return updated;
+    }
+
+    const id = createUniqueId('sub');
+    const newSubscriber: NewsletterSubscriber = {
+      id,
+      email: cleanEmail,
+      source,
+      language,
+      status: 'ACTIVE',
+      notes: '',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const nextSubs = [newSubscriber, ...subs];
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, nextSubs);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, nextSubs);
+
+    // Creation is permitted for both Visitor & Admin in firestore.rules
+    if (isFirebaseConfigured() && db) {
+      writeCloudDoc('newsletterSubscribers', id, toFirestoreSubscriber(newSubscriber));
+    }
+
+    this.logActivity('Newsletter Subscribed', `${cleanEmail} joined via ${source}`);
+    return newSubscriber;
+  },
+
+  updateSubscriberStatus(id: string, status: SubscriberStatus): NewsletterSubscriber | undefined {
+    const subs = [...this.getSubscribers()];
+    const idx = subs.findIndex((s) => s.id === id);
+    if (idx === -1) return undefined;
+    const updated: NewsletterSubscriber = {
+      ...subs[idx],
+      status,
+      updatedAt: new Date().toISOString(),
+    };
+    subs[idx] = updated;
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, subs);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, subs);
+    if (adminCloudMode) {
+      writeCloudDoc('newsletterSubscribers', id, toFirestoreSubscriber(updated));
+    }
+    return updated;
+  },
+
+  updateSubscriberNotes(id: string, notes: string): NewsletterSubscriber | undefined {
+    const subs = [...this.getSubscribers()];
+    const idx = subs.findIndex((s) => s.id === id);
+    if (idx === -1) return undefined;
+    const updated: NewsletterSubscriber = {
+      ...subs[idx],
+      notes,
+      updatedAt: new Date().toISOString(),
+    };
+    subs[idx] = updated;
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, subs);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, subs);
+    if (adminCloudMode) {
+      writeCloudDoc('newsletterSubscribers', id, toFirestoreSubscriber(updated));
+    }
+    return updated;
+  },
+
+  recordSubscriberOutreach(
+    id: string,
+    subject: string,
+    notes?: string
+  ): NewsletterSubscriber | undefined {
+    const subs = [...this.getSubscribers()];
+    const idx = subs.findIndex((s) => s.id === id);
+    if (idx === -1) return undefined;
+    const now = new Date().toISOString();
+    const updated: NewsletterSubscriber = {
+      ...subs[idx],
+      status: 'CONTACTED',
+      lastSubject: clampStr(subject, 200),
+      lastContactedAt: now,
+      notes: notes !== undefined ? notes : subs[idx].notes,
+      updatedAt: now,
+    };
+    subs[idx] = updated;
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, subs);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, subs);
+    if (adminCloudMode) {
+      writeCloudDoc('newsletterSubscribers', id, toFirestoreSubscriber(updated));
+    }
+    this.logActivity('Subscriber Contacted', `Outreach sent to ${updated.email}`);
+    return updated;
+  },
+
+  deleteSubscriber(id: string): void {
+    const subs = this.getSubscribers().filter((s) => s.id !== id);
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, subs);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, subs);
+    if (adminCloudMode) {
+      deleteCloudDoc('newsletterSubscribers', id);
+    }
+    this.logActivity('Subscriber Removed', `Removed subscriber ${id}`);
+  },
+
+  // Reset only analytics telemetry to 0 across local state, tabs, and cloud Firestore
+  resetAnalyticsData() {
+    saveCollection(STORAGE_KEYS.ANALYTICS, []);
+    notifyListeners(STORAGE_KEYS.ANALYTICS, []);
+    this.logActivity(
+      'Analytics Data Reset',
+      'All visitor traffic & conversion analytics cleared to zero'
+    );
+
+    if (adminCloudMode && isFirebaseConfigured() && db) {
+      const firestoreDb = db;
+      (async () => {
+        try {
+          const snap = await getDocs(collection(firestoreDb, 'analyticsEvents'));
+          const docsToDelete = snap.docs;
+          // Chunk deletions into <= 450 operations per Firestore batch
+          for (let i = 0; i < docsToDelete.length; i += 450) {
+            const batch = writeBatch(firestoreDb);
+            docsToDelete.slice(i, i + 450).forEach((d) => batch.delete(d.ref));
+            await batch.commit();
+          }
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, 'analyticsEvents');
+        }
+      })();
+    }
+  },
+
   // Reset to initial demo data across local cache and cloud Firestore
   resetDemoData() {
     const initialEvents: AnalyticsEvent[] = [
@@ -2683,6 +2915,7 @@ export const DataService = {
     saveCollection(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
     saveCollection(STORAGE_KEYS.ANALYTICS, initialEvents);
     saveCollection(STORAGE_KEYS.ACTIVITY_LOGS, initialLogs);
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, INITIAL_SUBSCRIBERS);
 
     // Notify all local subscribers across tabs & panels
     notifyListeners(STORAGE_KEYS.DESTINATIONS, INITIAL_DESTINATIONS);
@@ -2696,6 +2929,7 @@ export const DataService = {
     notifyListeners(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
     notifyListeners(STORAGE_KEYS.ANALYTICS, initialEvents);
     notifyListeners(STORAGE_KEYS.ACTIVITY_LOGS, initialLogs);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, INITIAL_SUBSCRIBERS);
 
     // Push reset cleanly to Firestore so every connected device syncs immediately
     if (adminCloudMode && isFirebaseConfigured() && db) {
@@ -2712,6 +2946,7 @@ export const DataService = {
             { name: 'customers', docs: INITIAL_CUSTOMERS },
             { name: 'analyticsEvents', docs: initialEvents },
             { name: 'activityLogs', docs: initialLogs },
+            { name: 'newsletterSubscribers', docs: INITIAL_SUBSCRIBERS },
           ];
 
           const batch = writeBatch(firestoreDb);
@@ -2735,6 +2970,7 @@ export const DataService = {
           INITIAL_CUSTOMERS.forEach((c) => batch.set(doc(firestoreDb, 'customers', c.id), toFirestoreCustomer(c)));
           initialEvents.forEach((e) => batch.set(doc(firestoreDb, 'analyticsEvents', e.id), toFirestoreAnalyticsEvent(e)));
           initialLogs.forEach((l) => batch.set(doc(firestoreDb, 'activityLogs', l.id), toFirestoreActivityLog(l)));
+          INITIAL_SUBSCRIBERS.forEach((s) => batch.set(doc(firestoreDb, 'newsletterSubscribers', s.id), toFirestoreSubscriber(s)));
 
           batch.set(doc(firestoreDb, 'websiteContent', 'main'), toFirestoreWebsiteContent(INITIAL_WEBSITE_CONTENT));
           batch.set(doc(firestoreDb, 'settings', 'main'), toFirestoreBusinessSettings(INITIAL_SETTINGS));

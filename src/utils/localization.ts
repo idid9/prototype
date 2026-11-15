@@ -67,6 +67,10 @@ const ACTIVITY_ACTION_AR_MAP: Record<string, string> = {
   'Website CMS Updated': 'تم تحديث محتوى الموقع',
   'Settings Updated': 'تم تحديث إعدادات المنصة',
   'Database Reset': 'إعادة تعيين قاعدة البيانات',
+  'Newsletter Subscribed': 'اشتراك بريد إلكتروني جديد',
+  'Subscriber Contacted': 'تم التواصل مع مشترك البريد',
+  'Subscriber Removed': 'تم حذف مشترك البريد',
+  'Analytics Data Reset': 'تم تصفير بيانات التحليلات',
 };
 
 export function localizeCategory(category: string, language: Language): string {
@@ -153,6 +157,22 @@ export function localizeActivityDetails(details: string, language: Language): st
   }
   if (details === 'Demo database restored to default seed state') {
     return 'تمت استعادة البيانات التجريبية الافتراضية';
+  }
+  if (details === 'All visitor traffic & conversion analytics cleared to zero') {
+    return 'تم تصفير جميع بيانات حركة الزوار والتحويلات بنجاح';
+  }
+  const joinedMatch = details.match(/^(\S+) joined via (.+)$/);
+  if (joinedMatch) {
+    const [, email, src] = joinedMatch;
+    return `انضم البريد ${email} عبر ${src}`;
+  }
+  const outreachMatch = details.match(/^Outreach sent to (\S+)$/);
+  if (outreachMatch) {
+    return `تم إرسال رسالة تواصل إلى ${outreachMatch[1]}`;
+  }
+  const removedSubMatch = details.match(/^Removed subscriber (\S+)$/);
+  if (removedSubMatch) {
+    return `تمت إزالة المشترك ${removedSubMatch[1]}`;
   }
   const statusMatch = details.match(/^Inquiry (\S+) status updated to (\S+)$/);
   if (statusMatch) {

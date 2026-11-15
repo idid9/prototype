@@ -17,6 +17,7 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  Mail,
 } from 'lucide-react';
 
 export type AdminTab =
@@ -25,6 +26,7 @@ export type AdminTab =
   | 'destinations'
   | 'inquiries'
   | 'customers'
+  | 'subscribers'
   | 'promotions'
   | 'interactive'
   | 'analytics'
@@ -40,6 +42,7 @@ interface AdminSidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   newInquiriesCount?: number;
+  newSubscribersCount?: number;
 }
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({
@@ -50,6 +53,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   collapsed,
   onToggleCollapse,
   newInquiriesCount = 0,
+  newSubscribersCount = 0,
 }) => {
   const { language, isRtl } = useLanguage();
   const { settings, isDarkGlass, blurPixels, currentAccentHex, currentAccentBtnTextHex, currentAccentRgb, getGlassyIconStyle } = useTheme();
@@ -61,6 +65,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'destinations', label: 'Destinations', labelAr: 'الوجهات', icon: <MapPin className="w-4 h-4" /> },
     { id: 'inquiries', label: 'Bookings & Inquiries', labelAr: 'الحجوزات والطلبات', icon: <CalendarCheck className="w-4 h-4" />, badge: newInquiriesCount },
     { id: 'customers', label: 'Customers CRM', labelAr: 'إدارة العملاء', icon: <Users className="w-4 h-4" /> },
+    { id: 'subscribers', label: 'Email Subscribers', labelAr: 'قائمة البريد الإلكتروني', icon: <Mail className="w-4 h-4" />, badge: newSubscribersCount },
     { id: 'promotions', label: 'Marketing & Promos', labelAr: 'التسويق والعروض', icon: <Megaphone className="w-4 h-4" /> },
     { id: 'interactive', label: 'Interactive Content', labelAr: 'المحتوى التفاعلي', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'analytics', label: 'Analytics', labelAr: 'التحليلات', icon: <BarChart3 className="w-4 h-4" /> },
