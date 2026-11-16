@@ -5,7 +5,11 @@ import { Destination, Experience } from '../../../types';
 import { DataService, IMAGES } from '../../../services/dataService';
 import { GlassContainer } from '../../glass/GlassContainer';
 import { ImageUploadField } from '../../common/ImageUploadField';
-import { Plus, Edit2, Eye, EyeOff, X } from 'lucide-react';
+import {
+  buildDestinationSearchQuery,
+  buildGoogleMapsPlaceUrl,
+} from '../../../utils/mapGuideUtils';
+import { Plus, Edit2, Eye, EyeOff, X, ExternalLink } from 'lucide-react';
 
 interface DestinationsTabProps {
   destinations: Destination[];
@@ -203,13 +207,26 @@ export const DestinationsTab: React.FC<DestinationsTabProps> = ({
                 </span>
               </button>
 
-              <button
-                onClick={() => handleOpenEdit(dest)}
-                className="p-1.5 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-lg transition-colors cursor-pointer"
-                title={isArabic ? 'تعديل الوجهة' : 'Edit Destination'}
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <a
+                  href={buildGoogleMapsPlaceUrl({
+                    query: buildDestinationSearchQuery(dest),
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-lg transition-colors cursor-pointer"
+                  title={isArabic ? 'معاينة في خرائط جوجل' : 'Preview on Google Maps'}
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  onClick={() => handleOpenEdit(dest)}
+                  className="p-1.5 text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-lg transition-colors cursor-pointer"
+                  title={isArabic ? 'تعديل الوجهة' : 'Edit Destination'}
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </GlassContainer>
         ))}

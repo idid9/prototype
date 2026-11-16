@@ -1331,7 +1331,16 @@ function normalizeCollectionData<T>(key: string, data: T): T {
       : [];
     const normalizedSlides = rawSlides.length > 0 ? rawSlides : [primaryHero];
     return {
+      ...INITIAL_WEBSITE_CONTENT,
       ...wc,
+      stats: {
+        ...INITIAL_WEBSITE_CONTENT.stats,
+        ...(wc.stats || {}),
+      },
+      socialLinks: {
+        ...INITIAL_WEBSITE_CONTENT.socialLinks,
+        ...(wc.socialLinks || {}),
+      },
       heroImage: normalizedSlides[0] || primaryHero,
       heroImages: normalizedSlides,
       heroSlideshowEnabled: wc.heroSlideshowEnabled !== false,

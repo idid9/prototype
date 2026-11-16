@@ -277,7 +277,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
                 </div>
                 <div className="pl-6 border-l border-[var(--tf-border)] rtl:pl-0 rtl:pr-6 rtl:border-l-0 rtl:border-r">
                   <div className="font-mono text-xl font-bold text-[var(--tf-heading)] tabular-nums">
-                    {content.stats.satisfactionRate}%
+                    {content.stats?.satisfactionRate ?? 99}%
                   </div>
                   <span className="text-[11px] text-[var(--tf-muted)]">
                     {getSiteText(content, 'reviews.satisfactionLabel', language)}
@@ -355,7 +355,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-[var(--tf-border)]">
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
-                  {content.stats.operators}+
+                  {content.stats?.operators ?? 140}+
                 </div>
                 <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
                   {getSiteText(content, 'about.statOperators', language)}
@@ -363,7 +363,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
               </div>
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
-                  {content.stats.experiences}+
+                  {content.stats?.experiences ?? 85}+
                 </div>
                 <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
                   {getSiteText(content, 'about.statExperiences', language)}
@@ -371,7 +371,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
               </div>
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
-                  {content.stats.travelersServed.toLocaleString()}
+                  {(content.stats?.travelersServed ?? 4200).toLocaleString()}
                 </div>
                 <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
                   {getSiteText(content, 'about.statTravelers', language)}
@@ -379,7 +379,7 @@ export const MarketingSections: React.FC<MarketingSectionsProps> = ({
               </div>
               <div>
                 <div className="font-mono text-2xl font-bold text-[var(--tf-heading)] tabular-nums">
-                  {content.stats.satisfactionRate}%
+                  {content.stats?.satisfactionRate ?? 99}%
                 </div>
                 <div className="text-[11px] text-[var(--tf-muted)] mt-0.5">
                   {getSiteText(content, 'about.statSatisfaction', language)}

@@ -51,6 +51,7 @@ export const VisitorNavbar: React.FC<VisitorNavbarProps> = ({
   const navItems = [
     { label: getSiteText(content, 'nav.explore', language), id: 'explore' },
     { label: getSiteText(content, 'nav.destinations', language), id: 'destinations' },
+    { label: getSiteText(content, 'nav.map', language), id: 'map-explorer' },
     { label: getSiteText(content, 'nav.experiences', language), id: 'experiences' },
     { label: getSiteText(content, 'nav.quiz', language), id: 'quiz' },
     { label: getSiteText(content, 'nav.about', language), id: 'about' },

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Language } from '../types';
 import { DataService } from '../services/dataService';
+import { resolveCloudLanguageSync, shouldReloadForMapLanguage } from '../utils/languageSync';
 
 interface LanguageContextType {
   language: Language;
@@ -212,6 +213,9 @@ const LanguageContext = createContext<LanguageContextType>({
 });
 
 const LANG_STORAGE_KEY = 'tourflow_lang';
+const LANG_MANUAL_OVERRIDE_KEY = 'tourflow_lang_manual';
+const LANG_RELOAD_SCROLL_KEY = 'tourflow_restore_scroll_y';
+const LANG_RELOAD_FLAG_KEY = 'tourflow_restore_after_lang_reload';
 const LANG_BROADCAST_CHANNEL = 'tourflow_lang_sync';
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -226,7 +230,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const lastCloudDefaultLangRef = useRef<Language | null>(null);
-  const manualVisitorOverrideRef = useRef<boolean>(false);
+  const manualVisitorOverrideRef = useRef<boolean>(
+    typeof window !== 'undefined' &&
+      localStorage.getItem(LANG_MANUAL_OVERRIDE_KEY) === '1' &&
+      (localStorage.getItem(LANG_STORAGE_KEY) === 'en' ||
+        localStorage.getItem(LANG_STORAGE_KEY) === 'ar')
+  );
 
   const isRtl = language === 'ar';
 
@@ -260,15 +269,22 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Real-time cloud default language synchronization across all devices
     const unsubSettings = DataService.subscribeSettings((settings) => {
-      const nextDefault = settings?.defaultLanguage;
-      if (nextDefault !== 'en' && nextDefault !== 'ar') return;
-      const cloudChanged = lastCloudDefaultLangRef.current !== null && lastCloudDefaultLangRef.current !== nextDefault;
-      const initialCloudFollow = lastCloudDefaultLangRef.current === null && !manualVisitorOverrideRef.current;
-      lastCloudDefaultLangRef.current = nextDefault;
+      const syncResult = resolveCloudLanguageSync({
+        lastCloudDefault: lastCloudDefaultLangRef.current,
+        incomingCloudDefault: settings?.defaultLanguage,
+        hasManualOverride: manualVisitorOverrideRef.current,
+      });
 
-      if (cloudChanged || initialCloudFollow) {
-        manualVisitorOverrideRef.current = false;
-        setLanguageState(nextDefault);
+      lastCloudDefaultLangRef.current = syncResult.nextCloudDefault;
+      manualVisitorOverrideRef.current = syncResult.nextHasManualOverride;
+
+      if (!syncResult.nextHasManualOverride) {
+        localStorage.removeItem(LANG_MANUAL_OVERRIDE_KEY);
+      }
+
+      if (syncResult.languageToApply) {
+        localStorage.setItem(LANG_STORAGE_KEY, syncResult.languageToApply);
+        setLanguageState(syncResult.languageToApply);
       }
     });
 
@@ -280,13 +296,23 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const setLanguage = (lang: Language, options?: { manualVisitorOverride?: boolean }) => {
-    if (options?.manualVisitorOverride) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LANG_STORAGE_KEY, lang);
+      if (options?.manualVisitorOverride) {
+        manualVisitorOverrideRef.current = true;
+        localStorage.setItem(LANG_MANUAL_OVERRIDE_KEY, '1');
+      } else {
+        manualVisitorOverrideRef.current = false;
+        lastCloudDefaultLangRef.current = lang;
+        localStorage.removeItem(LANG_MANUAL_OVERRIDE_KEY);
+      }
+    } else if (options?.manualVisitorOverride) {
       manualVisitorOverrideRef.current = true;
     } else {
       manualVisitorOverrideRef.current = false;
       lastCloudDefaultLangRef.current = lang;
     }
-    setLanguageState(lang);
+
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
         const bc = new BroadcastChannel(LANG_BROADCAST_CHANNEL);
@@ -294,6 +320,31 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         bc.close();
       } catch {}
     }
+
+    if (typeof window !== 'undefined') {
+      const win = window as Window & {
+        google?: { maps?: unknown };
+        __tfMapsLoadedLanguage?: Language;
+      };
+      if (
+        shouldReloadForMapLanguage({
+          manualVisitorOverride: options?.manualVisitorOverride,
+          currentLanguage: language,
+          nextLanguage: lang,
+          hasGoogleMapsLoaded: Boolean(win.google?.maps),
+          loadedMapLanguage: win.__tfMapsLoadedLanguage || null,
+        })
+      ) {
+        try {
+          sessionStorage.setItem(LANG_RELOAD_SCROLL_KEY, String(window.scrollY));
+          sessionStorage.setItem(LANG_RELOAD_FLAG_KEY, '1');
+        } catch {}
+        window.location.reload();
+        return;
+      }
+    }
+
+    setLanguageState(lang);
   };
 
   const t = (key: string): string => {

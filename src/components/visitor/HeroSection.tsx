@@ -18,6 +18,7 @@ interface HeroSectionProps {
   guestsCount: number;
   onSetGuestsCount: (guests: number) => void;
   onExecuteSearch: () => void;
+  onOpenMapExplorer?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -32,6 +33,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   guestsCount,
   onSetGuestsCount,
   onExecuteSearch,
+  onOpenMapExplorer,
 }) => {
   const { language, isRtl } = useLanguage();
   const { getGlassyCardStyle, currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex, isDarkGlass } = useTheme();
@@ -307,6 +309,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           </form>
         </div>
+
+        {/* Direct Live Google Maps Guide Finder Shortcut */}
+        {onOpenMapExplorer && (
+          <div className="mt-5 flex justify-center">
+            <button
+              type="button"
+              onClick={onOpenMapExplorer}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#102E29]/70 hover:bg-[#102E29]/90 backdrop-blur-md border border-[#FAF0DC]/25 text-xs sm:text-sm font-semibold text-[#FAF0DC] shadow-md transition-all cursor-pointer"
+            >
+              <MapPin className="w-4 h-4" style={{ color: currentAccentHex }} />
+              <span>
+                {isArabic
+                  ? 'حجزت طيرانك وفندقك؟ ابحث عن مرشدين محليين على الخريطة المباشرة'
+                  : 'Flights & hotel ready? Find local UMKM tour guides on the Live Map'}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -19,6 +19,8 @@ import { InteractiveQuiz } from '../../components/visitor/InteractiveQuiz';
 import { MarketingSections } from '../../components/visitor/MarketingSections';
 import { VisitorFooter } from '../../components/visitor/VisitorFooter';
 import { ExperienceDetailPage } from '../../components/visitor/ExperienceDetailPage';
+import { MapsProvider } from '../../components/visitor/MapsProvider';
+import { DestinationMapExplorer } from '../../components/visitor/DestinationMapExplorer';
 
 interface VisitorPortalPageProps {
   onGoToAdmin: () => void;
@@ -50,11 +52,20 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
     return d.toISOString().split('T')[0];
   });
   const [guestsCount, setGuestsCount] = useState<number>(2);
+  const [focusedMapDestinationId, setFocusedMapDestinationId] = useState<string | null>(null);
 
   // Active Experience Detail view tracked by ID so real-time admin edits update the open detail view immediately
-  const [activeExperienceId, setActiveExperienceId] = useState<string | null>(
-    initialSelectedExperience?.id || null
-  );
+  const [activeExperienceId, setActiveExperienceId] = useState<string | null>(() => {
+    if (initialSelectedExperience?.id) return initialSelectedExperience.id;
+    if (typeof window !== 'undefined') {
+      try {
+        if (sessionStorage.getItem('tourflow_restore_after_lang_reload') === '1') {
+          return sessionStorage.getItem('tourflow_active_experience_id') || null;
+        }
+      } catch {}
+    }
+    return null;
+  });
 
   const activeExperience = activeExperienceId
     ? experiences.find((e) => e.id === activeExperienceId) || null
@@ -65,6 +76,39 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
       setActiveExperienceId(initialSelectedExperience.id);
     }
   }, [initialSelectedExperience]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (activeExperienceId) {
+        sessionStorage.setItem('tourflow_active_experience_id', activeExperienceId);
+      } else {
+        sessionStorage.removeItem('tourflow_active_experience_id');
+      }
+    } catch {}
+  }, [activeExperienceId]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      destinations.length === 0 ||
+      (activeExperienceId && experiences.length === 0)
+    ) {
+      return;
+    }
+    try {
+      const shouldRestore = sessionStorage.getItem('tourflow_restore_after_lang_reload') === '1';
+      if (!shouldRestore) return;
+      const savedScrollY = Number(sessionStorage.getItem('tourflow_restore_scroll_y') || '0');
+      sessionStorage.removeItem('tourflow_restore_after_lang_reload');
+      sessionStorage.removeItem('tourflow_restore_scroll_y');
+      if (Number.isFinite(savedScrollY) && savedScrollY > 0) {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: savedScrollY, behavior: 'instant' as ScrollBehavior });
+        });
+      }
+    } catch {}
+  }, [destinations.length, experiences.length, activeExperienceId]);
 
   // Subscribe to real-time collections
   useEffect(() => {
@@ -136,7 +180,13 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
     handleScrollToSection('experiences');
   };
 
+  const handleViewDestinationOnMap = (destId: string) => {
+    setFocusedMapDestinationId(destId);
+    handleScrollToSection('map-explorer');
+  };
+
   return (
+    <MapsProvider>
     <div
       data-glass-tone={isDarkGlass ? 'dark' : 'light'}
       style={getDashboardBgStyle()}
@@ -185,6 +235,7 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
               guestsCount={guestsCount}
               onSetGuestsCount={setGuestsCount}
               onExecuteSearch={handleExecuteSearch}
+              onOpenMapExplorer={() => handleScrollToSection('map-explorer')}
             />
           </div>
 
@@ -197,6 +248,21 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
               setSelectedDestination(id);
               handleScrollToSection('experiences');
             }}
+            onViewOnMap={handleViewDestinationOnMap}
+          />
+
+          {/* Section: Live Google Maps Destinations & Local UMKM Tour Guide Explorer */}
+          <DestinationMapExplorer
+            destinations={destinations}
+            experiences={experiences}
+            content={websiteContent}
+            currency={businessSettings.currency}
+            focusedDestinationId={focusedMapDestinationId}
+            onSelectDestinationForCatalog={(destId) => {
+              setSelectedDestination(destId);
+              handleScrollToSection('experiences');
+            }}
+            onOpenExperienceDetail={handleSelectExperience}
           />
 
           {/* Section: Experiences Dynamic Catalog */}
@@ -243,5 +309,6 @@ export const VisitorPortalPage: React.FC<VisitorPortalPageProps> = ({
         onNavigateSection={handleScrollToSection}
       />
     </div>
+    </MapsProvider>
   );
 };

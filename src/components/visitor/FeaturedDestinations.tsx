@@ -3,13 +3,14 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Destination, Experience, WebsiteContent } from '../../types';
 import { getSiteText } from '../../utils/siteTexts';
-import { ArrowUpRight, Compass } from 'lucide-react';
+import { ArrowUpRight, Compass, MapPin } from 'lucide-react';
 
 interface FeaturedDestinationsProps {
   destinations: Destination[];
   experiences?: Experience[];
   content?: WebsiteContent;
   onSelectDestination: (destId: string) => void;
+  onViewOnMap?: (destId: string) => void;
 }
 
 export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
@@ -17,6 +18,7 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
   experiences = [],
   content,
   onSelectDestination,
+  onViewOnMap,
 }) => {
   const { language, isRtl } = useLanguage();
   const { currentAccentHex, currentAccentTextHex, currentAccentRgb, settings } = useTheme();
@@ -124,19 +126,35 @@ export const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
                   </p>
 
                   <div
-                    className="flex items-center gap-3 text-xs font-medium pt-2 border-t border-[#FAF0DC]/15"
+                    className="flex items-center justify-between gap-3 text-xs font-medium pt-2 border-t border-[#FAF0DC]/15"
                     style={{ color: currentAccentHex }}
                   >
-                    <span>
-                      {experiences.length > 0
-                        ? experiences.filter(
-                            (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
-                          ).length
-                        : dest.experienceCount}{' '}
-                      {getSiteText(content, 'destinations.experiencesSuffix', language)}
-                    </span>
-                    <span aria-hidden="true">·</span>
-                    <span>{getSiteText(content, 'destinations.exploreCta', language)}</span>
+                    <div className="flex items-center gap-2.5">
+                      <span>
+                        {experiences.length > 0
+                          ? experiences.filter(
+                              (e) => e.destinationId === dest.id && e.status === 'PUBLISHED'
+                            ).length
+                          : dest.experienceCount}{' '}
+                        {getSiteText(content, 'destinations.experiencesSuffix', language)}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>{getSiteText(content, 'destinations.exploreCta', language)}</span>
+                    </div>
+
+                    {onViewOnMap && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewOnMap(dest.id);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/45 hover:bg-black/70 border border-[#FAF0DC]/25 text-[#FAF0DC] text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                      >
+                        <MapPin className="w-3 h-3" style={{ color: currentAccentHex }} />
+                        <span>{isArabic ? 'على الخريطة' : 'View on Map'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

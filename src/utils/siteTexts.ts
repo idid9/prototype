@@ -4,6 +4,7 @@ export type SiteTextGroupId =
   | 'nav'
   | 'hero'
   | 'destinations'
+  | 'map'
   | 'experiences'
   | 'quiz'
   | 'marketing'
@@ -50,6 +51,13 @@ export const SITE_TEXT_GROUPS: SiteTextGroup[] = [
     titleAr: 'قسم الوجهات السياحية',
     description: 'Section headings, counters, and destination card call-to-action labels.',
     descriptionAr: 'عناوين قسم الوجهات، عداد التجارب، ونص استكشف الوجهة.',
+  },
+  {
+    id: 'map',
+    title: 'Live Google Maps Guide Finder',
+    titleAr: 'خريطة الوجهات والمرشدين المحليين',
+    description: 'Interactive Google Maps explorer helping travelers find local SME tour guides at each hub.',
+    descriptionAr: 'خريطة جوجل التفاعلية لمساعدة المسافرين على إيجاد المواقع والمرشدين المحليين.',
   },
   {
     id: 'experiences',
@@ -120,6 +128,14 @@ export const SITE_TEXT_DEFINITIONS: SiteTextDefinition[] = [
     labelAr: 'رابط القائمة: الوجهات',
     defaultEn: 'Destinations',
     defaultAr: 'الوجهات',
+  },
+  {
+    key: 'nav.map',
+    group: 'nav',
+    label: 'Nav Link: Map Explorer',
+    labelAr: 'رابط القائمة: خريطة المرشدين',
+    defaultEn: 'Live Map',
+    defaultAr: 'الخريطة المباشرة',
   },
   {
     key: 'nav.experiences',
@@ -295,6 +311,51 @@ export const SITE_TEXT_DEFINITIONS: SiteTextDefinition[] = [
     labelAr: 'نص رابط البطاقة',
     defaultEn: 'Explore Destination',
     defaultAr: 'استكشف الوجهة',
+  },
+
+  // LIVE GOOGLE MAPS GUIDE FINDER
+  {
+    key: 'map.eyebrow',
+    group: 'map',
+    label: 'Map Section Eyebrow',
+    labelAr: 'العنوان الفرعي العلوي للخريطة',
+    defaultEn: 'Flight & Hotel Booked? Explore Nearby Guides',
+    defaultAr: 'حجزت طيرانك وفندقك؟ اكتشف المرشدين حولك',
+  },
+  {
+    key: 'map.title',
+    group: 'map',
+    label: 'Map Section Heading',
+    labelAr: 'عنوان قسم الخريطة التفاعلية',
+    defaultEn: 'Live Saudi Destination Map & Local UMKM Tour Guides',
+    defaultAr: 'خريطة الوجهات السعودية المباشرة والمرشدون المحليون',
+  },
+  {
+    key: 'map.sub',
+    group: 'map',
+    label: 'Map Section Subtitle',
+    labelAr: 'وصف قسم الخريطة التفاعلية',
+    defaultEn:
+      'Locate every tourist spot on Google Maps, verify available local SME operators ready to guide you, plan driving routes from your hotel, or launch Google Maps navigation.',
+    defaultAr:
+      'حدّد مواقع المعالم السياحية على خرائط جوجل، وتعرّف على المرشدين المحليين المعتمدين في كل وجهة، واحسب مسار القيادة من فندقك مباشرة.',
+    multiline: true,
+  },
+  {
+    key: 'map.findGuidesCta',
+    group: 'map',
+    label: 'Map Spot Primary CTA',
+    labelAr: 'زر عرض المرشدين بالوجهة',
+    defaultEn: 'Browse Local Guides Here',
+    defaultAr: 'عرض المرشدين المحليين هنا',
+  },
+  {
+    key: 'map.openGmapsCta',
+    group: 'map',
+    label: 'Open in Google Maps CTA',
+    labelAr: 'زر الفتح في خرائط جوجل',
+    defaultEn: 'Open in Google Maps',
+    defaultAr: 'فتح في خرائط جوجل',
   },
 
   // EXPERIENCES CATALOG

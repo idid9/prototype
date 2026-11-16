@@ -10,6 +10,7 @@ import {
   localizeDestinationName,
 } from '../../utils/localization';
 import { getSiteText } from '../../utils/siteTexts';
+import { ExperienceLocationMap } from './ExperienceLocationMap';
 import {
   Clock,
   MapPin,
@@ -362,6 +363,7 @@ export const ExperienceDetailPage: React.FC<ExperienceDetailPageProps> = ({
                 <ShieldCheck className="w-4 h-4" style={{ color: currentAccentTextHex }} />
                 <span>{getSiteText(websiteContent, 'details.verifiedBadge', language)}</span>
               </div>
+              <ExperienceLocationMap experience={experience} />
             </div>
           </div>
 
