@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../../../firebase-applet-config.json';
 
-export const ADMIN_EMAILS = ['satriarosie@gmail.com', 'admin@tourflow.sa'];
+export const ADMIN_EMAILS = ['satriarosie@gmail.com', 'handaainv@gmail.com', 'admin@tourflow.sa'];
 
 export enum OperationType {
   CREATE = 'create',
