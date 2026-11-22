@@ -16,10 +16,8 @@ import {
 } from '@vis.gl/react-google-maps';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
 import { Destination, Experience, WebsiteContent } from '../../types';
-import { DataService } from '../../services/dataService';
-import { getDefaultSiteText, getSiteText } from '../../utils/siteTexts';
+import { getSiteText } from '../../utils/siteTexts';
 import {
   localizeCurrency,
   localizeCategory,
@@ -49,9 +47,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Building2,
-  Pencil,
-  Check,
-  RotateCcw,
 } from 'lucide-react';
 
 interface ResolvedDestinationPlace {
@@ -67,7 +62,16 @@ interface ResolvedDestinationPlace {
 
 interface OriginLocation {
   label: string;
-  location: google.maps.LatLngLiteral;
+  location?: google.maps.LatLngLiteral | null;
+  isCurrentGps?: boolean;
+}
+
+function getOriginDirectionsQuery(origin: OriginLocation | null | undefined): string | undefined {
+  if (!origin) return undefined;
+  if (origin.isCurrentGps && origin.location) {
+    return `${origin.location.lat},${origin.location.lng}`;
+  }
+  return origin.label?.trim() || undefined;
 }
 
 interface RouteSummaryInfo {
@@ -289,7 +293,7 @@ const RouteOverlayController: React.FC<RouteOverlayControllerProps> = ({
     polylinesRef.current = [];
     onRouteError(null);
 
-    if (!map || !routesLib || !origin || !destination) {
+    if (!map || !routesLib || !origin || !origin.location || !destination) {
       onRouteComputed(null);
       return;
     }
@@ -599,7 +603,7 @@ const InteractiveMapCanvas: React.FC<InteractiveMapCanvasProps> = ({
             currency={currency}
             content={content}
             language={language}
-            originLabel={origin?.label}
+            originLabel={getOriginDirectionsQuery(origin)}
             onSelectMarker={onSelectMarker}
             onCloseInfoWindow={onCloseInfoWindow}
             onFindGuides={onFindGuides}
@@ -607,7 +611,7 @@ const InteractiveMapCanvas: React.FC<InteractiveMapCanvasProps> = ({
         );
       })}
 
-      {origin && (
+      {origin?.location && (
         <AdvancedMarker position={origin.location} title={origin.label} zIndex={60}>
           <Pin
             background="#0284C7"
@@ -641,41 +645,49 @@ interface OriginAutocompleteControlProps {
   onSetOrigin: (origin: OriginLocation | null) => void;
 }
 
-const OriginAutocompleteControl: React.FC<OriginAutocompleteControlProps> = ({
+interface OriginPlacesSuggestionsBridgeProps {
+  inputVal: string;
+  language: 'en' | 'ar';
+  hasResolvedLocation: boolean;
+  isCurrentGps: boolean;
+  resolvedLabel?: string;
+  accentTextHex: string;
+  onPickResolvedOrigin: (label: string, location: google.maps.LatLngLiteral) => void;
+}
+
+const OriginPlacesSuggestionsBridge: React.FC<OriginPlacesSuggestionsBridgeProps> = ({
+  inputVal,
   language,
+  hasResolvedLocation,
+  isCurrentGps,
+  resolvedLabel,
   accentTextHex,
-  accentHex,
-  accentBtnTextHex,
-  origin,
-  onSetOrigin,
+  onPickResolvedOrigin,
 }) => {
-  const { hasApiKey } = useMapsAvailability();
   const placesLib = useMapsLibrary('places');
   const isArabic = language === 'ar';
-
-  const [inputVal, setInputVal] = useState('');
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
-  const [geoError, setGeoError] = useState<string | null>(null);
   const sessionTokenRef =
     useRef<google.maps.places.AutocompleteSessionToken | null>(null);
 
-  // Debounced AutocompleteSuggestion using modern Places API (New)
   useEffect(() => {
-    if (!hasApiKey || !placesLib) return;
+    if (!placesLib) return;
     const trimmed = inputVal.trim();
-    if (trimmed.length < 2 || (origin && origin.label === trimmed)) {
+    if (
+      trimmed.length < 2 ||
+      isCurrentGps ||
+      (hasResolvedLocation && resolvedLabel === trimmed)
+    ) {
       setSuggestions([]);
       return;
     }
 
     const timer = window.setTimeout(async () => {
       try {
-        const { AutocompleteSessionToken, AutocompleteSuggestion } =
-          placesLib;
+        const { AutocompleteSessionToken, AutocompleteSuggestion } = placesLib;
         if (!sessionTokenRef.current) {
           sessionTokenRef.current = new AutocompleteSessionToken();
         }
@@ -699,7 +711,7 @@ const OriginAutocompleteControl: React.FC<OriginAutocompleteControlProps> = ({
     }, 280);
 
     return () => window.clearTimeout(timer);
-  }, [hasApiKey, placesLib, inputVal, language, origin]);
+  }, [placesLib, inputVal, language, hasResolvedLocation, isCurrentGps, resolvedLabel]);
 
   const handlePickSuggestion = async (
     suggestion: google.maps.places.AutocompleteSuggestion
@@ -722,8 +734,7 @@ const OriginAutocompleteControl: React.FC<OriginAutocompleteControlProps> = ({
           place.displayName ||
           place.formattedAddress ||
           suggestion.placePrediction.text.text;
-        setInputVal(label);
-        onSetOrigin({ label, location: loc });
+        onPickResolvedOrigin(label, loc);
       }
     } catch (err) {
       if (isMapsQuotaError(err)) {
@@ -735,119 +746,8 @@ const OriginAutocompleteControl: React.FC<OriginAutocompleteControlProps> = ({
     }
   };
 
-  const handleUseCurrentGps = () => {
-    setGeoError(null);
-    if (!navigator.geolocation) {
-      setGeoError(
-        isArabic
-          ? 'المتصفح لا يدعم تحديد الموقع.'
-          : 'Geolocation is not supported in this browser.'
-      );
-      return;
-    }
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGeoLoading(false);
-        const label = isArabic ? 'موقعي الحالي' : 'My Current Location';
-        setInputVal(label);
-        setSuggestions([]);
-        onSetOrigin({
-          label,
-          location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-        });
-      },
-      () => {
-        setGeoLoading(false);
-        setGeoError(
-          isArabic
-            ? 'تعذر الوصول للموقع الحالي. اكتب اسم الفندق أعلاه.'
-            : 'Location permission declined. Type your hotel name above instead.'
-        );
-      },
-      { timeout: 8000, maximumAge: 60000 }
-    );
-  };
-
-  const handleClear = () => {
-    setInputVal('');
-    setSuggestions([]);
-    setGeoError(null);
-    onSetOrigin(null);
-  };
-
   return (
-    <div className="relative flex-1 min-w-[240px]">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Building2
-            className="w-4 h-4 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ color: accentTextHex }}
-          />
-          <input
-            type="text"
-            value={inputVal}
-            onChange={(e) => {
-              setInputVal(e.target.value);
-              if (origin && e.target.value !== origin.label) {
-                onSetOrigin(null);
-              }
-            }}
-            placeholder={
-              isArabic
-                ? 'أدخل فندقك أو مكان إقامتك لحساب المسار...'
-                : 'Enter your hotel or stay in KSA to compute route...'
-            }
-            className="w-full text-xs sm:text-sm py-2.5 pl-9 pr-8 rtl:pl-8 rtl:pr-9 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder:text-[var(--tf-muted)] focus:outline-none"
-          />
-          {(inputVal || origin) && (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label={isArabic ? 'مسح نقطة الانطلاق' : 'Clear hotel location'}
-              className="absolute right-2.5 rtl:right-auto rtl:left-2.5 top-1/2 -translate-y-1/2 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={handleUseCurrentGps}
-          disabled={geoLoading}
-          style={
-            origin?.label === 'My Current Location' ||
-            origin?.label === 'موقعي الحالي'
-              ? { backgroundColor: accentHex, color: accentBtnTextHex }
-              : undefined
-          }
-          className="px-3 py-2.5 rounded-xl text-xs font-semibold border border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] text-[var(--tf-heading)] flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors disabled:opacity-60"
-          title={
-            isArabic
-              ? 'استخدام موقعي الحالي بموافقتي'
-              : 'Use my current GPS location'
-          }
-        >
-          <LocateFixed className="w-3.5 h-3.5" style={{ color: accentTextHex }} />
-          <span className="hidden sm:inline">
-            {geoLoading
-              ? isArabic
-                ? 'جاري التحديد...'
-                : 'Locating...'
-              : isArabic
-              ? 'موقعي'
-              : 'My Location'}
-          </span>
-        </button>
-      </div>
-
-      {geoError && (
-        <p className="text-[11px] text-[var(--tf-danger-text)] mt-1">
-          {geoError}
-        </p>
-      )}
-
+    <>
       {isSearching && (
         <div className="text-[11px] text-[var(--tf-muted)] mt-1">
           {isArabic ? 'جاري البحث عن الفندق...' : 'Searching Saudi places...'}
@@ -877,6 +777,159 @@ const OriginAutocompleteControl: React.FC<OriginAutocompleteControlProps> = ({
           })}
         </ul>
       )}
+    </>
+  );
+};
+
+const OriginAutocompleteControl: React.FC<OriginAutocompleteControlProps> = ({
+  language,
+  accentTextHex,
+  accentHex,
+  accentBtnTextHex,
+  origin,
+  onSetOrigin,
+}) => {
+  const { hasApiKey, isAvailable } = useMapsAvailability();
+  const isArabic = language === 'ar';
+
+  const [inputVal, setInputVal] = useState('');
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+
+  const isGpsActive = Boolean(origin?.isCurrentGps);
+
+  const handleUseCurrentGps = () => {
+    setGeoError(null);
+    if (!navigator.geolocation) {
+      setGeoError(
+        isArabic
+          ? 'المتصفح لا يدعم تحديد الموقع.'
+          : 'Geolocation is not supported in this browser.'
+      );
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoLoading(false);
+        const label = isArabic ? 'موقعي الحالي' : 'My Current Location';
+        setInputVal(label);
+        onSetOrigin({
+          label,
+          location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          isCurrentGps: true,
+        });
+      },
+      () => {
+        setGeoLoading(false);
+        setGeoError(
+          isArabic
+            ? 'تعذر الوصول للموقع الحالي. اكتب اسم الفندق أعلاه.'
+            : 'Location permission declined. Type your hotel name above instead.'
+        );
+      },
+      { timeout: 8000, maximumAge: 60000 }
+    );
+  };
+
+  const handleClear = () => {
+    setInputVal('');
+    setGeoError(null);
+    onSetOrigin(null);
+  };
+
+  return (
+    <div className="relative flex-1 min-w-0 lg:min-w-[240px]">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 min-w-0">
+          <Building2
+            className="w-4 h-4 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: accentTextHex }}
+          />
+          <input
+            type="text"
+            value={inputVal}
+            onChange={(e) => {
+              const nextVal = e.target.value;
+              setInputVal(nextVal);
+              const trimmed = nextVal.trim();
+              if (!trimmed) {
+                onSetOrigin(null);
+              } else {
+                onSetOrigin({ label: trimmed, location: null, isCurrentGps: false });
+              }
+            }}
+            placeholder={
+              isArabic
+                ? 'أدخل فندقك أو مكان إقامتك لحساب المسار...'
+                : 'Enter your hotel or stay in KSA to compute route...'
+            }
+            className="w-full text-xs sm:text-sm py-2.5 pl-9 pr-8 rtl:pl-8 rtl:pr-9 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] placeholder:text-[var(--tf-muted)] focus:outline-none"
+          />
+          {(inputVal || origin) && (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label={isArabic ? 'مسح نقطة الانطلاق' : 'Clear hotel location'}
+              className="absolute right-2.5 rtl:right-auto rtl:left-2.5 top-1/2 -translate-y-1/2 text-[var(--tf-muted)] hover:text-[var(--tf-heading)] cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleUseCurrentGps}
+          disabled={geoLoading}
+          style={
+            isGpsActive
+              ? { backgroundColor: accentHex, color: accentBtnTextHex }
+              : undefined
+          }
+          className="px-3 py-2.5 rounded-xl text-xs font-semibold border border-[var(--tf-border)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] text-[var(--tf-heading)] flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-colors disabled:opacity-60"
+          title={
+            isArabic
+              ? 'استخدام موقعي الحالي بموافقتي'
+              : 'Use my current GPS location'
+          }
+        >
+          <LocateFixed
+            className="w-3.5 h-3.5"
+            style={{ color: isGpsActive ? accentBtnTextHex : accentTextHex }}
+          />
+          <span className="hidden sm:inline">
+            {geoLoading
+              ? isArabic
+                ? 'جاري التحديد...'
+                : 'Locating...'
+              : isArabic
+              ? 'موقعي'
+              : 'My Location'}
+          </span>
+        </button>
+      </div>
+
+      {geoError && (
+        <p className="text-[11px] text-[var(--tf-danger-text)] mt-1">
+          {geoError}
+        </p>
+      )}
+
+      {hasApiKey && isAvailable && (
+        <OriginPlacesSuggestionsBridge
+          inputVal={inputVal}
+          language={language}
+          hasResolvedLocation={Boolean(origin?.location)}
+          isCurrentGps={isGpsActive}
+          resolvedLabel={origin?.label}
+          accentTextHex={accentTextHex}
+          onPickResolvedOrigin={(label, location) => {
+            setInputVal(label);
+            onSetOrigin({ label, location, isCurrentGps: false });
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -891,7 +944,6 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
   onOpenExperienceDetail,
 }) => {
   const { language, isRtl } = useLanguage();
-  const { isAdminAuthenticated } = useAuth();
   const {
     getGlassyCardStyle,
     currentAccentHex,
@@ -902,122 +954,6 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
   const isArabic = language === 'ar';
 
   const cardStyle = getGlassyCardStyle();
-
-  const HEADER_TEXT_FIELDS = useMemo(
-    () =>
-      [
-        {
-          key: 'map.eyebrow',
-          labelEn: 'Section Eyebrow',
-          labelAr: 'العنوان الفرعي العلوي',
-          multiline: false,
-        },
-        {
-          key: 'map.title',
-          labelEn: 'Section Heading',
-          labelAr: 'العنوان الرئيسي للقسم',
-          multiline: false,
-        },
-        {
-          key: 'map.sub',
-          labelEn: 'Section Subtitle',
-          labelAr: 'الوصف التفصيلي للقسم',
-          multiline: true,
-        },
-        {
-          key: 'map.trustTitleSuffix',
-          labelEn: 'Trust Badge Title Suffix',
-          labelAr: 'نص شارة الثقة الرئيسي',
-          multiline: false,
-        },
-        {
-          key: 'map.trustSubtitle',
-          labelEn: 'Trust Badge Subtitle',
-          labelAr: 'النص الفرعي لشارة الثقة',
-          multiline: false,
-        },
-      ] as const,
-    []
-  );
-
-  const [isHeaderEditing, setIsHeaderEditing] = useState(false);
-  const [headerSavedNotice, setHeaderSavedNotice] = useState(false);
-  const [draftEn, setDraftEn] = useState<Record<string, string>>({});
-  const [draftAr, setDraftAr] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (isHeaderEditing) return;
-    const nextEn: Record<string, string> = {};
-    const nextAr: Record<string, string> = {};
-    for (const field of HEADER_TEXT_FIELDS) {
-      nextEn[field.key] = getSiteText(content, field.key, 'en');
-      nextAr[field.key] = getSiteText(content, field.key, 'ar');
-    }
-    setDraftEn(nextEn);
-    setDraftAr(nextAr);
-  }, [content, isHeaderEditing, HEADER_TEXT_FIELDS]);
-
-  const handleOpenHeaderEditor = () => {
-    const nextEn: Record<string, string> = {};
-    const nextAr: Record<string, string> = {};
-    for (const field of HEADER_TEXT_FIELDS) {
-      nextEn[field.key] = getSiteText(content, field.key, 'en');
-      nextAr[field.key] = getSiteText(content, field.key, 'ar');
-    }
-    setDraftEn(nextEn);
-    setDraftAr(nextAr);
-    setHeaderSavedNotice(false);
-    setIsHeaderEditing(true);
-  };
-
-  const handleResetHeaderDrafts = () => {
-    const nextEn: Record<string, string> = {};
-    const nextAr: Record<string, string> = {};
-    for (const field of HEADER_TEXT_FIELDS) {
-      nextEn[field.key] = getDefaultSiteText(field.key, 'en');
-      nextAr[field.key] = getDefaultSiteText(field.key, 'ar');
-    }
-    setDraftEn(nextEn);
-    setDraftAr(nextAr);
-  };
-
-  const handleSaveHeaderTexts = (e: React.FormEvent) => {
-    e.preventDefault();
-    const currentContent = DataService.getWebsiteContent();
-    const nextComponentTexts: Record<string, string> = {
-      ...(currentContent.componentTexts || {}),
-    };
-    const nextComponentTextsAr: Record<string, string> = {
-      ...(currentContent.componentTextsAr || {}),
-    };
-
-    for (const field of HEADER_TEXT_FIELDS) {
-      const valEn = (draftEn[field.key] ?? '').trim();
-      const defEn = getDefaultSiteText(field.key, 'en').trim();
-      if (valEn.length > 0 && valEn !== defEn) {
-        nextComponentTexts[field.key] = valEn;
-      } else {
-        delete nextComponentTexts[field.key];
-      }
-
-      const valAr = (draftAr[field.key] ?? '').trim();
-      const defAr = getDefaultSiteText(field.key, 'ar').trim();
-      if (valAr.length > 0 && valAr !== defAr) {
-        nextComponentTextsAr[field.key] = valAr;
-      } else {
-        delete nextComponentTextsAr[field.key];
-      }
-    }
-
-    DataService.updateWebsiteContent({
-      componentTexts: nextComponentTexts,
-      componentTextsAr: nextComponentTextsAr,
-    });
-
-    setIsHeaderEditing(false);
-    setHeaderSavedNotice(true);
-    window.setTimeout(() => setHeaderSavedNotice(false), 3200);
-  };
 
   const allSummaries = useMemo(
     () => summarizeDestinationGuides(destinations, experiences),
@@ -1101,236 +1037,52 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="mb-10 space-y-5">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div className="max-w-2xl">
-              <div
-                className="text-xs font-bold tracking-widest uppercase mb-2 flex items-center gap-1.5"
-                style={{ color: currentAccentTextHex }}
-              >
-                <MapPin className="w-4 h-4" style={{ color: currentAccentTextHex }} />
-                <span>{getSiteText(content, 'map.eyebrow', language)}</span>
-              </div>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
-                {getSiteText(content, 'map.title', language)}
-              </h2>
-              <p className="mt-3 text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed">
-                {getSiteText(content, 'map.sub', language)}
-              </p>
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
+          <div className="max-w-2xl">
+            <div
+              className="text-xs font-bold tracking-widest uppercase mb-2 flex items-center gap-1.5"
+              style={{ color: currentAccentTextHex }}
+            >
+              <MapPin className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+              <span>{getSiteText(content, 'map.eyebrow', language)}</span>
             </div>
-
-            {/* Quick Trust Stats & Admin Inline Edit Trigger */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div
-                style={cardStyle}
-                className="px-4 py-2.5 rounded-xl flex items-center gap-2.5"
-              >
-                <CheckCircle2
-                  className="w-4 h-4 shrink-0"
-                  style={{ color: currentAccentTextHex }}
-                />
-                <div className="text-xs">
-                  <div className="font-bold text-[var(--tf-heading)] tabular-nums">
-                    {totalLiveGuides}{' '}
-                    {getSiteText(content, 'map.trustTitleSuffix', language)}
-                  </div>
-                  <div className="text-[11px] text-[var(--tf-muted)]">
-                    {getSiteText(content, 'map.trustSubtitle', language)}
-                  </div>
-                </div>
-              </div>
-
-              {isAdminAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    isHeaderEditing ? setIsHeaderEditing(false) : handleOpenHeaderEditor()
-                  }
-                  style={
-                    isHeaderEditing
-                      ? { backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }
-                      : cardStyle
-                  }
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:brightness-105"
-                >
-                  {isHeaderEditing ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />}
-                  <span>
-                    {isHeaderEditing
-                      ? isArabic
-                        ? 'إغلاق المحرر'
-                        : 'Close Editor'
-                      : isArabic
-                      ? 'تعديل النصوص'
-                      : 'Edit Texts'}
-                  </span>
-                </button>
-              )}
-
-              {headerSavedNotice && (
-                <div className="px-3 py-2 rounded-xl bg-[var(--tf-success-bg)] border border-[var(--tf-success-border)] text-[var(--tf-success-text)] text-xs font-semibold flex items-center gap-1.5">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>
-                    {isArabic
-                      ? 'تم التحديث والمزامنة فوريًا في جميع اللوحات'
-                      : 'Synced live across all panels'}
-                  </span>
-                </div>
-              )}
-            </div>
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
+              {getSiteText(content, 'map.title', language)}
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed">
+              {getSiteText(content, 'map.sub', language)}
+            </p>
           </div>
 
-          {/* Admin-only Inline Bilingual Editor synced in real time with Website CMS & Firestore */}
-          {isAdminAuthenticated && isHeaderEditing && (
-            <form
-              onSubmit={handleSaveHeaderTexts}
+          {/* Quick Trust Stats */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div
               style={cardStyle}
-              className="p-5 rounded-2xl space-y-4 shadow-lg"
+              className="px-4 py-2.5 rounded-xl flex items-center gap-2.5"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[var(--tf-border)]">
-                <div>
-                  <h3 className="text-sm font-bold text-[var(--tf-heading)] flex items-center gap-2">
-                    <Pencil className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
-                    <span>
-                      {isArabic
-                        ? 'تعديل نصوص رأس خريطة الوجهات (مزامنة فورية)'
-                        : 'Edit Destination Map Header Texts (Real-time Sync)'}
-                    </span>
-                  </h3>
-                  <p className="text-[11px] text-[var(--tf-muted)] mt-0.5">
-                    {isArabic
-                      ? 'أي تعديل هنا يتحدث فوراً في موقع الزوار ولوحة تحكم الإدارة وقاعدة البيانات.'
-                      : 'Changes sync immediately across the Visitor Portal, Admin CMS panel, open tabs, and Firestore.'}
-                  </p>
+              <CheckCircle2
+                className="w-4 h-4 shrink-0"
+                style={{ color: currentAccentTextHex }}
+              />
+              <div className="text-xs">
+                <div className="font-bold text-[var(--tf-heading)] tabular-nums">
+                  {totalLiveGuides}{' '}
+                  {getSiteText(content, 'map.trustTitleSuffix', language)}
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleResetHeaderDrafts}
-                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>{isArabic ? 'استعادة الافتراضي' : 'Reset Defaults'}</span>
-                </button>
+                <div className="text-[11px] text-[var(--tf-muted)]">
+                  {getSiteText(content, 'map.trustSubtitle', language)}
+                </div>
               </div>
-
-              <div className="space-y-3">
-                {HEADER_TEXT_FIELDS.map((field) => (
-                  <div
-                    key={field.key}
-                    className="p-3.5 rounded-xl bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] space-y-2.5"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-[var(--tf-heading)]">
-                        {isArabic ? field.labelAr : field.labelEn}
-                      </span>
-                      <code className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--tf-input-bg)] border border-[var(--tf-border)] text-[var(--tf-muted)]">
-                        {field.key}
-                      </code>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-semibold text-[var(--tf-muted)] mb-1">
-                          {isArabic ? 'النص بالإنجليزية (EN)' : 'English (EN)'}
-                        </label>
-                        {field.multiline ? (
-                          <textarea
-                            rows={2}
-                            dir="ltr"
-                            value={draftEn[field.key] ?? ''}
-                            onChange={(e) =>
-                              setDraftEn((prev) => ({
-                                ...prev,
-                                [field.key]: e.target.value,
-                              }))
-                            }
-                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            dir="ltr"
-                            value={draftEn[field.key] ?? ''}
-                            onChange={(e) =>
-                              setDraftEn((prev) => ({
-                                ...prev,
-                                [field.key]: e.target.value,
-                              }))
-                            }
-                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
-                          />
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-semibold text-[var(--tf-muted)] mb-1">
-                          {isArabic ? 'النص بالعربية (AR)' : 'Arabic (AR)'}
-                        </label>
-                        {field.multiline ? (
-                          <textarea
-                            rows={2}
-                            dir="rtl"
-                            value={draftAr[field.key] ?? ''}
-                            onChange={(e) =>
-                              setDraftAr((prev) => ({
-                                ...prev,
-                                [field.key]: e.target.value,
-                              }))
-                            }
-                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            dir="rtl"
-                            value={draftAr[field.key] ?? ''}
-                            onChange={(e) =>
-                              setDraftAr((prev) => ({
-                                ...prev,
-                                [field.key]: e.target.value,
-                              }))
-                            }
-                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsHeaderEditing(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] cursor-pointer"
-                >
-                  {isArabic ? 'إلغاء' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    backgroundColor: currentAccentHex,
-                    color: currentAccentBtnTextHex,
-                  }}
-                  className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:brightness-105 cursor-pointer"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>
-                    {isArabic ? 'حفظ ومزامنة فورية' : 'Save & Sync Live'}
-                  </span>
-                </button>
-              </div>
-            </form>
-          )}
+            </div>
+          </div>
         </div>
 
         {/* Search, Guide Filter & Hotel Route Origin Bar */}
         <div
           style={cardStyle}
-          className="p-4 rounded-2xl mb-6 flex flex-col lg:flex-row items-stretch lg:items-center gap-3"
+          className="relative z-20 p-4 rounded-2xl mb-6 flex flex-col lg:flex-row items-stretch lg:items-center gap-3"
         >
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-0 lg:min-w-[200px]">
             <Search className="w-4 h-4 text-[var(--tf-muted)] absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
@@ -1345,16 +1097,14 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
             />
           </div>
 
-          {hasApiKey && (
-            <OriginAutocompleteControl
-              language={language}
-              accentTextHex={currentAccentTextHex}
-              accentHex={currentAccentHex}
-              accentBtnTextHex={currentAccentBtnTextHex}
-              origin={origin}
-              onSetOrigin={setOrigin}
-            />
-          )}
+          <OriginAutocompleteControl
+            language={language}
+            accentTextHex={currentAccentTextHex}
+            accentHex={currentAccentHex}
+            accentBtnTextHex={currentAccentBtnTextHex}
+            origin={origin}
+            onSetOrigin={setOrigin}
+          />
 
           <button
             type="button"
@@ -1705,7 +1455,7 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
                                   activeSummary.destination
                                 ),
                               destinationPlaceId: activeResolved?.placeId,
-                              originQuery: origin?.label,
+                              originQuery: getOriginDirectionsQuery(origin),
                             })}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -1734,7 +1484,7 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
                                   activeSummary.destination
                                 ),
                               destinationPlaceId: activeResolved?.placeId,
-                              originQuery: origin?.label,
+                              originQuery: getOriginDirectionsQuery(origin),
                             })}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -1795,6 +1545,7 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
                           destinationQuery: buildDestinationSearchQuery(
                             activeSummary.destination
                           ),
+                          originQuery: getOriginDirectionsQuery(origin),
                         })}
                         target="_blank"
                         rel="noopener noreferrer"
