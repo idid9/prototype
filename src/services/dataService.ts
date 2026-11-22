@@ -1453,6 +1453,75 @@ function deleteCloudDoc(collectionName: string, docId: string) {
   });
 }
 
+function clearCloudCollection(collectionName: string) {
+  if (!adminCloudMode || !isFirebaseConfigured() || !db) return;
+  const firestoreDb = db;
+  (async () => {
+    try {
+      const snap = await getDocs(collection(firestoreDb, collectionName));
+      const docsToDelete = snap.docs;
+      for (let i = 0; i < docsToDelete.length; i += 450) {
+        const batch = writeBatch(firestoreDb);
+        docsToDelete.slice(i, i + 450).forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, collectionName);
+    }
+  })();
+}
+
+function resetCloudCollection<T extends { id: string }>(
+  collectionName: string,
+  seedItems: T[],
+  mapper: (item: T) => Record<string, unknown>
+) {
+  if (!adminCloudMode || !isFirebaseConfigured() || !db) return;
+  const firestoreDb = db;
+  (async () => {
+    try {
+      const snap = await getDocs(collection(firestoreDb, collectionName));
+      const keepIds = new Set(seedItems.map((item) => item.id));
+      let currentBatch = writeBatch(firestoreDb);
+      let opsInBatch = 0;
+      const batches = [currentBatch];
+
+      const queueDelete = (ref: (typeof snap.docs)[number]['ref']) => {
+        if (opsInBatch >= 450) {
+          currentBatch = writeBatch(firestoreDb);
+          batches.push(currentBatch);
+          opsInBatch = 0;
+        }
+        currentBatch.delete(ref);
+        opsInBatch += 1;
+      };
+
+      const queueSet = (item: T) => {
+        if (opsInBatch >= 450) {
+          currentBatch = writeBatch(firestoreDb);
+          batches.push(currentBatch);
+          opsInBatch = 0;
+        }
+        currentBatch.set(doc(firestoreDb, collectionName, item.id), mapper(item));
+        opsInBatch += 1;
+      };
+
+      snap.docs.forEach((d) => {
+        if (!keepIds.has(d.id)) {
+          queueDelete(d.ref);
+        }
+      });
+      seedItems.forEach((item) => queueSet(item));
+
+      for (const batch of batches) {
+        await batch.commit();
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, collectionName);
+    }
+  })();
+}
+
 function sortByCreatedDesc<T extends { createdAt?: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 }
@@ -2297,6 +2366,37 @@ export const DataService = {
     return updated;
   },
 
+  deleteInquiry(id: string): boolean {
+    const list = this.getInquiries();
+    const target = list.find((i) => i.id === id);
+    const filtered = list.filter((i) => i.id !== id);
+    if (filtered.length === list.length) return false;
+    saveCollection(STORAGE_KEYS.INQUIRIES, filtered);
+    notifyListeners(STORAGE_KEYS.INQUIRIES, filtered);
+    if (adminCloudMode) {
+      deleteCloudDoc('inquiries', id);
+    }
+    this.logActivity(
+      'Inquiry Deleted',
+      `Removed inquiry ${id}${target ? ` (${target.customerName})` : ''}`
+    );
+    return true;
+  },
+
+  clearInquiries(): void {
+    saveCollection(STORAGE_KEYS.INQUIRIES, []);
+    notifyListeners(STORAGE_KEYS.INQUIRIES, []);
+    clearCloudCollection('inquiries');
+    this.logActivity('Inquiries Cleared', 'All booking inquiries deleted from list');
+  },
+
+  resetInquiries(): void {
+    saveCollection(STORAGE_KEYS.INQUIRIES, INITIAL_INQUIRIES);
+    notifyListeners(STORAGE_KEYS.INQUIRIES, INITIAL_INQUIRIES);
+    resetCloudCollection('inquiries', INITIAL_INQUIRIES, toFirestoreInquiry);
+    this.logActivity('Inquiries Reset', 'Booking inquiries restored to default seed data');
+  },
+
   // Customers CRM
   getCustomers(): Customer[] {
     const loaded = loadCollection<Customer[]>(STORAGE_KEYS.CUSTOMERS);
@@ -2365,6 +2465,34 @@ export const DataService = {
       writeCloudDoc('customers', id, toFirestoreCustomer(target));
     }
     return target;
+  },
+
+  deleteCustomer(id: string): boolean {
+    const customers = this.getCustomers();
+    const target = customers.find((c) => c.id === id);
+    const filtered = customers.filter((c) => c.id !== id);
+    if (filtered.length === customers.length) return false;
+    saveCollection(STORAGE_KEYS.CUSTOMERS, filtered);
+    notifyListeners(STORAGE_KEYS.CUSTOMERS, filtered);
+    if (adminCloudMode) {
+      deleteCloudDoc('customers', id);
+    }
+    this.logActivity('Customer Deleted', `Removed customer "${target?.name || id}"`);
+    return true;
+  },
+
+  clearCustomers(): void {
+    saveCollection(STORAGE_KEYS.CUSTOMERS, []);
+    notifyListeners(STORAGE_KEYS.CUSTOMERS, []);
+    clearCloudCollection('customers');
+    this.logActivity('Customers Cleared', 'All customer CRM records deleted from list');
+  },
+
+  resetCustomers(): void {
+    saveCollection(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
+    notifyListeners(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
+    resetCloudCollection('customers', INITIAL_CUSTOMERS, toFirestoreCustomer);
+    this.logActivity('Customers Reset', 'Customer CRM restored to default seed data');
   },
 
   // Promotions
@@ -2866,6 +2994,20 @@ export const DataService = {
       deleteCloudDoc('newsletterSubscribers', id);
     }
     this.logActivity('Subscriber Removed', `Removed subscriber ${id}`);
+  },
+
+  clearSubscribers(): void {
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, []);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, []);
+    clearCloudCollection('newsletterSubscribers');
+    this.logActivity('Subscribers Cleared', 'All newsletter subscriber records deleted from list');
+  },
+
+  resetSubscribers(): void {
+    saveCollection(STORAGE_KEYS.SUBSCRIBERS, INITIAL_SUBSCRIBERS);
+    notifyListeners(STORAGE_KEYS.SUBSCRIBERS, INITIAL_SUBSCRIBERS);
+    resetCloudCollection('newsletterSubscribers', INITIAL_SUBSCRIBERS, toFirestoreSubscriber);
+    this.logActivity('Subscribers Reset', 'Newsletter subscribers restored to default seed data');
   },
 
   // Reset only analytics telemetry to 0 across local state, tabs, and cloud Firestore

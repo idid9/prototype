@@ -16,6 +16,10 @@ import {
   Download,
   X,
   Send,
+  Trash2,
+  RotateCcw,
+  AlertCircle,
+  Check,
 } from 'lucide-react';
 
 interface InquiriesTabProps {
@@ -32,10 +36,51 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
   const [searchQuery, setSearchQuery] = useState('');
   const [activeInquiryId, setActiveInquiryId] = useState<string | null>(null);
   const [newNote, setNewNote] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [confirmListAction, setConfirmListAction] = useState<'clear' | 'reset' | null>(null);
+  const [actionFeedback, setActionFeedback] = useState('');
 
   const activeInquiryModal = activeInquiryId
     ? inquiries.find((i) => i.id === activeInquiryId) || null
     : null;
+
+  const deleteTargetInquiry = deleteConfirmId
+    ? inquiries.find((i) => i.id === deleteConfirmId) || null
+    : null;
+
+  const showFeedback = (msg: string) => {
+    setActionFeedback(msg);
+    setTimeout(() => setActionFeedback(''), 3500);
+  };
+
+  const handleConfirmDeleteSingle = () => {
+    if (!deleteConfirmId) return;
+    DataService.deleteInquiry(deleteConfirmId);
+    if (activeInquiryId === deleteConfirmId) {
+      setActiveInquiryId(null);
+    }
+    setDeleteConfirmId(null);
+    showFeedback(isArabic ? 'تم حذف الطلب بنجاح.' : 'Inquiry deleted successfully.');
+  };
+
+  const handleConfirmListAction = () => {
+    if (confirmListAction === 'clear') {
+      DataService.clearInquiries();
+      setActiveInquiryId(null);
+      setDeleteConfirmId(null);
+      showFeedback(isArabic ? 'تم حذف جميع بيانات قائمة الطلبات.' : 'All booking inquiries deleted.');
+    } else if (confirmListAction === 'reset') {
+      DataService.resetInquiries();
+      setActiveInquiryId(null);
+      setDeleteConfirmId(null);
+      setStatusFilter('all');
+      setSearchQuery('');
+      showFeedback(
+        isArabic ? 'تمت استعادة قائمة الطلبات الافتراضية بنجاح.' : 'Booking inquiries list reset to default data.'
+      );
+    }
+    setConfirmListAction(null);
+  };
 
   const statusOptions: InquiryStatus[] = [
     'NEW',
@@ -145,13 +190,43 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
           </p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <Download className="w-4 h-4" style={{ color: currentAccentTextHex }} />
-          <span>{isArabic ? 'تصدير تقرير CSV' : 'Export CSV Report'}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          {actionFeedback && (
+            <div className="px-3 py-1.5 bg-[var(--tf-success-bg)] border border-[var(--tf-success-border)] text-[var(--tf-success-text)] text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>{actionFeedback}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setConfirmListAction('reset')}
+            className="py-2.5 px-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
+            <span>{isArabic ? 'إعادة تعيين القائمة' : 'Reset List'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setConfirmListAction('clear')}
+            disabled={inquiries.length === 0}
+            className="py-2.5 px-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-danger-border)] text-[var(--tf-danger-text)] hover:bg-[var(--tf-danger-bg)] rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{isArabic ? 'حذف الكل' : 'Delete All'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            disabled={filteredInquiries.length === 0}
+            className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+            <span>{isArabic ? 'تصدير تقرير CSV' : 'Export CSV Report'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -309,12 +384,28 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
                       </select>
                     </td>
                     <td className="py-3 px-4 text-end whitespace-nowrap">
-                      <button
-                        onClick={() => setActiveInquiryId(inq.id)}
-                        className="py-1 px-2.5 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
-                      >
-                        {isArabic ? 'التفاصيل والملاحظات' : 'Details & Notes'}
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setActiveInquiryId(inq.id)}
+                          className="py-1 px-2.5 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
+                        >
+                          {isArabic ? 'التفاصيل والملاحظات' : 'Details & Notes'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(inq.id)}
+                          title={isArabic ? 'حذف الطلب' : 'Delete inquiry'}
+                          aria-label={isArabic ? 'حذف الطلب' : 'Delete inquiry'}
+                          className={`p-1.5 rounded-lg hover:bg-rose-500/15 transition-colors cursor-pointer ${
+                            isDarkGlass
+                              ? 'text-rose-400 hover:text-rose-300'
+                              : 'text-rose-600 hover:text-rose-700'
+                          }`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -502,6 +593,100 @@ export const InquiriesTab: React.FC<InquiriesTabProps> = ({ inquiries, experienc
                   <span>{isArabic ? 'إضافة ملاحظة' : 'Add Note'}</span>
                 </button>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SINGLE INQUIRY DELETE CONFIRMATION */}
+      {deleteConfirmId && (
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-[var(--tf-modal-bg)] rounded-2xl p-6 max-w-sm w-full border border-[var(--tf-border)] shadow-xl text-center text-[var(--tf-text)]">
+            <AlertCircle className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            <h3 className="text-base font-bold text-[var(--tf-heading)] mb-1">
+              {isArabic ? 'حذف طلب الحجز؟' : 'Delete Booking Inquiry?'}
+            </h3>
+            <p className="text-xs text-[var(--tf-muted)] mb-6">
+              {isArabic
+                ? `سيتم حذف الطلب (${deleteTargetInquiry?.id || deleteConfirmId}) من قاعدة البيانات على جميع الأجهزة فوراً.`
+                : `Inquiry ${deleteTargetInquiry?.id || deleteConfirmId}${
+                    deleteTargetInquiry ? ` (${deleteTargetInquiry.customerName})` : ''
+                  } will be permanently removed across all devices.`}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl cursor-pointer hover:bg-[var(--tf-surface-hover)]"
+              >
+                {isArabic ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSingle}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#FAF0DC] bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
+              >
+                {isArabic ? 'حذف' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK CLEAR / RESET INQUIRIES CONFIRMATION */}
+      {confirmListAction && (
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-[var(--tf-modal-bg)] rounded-2xl p-6 max-w-sm w-full border border-[var(--tf-border)] shadow-xl text-center text-[var(--tf-text)]">
+            {confirmListAction === 'clear' ? (
+              <Trash2 className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            ) : (
+              <RotateCcw className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            )}
+            <h3 className="text-base font-bold text-[var(--tf-heading)] mb-1">
+              {confirmListAction === 'clear'
+                ? isArabic
+                  ? 'حذف جميع طلبات الحجز؟'
+                  : 'Delete All Inquiries?'
+                : isArabic
+                ? 'إعادة تعيين قائمة الطلبات؟'
+                : 'Reset Inquiries List?'}
+            </h3>
+            <p className="text-xs text-[var(--tf-muted)] mb-6">
+              {confirmListAction === 'clear'
+                ? isArabic
+                  ? 'سيتم مسح جميع الاستفسارات وطلبات الحجز من القائمة وقاعدة البيانات عبر جميع الأجهزة المتصلة.'
+                  : 'This will permanently delete all booking inquiries from the list and cloud database across all connected devices.'
+                : isArabic
+                ? 'سيتم استبدال القائمة الحالية ببيانات الطلبات الافتراضية النموذجية ومزامنتها عبر جميع الأجهزة.'
+                : 'This will replace the current inquiry list with the default sample inquiries and sync across all connected devices.'}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmListAction(null)}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl cursor-pointer hover:bg-[var(--tf-surface-hover)]"
+              >
+                {isArabic ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmListAction}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#FAF0DC] bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
+              >
+                {confirmListAction === 'clear'
+                  ? isArabic
+                    ? 'تأكيد الحذف'
+                    : 'Delete All'
+                  : isArabic
+                  ? 'تأكيد الاستعادة'
+                  : 'Confirm Reset'}
+              </button>
             </div>
           </div>
         </div>

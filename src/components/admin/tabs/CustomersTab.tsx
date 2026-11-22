@@ -10,7 +10,7 @@ import {
   localizeExperienceTitle,
   localizeInquiryStatus,
 } from '../../../utils/localization';
-import { Search, Download, User, X, Check } from 'lucide-react';
+import { Search, Download, User, X, Check, Trash2, RotateCcw, AlertCircle } from 'lucide-react';
 
 interface CustomersTabProps {
   customers: Customer[];
@@ -25,17 +25,58 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
 }) => {
   const { language, isRtl } = useLanguage();
   const isArabic = language === 'ar';
-  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex } = useTheme();
+  const { currentAccentHex, currentAccentTextHex, currentAccentBtnTextHex, isDarkGlass } = useTheme();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [notesInput, setNotesInput] = useState('');
   const [notesSaved, setNotesSaved] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [confirmListAction, setConfirmListAction] = useState<'clear' | 'reset' | null>(null);
+  const [actionFeedback, setActionFeedback] = useState('');
 
   const selectedCustomer = selectedCustomerId
     ? customers.find((c) => c.id === selectedCustomerId) || null
     : null;
+
+  const deleteTargetCustomer = deleteConfirmId
+    ? customers.find((c) => c.id === deleteConfirmId) || null
+    : null;
+
+  const showFeedback = (msg: string) => {
+    setActionFeedback(msg);
+    setTimeout(() => setActionFeedback(''), 3500);
+  };
+
+  const handleConfirmDeleteSingle = () => {
+    if (!deleteConfirmId) return;
+    DataService.deleteCustomer(deleteConfirmId);
+    if (selectedCustomerId === deleteConfirmId) {
+      setSelectedCustomerId(null);
+    }
+    setDeleteConfirmId(null);
+    showFeedback(isArabic ? 'تم حذف سجل العميل بنجاح.' : 'Customer record deleted successfully.');
+  };
+
+  const handleConfirmListAction = () => {
+    if (confirmListAction === 'clear') {
+      DataService.clearCustomers();
+      setSelectedCustomerId(null);
+      setDeleteConfirmId(null);
+      showFeedback(isArabic ? 'تم حذف جميع سجلات العملاء.' : 'All customer CRM records deleted.');
+    } else if (confirmListAction === 'reset') {
+      DataService.resetCustomers();
+      setSelectedCustomerId(null);
+      setDeleteConfirmId(null);
+      setCountryFilter('all');
+      setSearchQuery('');
+      showFeedback(
+        isArabic ? 'تمت استعادة قائمة العملاء الافتراضية بنجاح.' : 'Customer CRM list reset to default data.'
+      );
+    }
+    setConfirmListAction(null);
+  };
 
   useEffect(() => {
     if (selectedCustomer) {
@@ -115,13 +156,43 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <Download className="w-4 h-4" style={{ color: currentAccentTextHex }} />
-          <span>{isArabic ? 'تصدير دليل العملاء' : 'Export Customer Directory'}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          {actionFeedback && (
+            <div className="px-3 py-1.5 bg-[var(--tf-success-bg)] border border-[var(--tf-success-border)] text-[var(--tf-success-text)] text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-sm">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>{actionFeedback}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setConfirmListAction('reset')}
+            className="py-2.5 px-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
+            <span>{isArabic ? 'إعادة تعيين القائمة' : 'Reset List'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setConfirmListAction('clear')}
+            disabled={customers.length === 0}
+            className="py-2.5 px-3.5 bg-[var(--tf-surface-subtle)] border border-[var(--tf-danger-border)] text-[var(--tf-danger-text)] hover:bg-[var(--tf-danger-bg)] rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{isArabic ? 'حذف الكل' : 'Delete All'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            disabled={filteredCustomers.length === 0}
+            className="py-2.5 px-4 bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+            <span>{isArabic ? 'تصدير دليل العملاء' : 'Export Customer Directory'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search */}
@@ -220,12 +291,28 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                       {cust.notes || '—'}
                     </td>
                     <td className="py-3 px-4 text-end whitespace-nowrap">
-                      <button
-                        onClick={() => handleOpenProfile(cust)}
-                        className="py-1 px-3 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
-                      >
-                        {isArabic ? 'الملف الشخصي' : 'Profile'}
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenProfile(cust)}
+                          className="py-1 px-3 text-xs font-semibold text-[var(--tf-heading)] bg-[var(--tf-surface-subtle)] hover:bg-[var(--tf-surface-hover)] border border-[var(--tf-border)] rounded-lg cursor-pointer"
+                        >
+                          {isArabic ? 'الملف الشخصي' : 'Profile'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(cust.id)}
+                          title={isArabic ? 'حذف العميل' : 'Delete customer'}
+                          aria-label={isArabic ? 'حذف العميل' : 'Delete customer'}
+                          className={`p-1.5 rounded-lg hover:bg-rose-500/15 transition-colors cursor-pointer ${
+                            isDarkGlass
+                              ? 'text-rose-400 hover:text-rose-300'
+                              : 'text-rose-600 hover:text-rose-700'
+                          }`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -365,6 +452,102 @@ export const CustomersTab: React.FC<CustomersTabProps> = ({
                   {isArabic ? 'حفظ الملاحظات' : 'Save Notes'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SINGLE CUSTOMER DELETE CONFIRMATION */}
+      {deleteConfirmId && (
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-[var(--tf-modal-bg)] rounded-2xl p-6 max-w-sm w-full border border-[var(--tf-border)] shadow-xl text-center text-[var(--tf-text)]">
+            <AlertCircle className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            <h3 className="text-base font-bold text-[var(--tf-heading)] mb-1">
+              {isArabic ? 'حذف سجل العميل؟' : 'Delete Customer Record?'}
+            </h3>
+            <p className="text-xs text-[var(--tf-muted)] mb-6">
+              {isArabic
+                ? `سيتم حذف العميل (${deleteTargetCustomer?.name || deleteConfirmId}) من إدارة علاقات العملاء على جميع الأجهزة فوراً.`
+                : `${
+                    deleteTargetCustomer
+                      ? `${deleteTargetCustomer.name} (${deleteTargetCustomer.email})`
+                      : deleteConfirmId
+                  } will be removed immediately from Customer CRM across all devices.`}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl cursor-pointer hover:bg-[var(--tf-surface-hover)]"
+              >
+                {isArabic ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSingle}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#FAF0DC] bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
+              >
+                {isArabic ? 'حذف' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK CLEAR / RESET CUSTOMERS CONFIRMATION */}
+      {confirmListAction && (
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        >
+          <div className="bg-[var(--tf-modal-bg)] rounded-2xl p-6 max-w-sm w-full border border-[var(--tf-border)] shadow-xl text-center text-[var(--tf-text)]">
+            {confirmListAction === 'clear' ? (
+              <Trash2 className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            ) : (
+              <RotateCcw className="w-10 h-10 text-[var(--tf-danger-text)] mx-auto mb-3" />
+            )}
+            <h3 className="text-base font-bold text-[var(--tf-heading)] mb-1">
+              {confirmListAction === 'clear'
+                ? isArabic
+                  ? 'حذف جميع سجلات العملاء؟'
+                  : 'Delete All Customer Records?'
+                : isArabic
+                ? 'إعادة تعيين قائمة العملاء؟'
+                : 'Reset Customer CRM List?'}
+            </h3>
+            <p className="text-xs text-[var(--tf-muted)] mb-6">
+              {confirmListAction === 'clear'
+                ? isArabic
+                  ? 'سيتم مسح جميع ملفات العملاء من القائمة وقاعدة البيانات عبر جميع الأجهزة المتصلة.'
+                  : 'This will permanently delete all customer profiles from Customer CRM and the cloud database across all connected devices.'
+                : isArabic
+                ? 'سيتم استبدال القائمة الحالية بملفات العملاء الافتراضية النموذجية ومزامنتها عبر جميع الأجهزة.'
+                : 'This will replace the current customer list with the default sample CRM profiles and sync across all connected devices.'}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmListAction(null)}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[var(--tf-text)] bg-[var(--tf-modal-subtle)] border border-[var(--tf-border)] rounded-xl cursor-pointer hover:bg-[var(--tf-surface-hover)]"
+              >
+                {isArabic ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmListAction}
+                className="w-1/2 py-2 px-3 text-xs font-semibold text-[#FAF0DC] bg-red-600 hover:bg-red-700 rounded-xl cursor-pointer"
+              >
+                {confirmListAction === 'clear'
+                  ? isArabic
+                    ? 'تأكيد الحذف'
+                    : 'Delete All'
+                  : isArabic
+                  ? 'تأكيد الاستعادة'
+                  : 'Confirm Reset'}
+              </button>
             </div>
           </div>
         </div>
