@@ -342,6 +342,22 @@ export const SITE_TEXT_DEFINITIONS: SiteTextDefinition[] = [
     multiline: true,
   },
   {
+    key: 'map.trustTitleSuffix',
+    group: 'map',
+    label: 'Trust Badge Title Suffix',
+    labelAr: 'تسمية شارة الثقة',
+    defaultEn: 'Local UMKM Guided Tours',
+    defaultAr: 'جولة مع مرشد محلي',
+  },
+  {
+    key: 'map.trustSubtitle',
+    group: 'map',
+    label: 'Trust Badge Subtitle',
+    labelAr: 'النص الفرعي لشارة الثقة',
+    defaultEn: 'Ready to host once you land',
+    defaultAr: 'جاهزون للاستقبال بمجرد وصولك',
+  },
+  {
     key: 'map.findGuidesCta',
     group: 'map',
     label: 'Map Spot Primary CTA',

@@ -16,8 +16,10 @@ import {
 } from '@vis.gl/react-google-maps';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { Destination, Experience, WebsiteContent } from '../../types';
-import { getSiteText } from '../../utils/siteTexts';
+import { DataService } from '../../services/dataService';
+import { getDefaultSiteText, getSiteText } from '../../utils/siteTexts';
 import {
   localizeCurrency,
   localizeCategory,
@@ -47,6 +49,9 @@ import {
   ArrowRight,
   CheckCircle2,
   Building2,
+  Pencil,
+  Check,
+  RotateCcw,
 } from 'lucide-react';
 
 interface ResolvedDestinationPlace {
@@ -886,6 +891,7 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
   onOpenExperienceDetail,
 }) => {
   const { language, isRtl } = useLanguage();
+  const { isAdminAuthenticated } = useAuth();
   const {
     getGlassyCardStyle,
     currentAccentHex,
@@ -896,6 +902,122 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
   const isArabic = language === 'ar';
 
   const cardStyle = getGlassyCardStyle();
+
+  const HEADER_TEXT_FIELDS = useMemo(
+    () =>
+      [
+        {
+          key: 'map.eyebrow',
+          labelEn: 'Section Eyebrow',
+          labelAr: 'العنوان الفرعي العلوي',
+          multiline: false,
+        },
+        {
+          key: 'map.title',
+          labelEn: 'Section Heading',
+          labelAr: 'العنوان الرئيسي للقسم',
+          multiline: false,
+        },
+        {
+          key: 'map.sub',
+          labelEn: 'Section Subtitle',
+          labelAr: 'الوصف التفصيلي للقسم',
+          multiline: true,
+        },
+        {
+          key: 'map.trustTitleSuffix',
+          labelEn: 'Trust Badge Title Suffix',
+          labelAr: 'نص شارة الثقة الرئيسي',
+          multiline: false,
+        },
+        {
+          key: 'map.trustSubtitle',
+          labelEn: 'Trust Badge Subtitle',
+          labelAr: 'النص الفرعي لشارة الثقة',
+          multiline: false,
+        },
+      ] as const,
+    []
+  );
+
+  const [isHeaderEditing, setIsHeaderEditing] = useState(false);
+  const [headerSavedNotice, setHeaderSavedNotice] = useState(false);
+  const [draftEn, setDraftEn] = useState<Record<string, string>>({});
+  const [draftAr, setDraftAr] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (isHeaderEditing) return;
+    const nextEn: Record<string, string> = {};
+    const nextAr: Record<string, string> = {};
+    for (const field of HEADER_TEXT_FIELDS) {
+      nextEn[field.key] = getSiteText(content, field.key, 'en');
+      nextAr[field.key] = getSiteText(content, field.key, 'ar');
+    }
+    setDraftEn(nextEn);
+    setDraftAr(nextAr);
+  }, [content, isHeaderEditing, HEADER_TEXT_FIELDS]);
+
+  const handleOpenHeaderEditor = () => {
+    const nextEn: Record<string, string> = {};
+    const nextAr: Record<string, string> = {};
+    for (const field of HEADER_TEXT_FIELDS) {
+      nextEn[field.key] = getSiteText(content, field.key, 'en');
+      nextAr[field.key] = getSiteText(content, field.key, 'ar');
+    }
+    setDraftEn(nextEn);
+    setDraftAr(nextAr);
+    setHeaderSavedNotice(false);
+    setIsHeaderEditing(true);
+  };
+
+  const handleResetHeaderDrafts = () => {
+    const nextEn: Record<string, string> = {};
+    const nextAr: Record<string, string> = {};
+    for (const field of HEADER_TEXT_FIELDS) {
+      nextEn[field.key] = getDefaultSiteText(field.key, 'en');
+      nextAr[field.key] = getDefaultSiteText(field.key, 'ar');
+    }
+    setDraftEn(nextEn);
+    setDraftAr(nextAr);
+  };
+
+  const handleSaveHeaderTexts = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentContent = DataService.getWebsiteContent();
+    const nextComponentTexts: Record<string, string> = {
+      ...(currentContent.componentTexts || {}),
+    };
+    const nextComponentTextsAr: Record<string, string> = {
+      ...(currentContent.componentTextsAr || {}),
+    };
+
+    for (const field of HEADER_TEXT_FIELDS) {
+      const valEn = (draftEn[field.key] ?? '').trim();
+      const defEn = getDefaultSiteText(field.key, 'en').trim();
+      if (valEn.length > 0 && valEn !== defEn) {
+        nextComponentTexts[field.key] = valEn;
+      } else {
+        delete nextComponentTexts[field.key];
+      }
+
+      const valAr = (draftAr[field.key] ?? '').trim();
+      const defAr = getDefaultSiteText(field.key, 'ar').trim();
+      if (valAr.length > 0 && valAr !== defAr) {
+        nextComponentTextsAr[field.key] = valAr;
+      } else {
+        delete nextComponentTextsAr[field.key];
+      }
+    }
+
+    DataService.updateWebsiteContent({
+      componentTexts: nextComponentTexts,
+      componentTextsAr: nextComponentTextsAr,
+    });
+
+    setIsHeaderEditing(false);
+    setHeaderSavedNotice(true);
+    window.setTimeout(() => setHeaderSavedNotice(false), 3200);
+  };
 
   const allSummaries = useMemo(
     () => summarizeDestinationGuides(destinations, experiences),
@@ -979,46 +1101,228 @@ export const DestinationMapExplorer: React.FC<DestinationMapExplorerProps> = ({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
-          <div className="max-w-2xl">
-            <div
-              className="text-xs font-bold tracking-widest uppercase mb-2 flex items-center gap-1.5"
-              style={{ color: currentAccentTextHex }}
-            >
-              <MapPin className="w-4 h-4" style={{ color: currentAccentTextHex }} />
-              <span>{getSiteText(content, 'map.eyebrow', language)}</span>
-            </div>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
-              {getSiteText(content, 'map.title', language)}
-            </h2>
-            <p className="mt-3 text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed">
-              {getSiteText(content, 'map.sub', language)}
-            </p>
-          </div>
-
-          {/* Quick Trust Stats */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div
-              style={cardStyle}
-              className="px-4 py-2.5 rounded-xl flex items-center gap-2.5"
-            >
-              <CheckCircle2
-                className="w-4 h-4 shrink-0"
+        <div className="mb-10 space-y-5">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div className="max-w-2xl">
+              <div
+                className="text-xs font-bold tracking-widest uppercase mb-2 flex items-center gap-1.5"
                 style={{ color: currentAccentTextHex }}
-              />
-              <div className="text-xs">
-                <div className="font-bold text-[var(--tf-heading)] tabular-nums">
-                  {totalLiveGuides}{' '}
-                  {isArabic ? 'جولة مع مرشد محلي' : 'Local UMKM Guided Tours'}
-                </div>
-                <div className="text-[11px] text-[var(--tf-muted)]">
-                  {isArabic
-                    ? 'جاهزون للاستقبال بمجرد وصولك'
-                    : 'Ready to host once you land'}
+              >
+                <MapPin className="w-4 h-4" style={{ color: currentAccentTextHex }} />
+                <span>{getSiteText(content, 'map.eyebrow', language)}</span>
+              </div>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--tf-heading)] tracking-tight">
+                {getSiteText(content, 'map.title', language)}
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-[var(--tf-muted)] leading-relaxed">
+                {getSiteText(content, 'map.sub', language)}
+              </p>
+            </div>
+
+            {/* Quick Trust Stats & Admin Inline Edit Trigger */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div
+                style={cardStyle}
+                className="px-4 py-2.5 rounded-xl flex items-center gap-2.5"
+              >
+                <CheckCircle2
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: currentAccentTextHex }}
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-[var(--tf-heading)] tabular-nums">
+                    {totalLiveGuides}{' '}
+                    {getSiteText(content, 'map.trustTitleSuffix', language)}
+                  </div>
+                  <div className="text-[11px] text-[var(--tf-muted)]">
+                    {getSiteText(content, 'map.trustSubtitle', language)}
+                  </div>
                 </div>
               </div>
+
+              {isAdminAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    isHeaderEditing ? setIsHeaderEditing(false) : handleOpenHeaderEditor()
+                  }
+                  style={
+                    isHeaderEditing
+                      ? { backgroundColor: currentAccentHex, color: currentAccentBtnTextHex }
+                      : cardStyle
+                  }
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all hover:brightness-105"
+                >
+                  {isHeaderEditing ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />}
+                  <span>
+                    {isHeaderEditing
+                      ? isArabic
+                        ? 'إغلاق المحرر'
+                        : 'Close Editor'
+                      : isArabic
+                      ? 'تعديل النصوص'
+                      : 'Edit Texts'}
+                  </span>
+                </button>
+              )}
+
+              {headerSavedNotice && (
+                <div className="px-3 py-2 rounded-xl bg-[var(--tf-success-bg)] border border-[var(--tf-success-border)] text-[var(--tf-success-text)] text-xs font-semibold flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {isArabic
+                      ? 'تم التحديث والمزامنة فوريًا في جميع اللوحات'
+                      : 'Synced live across all panels'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Admin-only Inline Bilingual Editor synced in real time with Website CMS & Firestore */}
+          {isAdminAuthenticated && isHeaderEditing && (
+            <form
+              onSubmit={handleSaveHeaderTexts}
+              style={cardStyle}
+              className="p-5 rounded-2xl space-y-4 shadow-lg"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[var(--tf-border)]">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--tf-heading)] flex items-center gap-2">
+                    <Pencil className="w-3.5 h-3.5" style={{ color: currentAccentTextHex }} />
+                    <span>
+                      {isArabic
+                        ? 'تعديل نصوص رأس خريطة الوجهات (مزامنة فورية)'
+                        : 'Edit Destination Map Header Texts (Real-time Sync)'}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-[var(--tf-muted)] mt-0.5">
+                    {isArabic
+                      ? 'أي تعديل هنا يتحدث فوراً في موقع الزوار ولوحة تحكم الإدارة وقاعدة البيانات.'
+                      : 'Changes sync immediately across the Visitor Portal, Admin CMS panel, open tabs, and Firestore.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleResetHeaderDrafts}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>{isArabic ? 'استعادة الافتراضي' : 'Reset Defaults'}</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {HEADER_TEXT_FIELDS.map((field) => (
+                  <div
+                    key={field.key}
+                    className="p-3.5 rounded-xl bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-[var(--tf-heading)]">
+                        {isArabic ? field.labelAr : field.labelEn}
+                      </span>
+                      <code className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--tf-input-bg)] border border-[var(--tf-border)] text-[var(--tf-muted)]">
+                        {field.key}
+                      </code>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[var(--tf-muted)] mb-1">
+                          {isArabic ? 'النص بالإنجليزية (EN)' : 'English (EN)'}
+                        </label>
+                        {field.multiline ? (
+                          <textarea
+                            rows={2}
+                            dir="ltr"
+                            value={draftEn[field.key] ?? ''}
+                            onChange={(e) =>
+                              setDraftEn((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value,
+                              }))
+                            }
+                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            dir="ltr"
+                            value={draftEn[field.key] ?? ''}
+                            onChange={(e) =>
+                              setDraftEn((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value,
+                              }))
+                            }
+                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
+                          />
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[var(--tf-muted)] mb-1">
+                          {isArabic ? 'النص بالعربية (AR)' : 'Arabic (AR)'}
+                        </label>
+                        {field.multiline ? (
+                          <textarea
+                            rows={2}
+                            dir="rtl"
+                            value={draftAr[field.key] ?? ''}
+                            onChange={(e) =>
+                              setDraftAr((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value,
+                              }))
+                            }
+                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            dir="rtl"
+                            value={draftAr[field.key] ?? ''}
+                            onChange={(e) =>
+                              setDraftAr((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value,
+                              }))
+                            }
+                            className="w-full text-xs p-2.5 bg-[var(--tf-input-bg)] border border-[var(--tf-border)] rounded-xl text-[var(--tf-heading)] focus:outline-none"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsHeaderEditing(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--tf-surface-subtle)] border border-[var(--tf-border)] text-[var(--tf-heading)] hover:bg-[var(--tf-surface-hover)] cursor-pointer"
+                >
+                  {isArabic ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: currentAccentHex,
+                    color: currentAccentBtnTextHex,
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:brightness-105 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>
+                    {isArabic ? 'حفظ ومزامنة فورية' : 'Save & Sync Live'}
+                  </span>
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Search, Guide Filter & Hotel Route Origin Bar */}
